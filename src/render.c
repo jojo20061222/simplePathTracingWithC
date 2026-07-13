@@ -1,5 +1,4 @@
 #include "render.h"
-#include "dynamicArray.h"
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
@@ -8,7 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Color *accessScreen(VirtualScreen *screen, int x, int y) {
+ScreenColor *accessScreen(VirtualScreen *screen, int x, int y) {
     if (x < 0 || x >= screen->width) {
         printf("invalid access of x: %d\n", x);
         return NULL;
@@ -23,7 +22,7 @@ VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(VirtualScreen));
     result->width = width;
     result->height = height;
-    result->buffer = calloc(width * height, sizeof(Color *));
+    result->buffer = calloc(width * height, sizeof(ScreenColor *));
     return result;
 }
 
@@ -91,21 +90,26 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     ReversedRay *initRay = malloc(sizeof(ReversedRay));
     *initRay = (ReversedRay){*camera, minus((Vector){x, y, 0}, *camera), 1.0};
     double minT = INFINITY;
+    CollideColorResult finalCollisionResult;
     for (int i = 0; i < objectsCount; i++) {
         CollideColorResult collisionResult = collideObject(objects[i], initRay);
         if (!collisionResult.collide) continue;
         if (collisionResult.t < minT) {
             minT = collisionResult.t;
-            *accessScreen(s, x, y) = collisionResult.color;
+            finalCollisionResult = collisionResult;
         }
     }
+    // TODO: to modify the program to calculate the reflection
+    ScreenColor finalColor = {(uint8_t)(finalCollisionResult.color.R * 255),
+                              (uint8_t)(finalCollisionResult.color.G * 255),
+                              (uint8_t)(finalCollisionResult.color.B * 255)};
+    *accessScreen(s, x, y) = finalColor;
 }
 
-void renderScreen(Point *camera, VirtualScreen *s, const Object **objects) {
-    int objectsCount = getSize(objects);
+void renderScreen(Point *camera, VirtualScreen *s, const Object **objects, int objectsCount) {
     for (int i = 0; i < s->width; i++) {
         for (int j = 0; j < s->height; j++) {
-            *accessScreen(s, i, j) = (Color)0U;
+            *accessScreen(s, i, j) = (ScreenColor)0U;
             renderPixel(camera, s, i, j, objects, objectsCount);
         }
     }

@@ -27,16 +27,17 @@ int main() {
 
     Triangle tri =
         newTriangle((Point){100, 0, 1500}, (Point){0, height, 1500}, (Point){width, 0, 1500});
-    Object obj2 = (Object){(Shape *)&tri, {255, 100, 100, 0}, 0, 0};
+    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0, 0};
     objects[0] = &obj2;
 
     Sphere sph = newSphere((Point){300, 300, 1550}, 100);
-    Object obj3 = (Object){(Shape *)&sph, {255, 255, 100, 0}, 0, 0};
+    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0, 0};
     objects[1] = &obj3;
 
     double angle = 0;
 
-    Multithreads *mul = initMultithreads(vs, 11, (const Object **)objects, &camera);
+    Multithreads *mul =
+        initMultithreads(vs, 11, (const Object **)objects, getSize(objects), &camera);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
@@ -48,7 +49,7 @@ int main() {
         waitBarrier(mul->start);
         waitBarrier(mul->end);
 
-        SDL_UpdateTexture(texture, NULL, vs->buffer, width * sizeof(Color));
+        SDL_UpdateTexture(texture, NULL, vs->buffer, width * sizeof(ScreenColor));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 

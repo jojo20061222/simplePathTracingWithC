@@ -9,7 +9,7 @@ typedef union {
         uint8_t R, G, B, A;
     } color;
     uint32_t pixel;
-} Color;
+} ScreenColor;
 
 typedef struct {
     double x, y, z;

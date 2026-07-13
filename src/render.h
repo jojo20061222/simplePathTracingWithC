@@ -8,11 +8,11 @@
 #include <stdint.h>
 
 typedef struct {
-    Color *buffer;
+    ScreenColor *buffer;
     int width, height;
 } VirtualScreen;
 
-Color *accessScreen(VirtualScreen *screen, int x, int y);
+ScreenColor *accessScreen(VirtualScreen *screen, int x, int y);
 
 VirtualScreen *newScreen(int width, int height);
 
@@ -21,6 +21,6 @@ void freeScreen(VirtualScreen *screen);
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount);
 
-void renderScreen(Point *camera, VirtualScreen *s, const Object **objects);
+void renderScreen(Point *camera, VirtualScreen *s, const Object **objects, int objectsCount);
 
 #endif

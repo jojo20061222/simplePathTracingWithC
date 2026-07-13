@@ -45,6 +45,7 @@ typedef struct {
     int id;
     VirtualScreen *vs;
     const Object **objects;
+    int objectsCount;
     Barrier *start, *end;
     Point *camera;
     int workerCount;
@@ -56,6 +57,7 @@ void *worker(void *para) {
     int id = workerPara->id;
     VirtualScreen *vs = workerPara->vs;
     const Object **objects = workerPara->objects;
+    int objectsCount = workerPara->objectsCount;
     Barrier *start = workerPara->start;
     Barrier *end = workerPara->end;
     Point *camera = workerPara->camera;
@@ -69,10 +71,9 @@ void *worker(void *para) {
 
     while (*workerPara->exit == 0) {
         waitBarrier(start);
-        int objectsCount = getSize(objects);
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
-            *accessScreen(s, x, y) = (Color)0U;
+            *accessScreen(s, x, y) = (ScreenColor)0U;
             renderPixel(camera, s, x, y, objects, objectsCount);
         }
         waitBarrier(end);
@@ -84,7 +85,7 @@ void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               Point *camera) {
+                               int objectsCount, Point *camera) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
     Barrier *start = malloc(sizeof(Barrier));
@@ -100,6 +101,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
         WorkerPara *parai = malloc(sizeof(WorkerPara));
         parai->id = i;
         parai->objects = objects;
+        parai->objectsCount = objectsCount;
         parai->vs = vs;
         parai->start = start;
         parai->end = end;

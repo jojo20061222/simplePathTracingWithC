@@ -6,19 +6,23 @@
 #include <stdbool.h>
 
 typedef struct {
+    double R, G, B;
+} ObjectColor;
+
+typedef struct {
     bool collide;
     double t;
-    Color color;
+    ObjectColor color;
 } CollideColorResult;
 
 typedef struct _Object {
     Shape *shape;
-    Color color;
+    ObjectColor color;
     double diffuseFactor, specularFactor;
 } Object;
 
 CollideColorResult collideObject(const struct _Object *self, const ReversedRay *ray);
 
-Object newObject(Shape *shape, Color color, double diffuseFactor, double specularFactor);
+Object newObject(Shape *shape, ObjectColor color, double diffuseFactor, double specularFactor);
 
 #endif
