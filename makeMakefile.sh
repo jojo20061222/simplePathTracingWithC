@@ -4,6 +4,20 @@ CC="clang"
 buildPath="build"
 binaryPath="bin"
 sourcePath="src"
+
+if [[ ! (-d $binaryPath) ]]; then
+    mkdir $binaryPath
+fi
+
+if [[ ! (-d $buildPath) ]]; then
+    mkdir $buildPath
+fi
+
+if [[ ! (-d $sourcePath) ]]; then
+    echo "Where is your source?"
+fi
+
+
 optimizationFlags="-O2 -g -pthread"
 
 echo "all: $binaryPath/main"
