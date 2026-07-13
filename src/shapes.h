@@ -12,7 +12,12 @@ typedef struct _Shape {
     CollisionResult (*detectCollide)(const struct _Shape *, const ReversedRay *);
     Vector (*reflectVector)(const struct _Shape *, Point, const ReversedRay *);
 } Shape;
+/*
+ * For the fact that line segment has no "normal vector" for a given point, unfortunately these has
+ * to be deprecated.
+ */
 
+/*
 typedef struct {
     Shape shape;
     Point start, end;
@@ -37,7 +42,7 @@ void rotateCubeZ(Cube *cube, double angle);
 
 void moveCube(Cube *cube, Vector displacement);
 void setCubePosition(Cube *cube, Point pos);
-
+*/
 typedef struct {
     Shape shape;
     Point p1, p2, p3;

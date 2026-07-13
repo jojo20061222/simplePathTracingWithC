@@ -3,11 +3,11 @@
 #include <math.h>
 #include <stdlib.h>
 static const double error = 1e-8;
-
+/*
 CollisionResult detectLineCollide(const struct _Shape *self, const ReversedRay *ray) {
     CollisionResult result;
     // some math
-    /*
+
      * Here we shall calculate the distance between lines. This is done by solving the equation
      * listed.
      * Let P(t) = S + tA, Q(r) = T + rB be a point on lines, A, B be directions of lines.
@@ -20,68 +20,68 @@ CollisionResult detectLineCollide(const struct _Shape *self, const ReversedRay *
      * at - br = d
      * bt - cr = e
      * where d = W dot A, e = W dot B
-     */
 
-    const LineSegment *line = (const LineSegment *)self;
-    Vector S = line->start;
-    Vector A = minus(line->end, line->start);
-    Vector T = ray->start;
-    Vector B = ray->direction;
-    Vector W = minus(T, S);
 
-    double a = dot(A, A);
-    double b = dot(A, B);
-    double c = dot(B, B);
-    double d = dot(W, A);
-    double e = dot(W, B);
+const LineSegment *line = (const LineSegment *)self;
+Vector S = line->start;
+Vector A = minus(line->end, line->start);
+Vector T = ray->start;
+Vector B = ray->direction;
+Vector W = minus(T, S);
 
-    // Applying Cramer's Rule to solve the equation
+double a = dot(A, A);
+double b = dot(A, B);
+double c = dot(B, B);
+double d = dot(W, A);
+double e = dot(W, B);
 
-    double delta = b * b - a * c; // delta < 0
-    double t, r;
-    if (-delta < error) {
-        /*
-         * cos(theta)^2 approx 1 => two lines are parallel
-         * since they are parallel we choose any point on the segment (t = 0 here)
-         */
-        t = 0;
-        // to get the best result we use the larger denominator
-        r = fabs(b) > fabs(c) ? -d / b : -e / c;
-    }
-    else {
-        double deltat = b * e - d * c;
-        double deltar = a * e - d * b;
-        t = deltat / delta;
-        r = deltar / delta;
-    }
+// Applying Cramer's Rule to solve the equation
 
-    // t might goes beyond the range 0 <= t <= 1 so we must adjust that
+double delta = b * b - a * c; // delta < 0
+double t, r;
+if (-delta < error) {
+
+     * cos(theta)^2 approx 1 => two lines are parallel
+     * since they are parallel we choose any point on the segment (t = 0 here)
+
+t = 0;
+// to get the best result we use the larger denominator
+r = fabs(b) > fabs(c) ? -d / b : -e / c;
+}
+else {
+    double deltat = b * e - d * c;
+    double deltar = a * e - d * b;
+    t = deltat / delta;
+    r = deltar / delta;
+}
+
+// t might goes beyond the range 0 <= t <= 1 so we must adjust that
+if (t < 0.0) t = 0.0;
+if (t > 1.0) t = 1.0;
+r = (b * t - e) / c;
+
+// we do same thing on r
+if (r < 0.0) {
+    r = 0.0;
+    t = d / a;
     if (t < 0.0) t = 0.0;
     if (t > 1.0) t = 1.0;
-    r = (b * t - e) / c;
+}
 
-    // we do same thing on r
-    if (r < 0.0) {
-        r = 0.0;
-        t = d / a;
-        if (t < 0.0) t = 0.0;
-        if (t > 1.0) t = 1.0;
-    }
+// finally we calculate the distance of two points
+Point Pt = plus(S, scalerMultiplication(t, A));
+Point Qr = plus(T, scalerMultiplication(r, B));
+Vector N = minus(Pt, Qr);
+double distance = sqrt(dot(N, N));
 
-    // finally we calculate the distance of two points
-    Point Pt = plus(S, scalerMultiplication(t, A));
-    Point Qr = plus(T, scalerMultiplication(r, B));
-    Vector N = minus(Pt, Qr);
-    double distance = sqrt(dot(N, N));
-
-    if (distance > line->width) {
-        result.collide = false;
-    }
-    else {
-        result.collide = true;
-    }
-    result.t = r;
-    return result;
+if (distance > line->width) {
+    result.collide = false;
+}
+else {
+    result.collide = true;
+}
+result.t = r;
+return result;
 }
 // TODO: figure out how should this work since it should not work by its definition .w.
 // may be it needs an incident ray for reference?
@@ -243,6 +243,7 @@ void freeCube(Cube *Cube) {
     free(Cube->points);
     free(Cube);
 }
+*/
 
 CollisionResult detectTriangleCollide(const struct _Shape *self, const ReversedRay *ray) {
     CollisionResult result = {false, INFINITY};
