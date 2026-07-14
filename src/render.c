@@ -7,16 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-ScreenColor *accessScreen(VirtualScreen *screen, int x, int y) {
-    if (x < 0 || x >= screen->width) {
-        printf("invalid access of x: %d\n", x);
-        return NULL;
-    }
-    if (y < 0 || y >= screen->height) {
-        printf("invalid access of y: %d\n", y);
-    }
-    return &screen->buffer[y * screen->width + x];
-}
 
 VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(VirtualScreen));

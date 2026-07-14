@@ -18,12 +18,19 @@ typedef struct {
 typedef Tuple Vector;
 typedef Tuple Point;
 
-Vector cross(Vector a, Vector b);
-Vector plus(Vector a, Vector b);
-Vector minus(Vector a, Vector b);
-Vector scalerMultiplication(double c, Vector a);
-Vector unitVector(Vector vec);
-double dot(Vector a, Vector b);
+static inline Vector cross(Vector a, Vector b) {
+    return (Vector){a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+}
+
+static inline Vector plus(Vector a, Vector b) { return (Vector){a.x + b.x, a.y + b.y, a.z + b.z}; }
+
+static inline Vector minus(Vector a, Vector b) { return (Vector){a.x - b.x, a.y - b.y, a.z - b.z}; }
+
+static inline Vector scalerMultiplication(double c, Vector a) {
+    return (Vector){c * a.x, c * a.y, c * a.z};
+}
+
+static inline double dot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
 typedef struct {
     Point start;

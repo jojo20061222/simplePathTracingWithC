@@ -12,7 +12,9 @@ typedef struct {
     int width, height;
 } VirtualScreen;
 
-ScreenColor *accessScreen(VirtualScreen *screen, int x, int y);
+static inline ScreenColor *accessScreen(VirtualScreen *screen, int x, int y) {
+    return &screen->buffer[y * screen->width + x];
+}
 
 VirtualScreen *newScreen(int width, int height);
 

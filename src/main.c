@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 1080;
-const int height = 720;
+const int width = 1440;
+const int height = 840;
 
 int main() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -44,7 +44,8 @@ int main() {
             if (event.type == SDL_QUIT) isRunning = false;
         }
 
-        angle += 2;
+        angle += M_PI / 180 * 2;
+        sph.center = (Vector){300, 300, 1500 + 300 * sin(angle)};
 
         waitBarrier(mul->start);
         waitBarrier(mul->end);
