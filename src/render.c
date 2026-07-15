@@ -31,7 +31,7 @@ typedef struct {
 RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Object **objects,
                                                   int objectsCount) {
     double minT = INFINITY;
-    const Object *finalCollisionObj;
+    const Object *finalCollisionObj = NULL;
     CollideColorResult finalCollisionResult;
     for (int i = 0; i < objectsCount; i++) {
         CollideColorResult collisionResult = collideObject(objects[i], &initRay);
@@ -56,29 +56,25 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     RayCollideWithObjectsResult result = rayCollideWithObjects(initRay, objects, objectsCount);
     CollideColorResult finalCollisionResult = result.finalCollisionResult;
     const Object *finalCollisionObj = result.finalCollisionObj;
-
-    // TODO: to modify the program to calculate the reflection
-    /*
-    ScreenColor finalColor = {(uint8_t)(finalCollisionResult.color.R * 255),
-                              (uint8_t)(finalCollisionResult.color.G * 255),
-                              (uint8_t)(finalCollisionResult.color.B * 255)};
-    */
+    if (finalCollisionObj == NULL) return;
 
     // calculate the diffuse and specular part
 
     LightIntensity specularIntensity = {0, 0, 0};
     LightIntensity diffusionIntensity = {0, 0, 0};
+
     if (sources != NULL) {
         // first we generate the reflection light
-        /*
-         * direction be r let N = ^n, then r = d - 2(d dot N)N
-         */
+        // direction be r let N = ^n, then r = d - 2(d dot N)N
 
         // d = initRay.direction
+
         Point collidePoint =
             plus(initRay.start, scalerMultiplication(finalCollisionResult.t, initRay.direction));
+
         Vector nHat = unitVector(
             finalCollisionObj->shape->normalVector(finalCollisionObj->shape, collidePoint));
+
         if (dot(nHat, initRay.direction) > 0) {
             nHat = (Vector){-nHat.x, -nHat.y, -nHat.z};
         }
@@ -90,6 +86,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
         RayCollideWithObjectsResult reflectObjectResult =
             rayCollideWithObjects(reflectionRay, objects, objectsCount);
+
         for (int i = 0; i < sourcesCount; i++) {
             // test if the reversed reflection light can directly reaches the light source
             // Specular Part
@@ -97,10 +94,12 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                 sources[i]->shape->detectCollide(sources[i]->shape, &reflectionRay);
             if (reflectLightSourceResult.collide) {
                 if (reflectObjectResult.finalCollisionResult.t >= reflectLightSourceResult.t)
-                    specularIntensity =
-                        plusLightIntensity(specularIntensity, sources[i]->intensity);
+                    specularIntensity = plusLightIntensity(
+                        specularIntensity,
+                        (LightIntensity){sources[i]->intensity.R * finalCollisionObj->color.R,
+                                         sources[i]->intensity.G * finalCollisionObj->color.G,
+                                         sources[i]->intensity.B * finalCollisionObj->color.B});
             }
-
             // Diffusion Part
             Vector diffuseRayDirection = minus(sources[i]->center, collidePoint);
             ReversedRay diffuseRay = {
@@ -108,6 +107,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                 diffuseRayDirection};
         }
     }
+
     ScreenColor finalColor = {
         (uint8_t){255 * (ambient * finalCollisionResult.color.R + specularIntensity.R)},
         (uint8_t){255 * (ambient * finalCollisionResult.color.G + specularIntensity.G)},

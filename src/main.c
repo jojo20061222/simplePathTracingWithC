@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 1440;
-const int height = 840;
+const int width = 1080;
+const int height = 720;
 
 int main() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -34,8 +34,8 @@ int main() {
     Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0, 0};
     objects[1] = &obj3;
 
-    Sphere lightSourceSph = newSphere((Point){1000, 1000, -100}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}, {1000, 1000, -100}};
+    Sphere lightSourceSph = newSphere((Point){300, 300, -100}, 100);
+    LightSource lightSource = {(Shape *)&lightSourceSph, {0.5, 0.5, 0.5}, {1000, 1000, -100}};
     LightSource **sources = getDynamicArray(1, LightSource *);
     sources[0] = &lightSource;
 
