@@ -46,6 +46,8 @@ typedef struct {
     VirtualScreen *vs;
     const Object **objects;
     int objectsCount;
+    const LightSource **sources;
+    int sourcesCount;
     Barrier *start, *end;
     Point *camera;
     int workerCount;
@@ -58,6 +60,8 @@ void *worker(void *para) {
     VirtualScreen *vs = workerPara->vs;
     const Object **objects = workerPara->objects;
     int objectsCount = workerPara->objectsCount;
+    const LightSource **sources = workerPara->sources;
+    int sourcesCount = workerPara->sourcesCount;
     Barrier *start = workerPara->start;
     Barrier *end = workerPara->end;
     Point *camera = workerPara->camera;
@@ -74,7 +78,7 @@ void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
-            renderPixel(camera, s, x, y, objects, objectsCount, NULL, 0, 0.1);
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, 0.1);
         }
         waitBarrier(end);
     }
@@ -85,7 +89,7 @@ void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               int objectsCount, Point *camera) {
+                               int objectsCount, const LightSource **sources, int sourcesCount, Point *camera) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
     Barrier *start = malloc(sizeof(Barrier));
@@ -102,6 +106,8 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
         parai->id = i;
         parai->objects = objects;
         parai->objectsCount = objectsCount;
+        parai->sources = sources;
+        parai->sourcesCount = sourcesCount;
         parai->vs = vs;
         parai->start = start;
         parai->end = end;

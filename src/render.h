@@ -22,7 +22,7 @@ VirtualScreen *newScreen(int width, int height);
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource *sources, int sourcesCount, double ambient);
+                 int objectsCount, const LightSource **sources, int sourcesCount, double ambient);
 
 
 

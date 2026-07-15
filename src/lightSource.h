@@ -10,6 +10,11 @@ typedef struct {
 typedef struct {
     Shape *shape;
     LightIntensity intensity;
+    Point center;
 } LightSource;
+
+static inline LightIntensity plusLightIntensity(LightIntensity a, LightIntensity b) {
+    return (LightIntensity){a.R + b.R, a.G + b.G, a.B + b.B};
+}
 
 #endif

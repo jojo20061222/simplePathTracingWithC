@@ -22,13 +22,14 @@ void freeScreen(VirtualScreen *screen) {
     free(screen);
     return;
 }
+
 typedef struct {
     CollideColorResult finalCollisionResult;
     const Object *finalCollisionObj;
 } RayCollideWithObjectsResult;
 
-RayCollideWithObjectsResult rayCollideWithObjects(Point *camera, int x, int y, const Object **objects, int objectsCount) {
-    ReversedRay initRay = {*camera, minus((Vector){x, y, 0}, *camera)};
+RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Object **objects,
+                                                  int objectsCount) {
     double minT = INFINITY;
     const Object *finalCollisionObj;
     CollideColorResult finalCollisionResult;
@@ -45,15 +46,16 @@ RayCollideWithObjectsResult rayCollideWithObjects(Point *camera, int x, int y, c
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource *sources, int sourcesCount, double ambient) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, double ambient) {
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
      * then do something consequently.
      */
-    RayCollideWithObjectsResult result = rayCollideWithObjects(camera, x, y, objects, objectsCount);
+    ReversedRay initRay = {*camera, minus((Vector){x, y, 0}, *camera)};
+    RayCollideWithObjectsResult result = rayCollideWithObjects(initRay, objects, objectsCount);
     CollideColorResult finalCollisionResult = result.finalCollisionResult;
-    const Object finalCollisionObj = result.finalCollisionObj;
+    const Object *finalCollisionObj = result.finalCollisionObj;
 
     // TODO: to modify the program to calculate the reflection
     /*
@@ -63,12 +65,12 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     */
 
     // calculate the diffuse and specular part
+
+    LightIntensity specularIntensity = {0, 0, 0};
+    LightIntensity diffusionIntensity = {0, 0, 0};
     if (sources != NULL) {
-        ReversedRay initRay = {*camera, minus((Vector){x, y, 0}, *camera)};
         // first we generate the reflection light
         /*
-         * To calculete the direction that reflection ray goes, we use the property that of a
-         * diamond Let the direction vector be d, normal vector of a surface be n, reflecting
          * direction be r let N = ^n, then r = d - 2(d dot N)N
          */
 
@@ -82,18 +84,34 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         }
         Vector reflectDirection =
             minus(initRay.direction, scalerMultiplication(2 * dot(initRay.direction, nHat), nHat));
-        ReversedRay reflection = {
+        ReversedRay reflectionRay = {
             plus(scalerMultiplication(error * 10, reflectDirection), collidePoint),
             reflectDirection};
 
+        RayCollideWithObjectsResult reflectObjectResult =
+            rayCollideWithObjects(reflectionRay, objects, objectsCount);
         for (int i = 0; i < sourcesCount; i++) {
             // test if the reversed reflection light can directly reaches the light source
+            // Specular Part
+            CollisionResult reflectLightSourceResult =
+                sources[i]->shape->detectCollide(sources[i]->shape, &reflectionRay);
+            if (reflectLightSourceResult.collide) {
+                if (reflectObjectResult.finalCollisionResult.t >= reflectLightSourceResult.t)
+                    specularIntensity = plusLightIntensity(specularIntensity, sources[i]->intensity);
+            }
+
+            // Diffusion Part
+            Vector diffuseRayDirection = minus(sources[i]->center, collidePoint);
+            ReversedRay diffuseRay = {
+                plus(scalerMultiplication(error * 10, diffuseRayDirection), collidePoint),
+                diffuseRayDirection};
         }
     }
-    ScreenColor finalColor = {// ambient + ...
-                              (uint8_t)(ambient * 255 * finalCollisionResult.color.R),
-                              (uint8_t)(ambient * 255 * finalCollisionResult.color.G),
-                              (uint8_t)(ambient * 255 * finalCollisionResult.color.B), (uint8_t)0};
+    ScreenColor finalColor = {
+        // ambient + diffuse + specular
+        (uint8_t)(255 * (ambient * finalCollisionResult.color.R + specularIntensity.R)),
+        (uint8_t)(ambient * 255 * finalCollisionResult.color.G + specularIntensity.G),
+        (uint8_t)(ambient * 255 * finalCollisionResult.color.B + specularIntensity.B), (uint8_t)0};
 
     *accessScreen(s, x, y) = finalColor;
 }

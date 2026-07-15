@@ -33,7 +33,7 @@ static inline Vector scalerMultiplication(double c, Vector a) {
 
 static inline double dot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-const double error = 1e-8;
+static const double error = 1e-8;
 
 static inline Vector unitVector(Vector vec) {
     double length = sqrt(dot(vec, vec));
