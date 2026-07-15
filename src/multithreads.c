@@ -74,7 +74,7 @@ void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
-            renderPixel(camera, s, x, y, objects, objectsCount);
+            renderPixel(camera, s, x, y, objects, objectsCount, NULL, 0, 0.1);
         }
         waitBarrier(end);
     }

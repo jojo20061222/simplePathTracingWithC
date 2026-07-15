@@ -11,4 +11,5 @@ typedef struct {
     Shape *shape;
     LightIntensity intensity;
 } LightSource;
+
 #endif

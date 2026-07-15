@@ -2,6 +2,7 @@
 #define RENDER_H
 #include "base.h"
 #include "dynamicArray.h"
+#include "lightSource.h"
 #include "object.h"
 #include <pthread.h>
 #include <stdbool.h>
@@ -21,8 +22,8 @@ VirtualScreen *newScreen(int width, int height);
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount);
+                 int objectsCount, const LightSource *sources, int sourcesCount, double ambient);
 
-void renderScreen(Point *camera, VirtualScreen *s, const Object **objects, int objectsCount);
+
 
 #endif

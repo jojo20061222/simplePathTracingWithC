@@ -1,4 +1,5 @@
 #include "render.h"
+#include "lightSource.h"
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
@@ -21,56 +22,8 @@ void freeScreen(VirtualScreen *screen) {
     return;
 }
 
-typedef struct {
-    int capacity;
-    int size;
-    int head, rear;
-    void **array;
-} Queue;
-
-Queue newQueue() {
-    const int initCapacity = 1024;
-    Queue result;
-    result.capacity = initCapacity;
-    result.head = 0;
-    result.rear = 0;
-    result.size = 0;
-    result.array = malloc(sizeof(void *) * initCapacity);
-    return result;
-}
-void freeQueue(Queue queue) { free(queue.array); }
-
-void push(Queue *queue, void *newobj) {
-    queue->array[queue->rear++] = newobj;
-    queue->size++;
-    if (queue->size == queue->capacity) {
-        void **moveTo = malloc(sizeof(void *) * queue->capacity * 2);
-        for (int i = 0; i < queue->size; i++) {
-            moveTo[i] = queue->array[(queue->head + i) % queue->capacity];
-        }
-        free(queue->array);
-        queue->capacity *= 2;
-        queue->array = moveTo;
-        queue->head = 0;
-        queue->rear = queue->size;
-    }
-    else if (queue->rear == queue->capacity) {
-        queue->rear = 0;
-    }
-}
-
-void *pop(Queue *queue) {
-    assert(queue->size > 0);
-    queue->size--;
-    ReversedRay *result = queue->array[queue->head++];
-    if (queue->head >= queue->capacity) queue->head = 0;
-    return result;
-}
-
-int size(Queue *queue) { return queue->size; }
-
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount) {
+                 int objectsCount, const LightSource *sources, int sourcesCount, double ambient) {
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
@@ -89,17 +42,23 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         }
     }
     // TODO: to modify the program to calculate the reflection
+    /*
     ScreenColor finalColor = {(uint8_t)(finalCollisionResult.color.R * 255),
                               (uint8_t)(finalCollisionResult.color.G * 255),
                               (uint8_t)(finalCollisionResult.color.B * 255)};
-    *accessScreen(s, x, y) = finalColor;
-}
+    */
 
-void renderScreen(Point *camera, VirtualScreen *s, const Object **objects, int objectsCount) {
-    for (int i = 0; i < s->width; i++) {
-        for (int j = 0; j < s->height; j++) {
-            *accessScreen(s, i, j) = (ScreenColor)0U;
-            renderPixel(camera, s, i, j, objects, objectsCount);
+    // calculate the diffuse and specular part
+    if (sources != NULL) {
+        for (int i = 0; i < sourcesCount; i++) {
+            // test 
         }
     }
+    ScreenColor finalColor = {// ambient + ...
+                              (uint8_t)(ambient * 255 * finalCollisionResult.color.R),
+                              (uint8_t)(ambient * 255 * finalCollisionResult.color.G),
+                              (uint8_t)(ambient * 255 * finalCollisionResult.color.B), (uint8_t)0};
+    
+
+    *accessScreen(s, x, y) = finalColor;
 }
