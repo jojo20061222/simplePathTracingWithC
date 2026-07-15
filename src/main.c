@@ -35,7 +35,7 @@ int main() {
     objects[1] = &obj3;
 
     Sphere lightSourceSph = newSphere((Point){300, 300, -100}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, {0.5, 0.5, 0.5}, {1000, 1000, -100}};
+    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}, {1000, 1000, -100}};
     LightSource **sources = getDynamicArray(1, LightSource *);
     sources[0] = &lightSource;
 

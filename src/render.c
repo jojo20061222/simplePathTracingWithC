@@ -96,9 +96,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                 if (reflectObjectResult.finalCollisionResult.t >= reflectLightSourceResult.t)
                     specularIntensity = plusLightIntensity(
                         specularIntensity,
-                        (LightIntensity){sources[i]->intensity.R * finalCollisionObj->color.R,
-                                         sources[i]->intensity.G * finalCollisionObj->color.G,
-                                         sources[i]->intensity.B * finalCollisionObj->color.B});
+                        irradiate(sources[i]->intensity, finalCollisionObj->color));
             }
             // Diffusion Part
             Vector diffuseRayDirection = minus(sources[i]->center, collidePoint);
@@ -107,12 +105,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                 diffuseRayDirection};
         }
     }
-
-    ScreenColor finalColor = {
-        (uint8_t){255 * (ambient * finalCollisionResult.color.R + specularIntensity.R)},
-        (uint8_t){255 * (ambient * finalCollisionResult.color.G + specularIntensity.G)},
-        (uint8_t){255 * (ambient * finalCollisionResult.color.B + specularIntensity.B)},
-        (uint8_t)0};
-
+    LightIntensity ambientIntensity = irradiate((LightIntensity){ambient, ambient, ambient}, finalCollisionObj->color);
+    ScreenColor finalColor = intensityToColor(plusLightIntensity(ambientIntensity, specularIntensity));
     *accessScreen(s, x, y) = finalColor;
 }
