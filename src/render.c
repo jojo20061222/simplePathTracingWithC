@@ -50,15 +50,23 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     // calculate the diffuse and specular part
     if (sources != NULL) {
+        // first we generate the reflection light
+        ReversedRay reflection;
+        /*
+         * To calculete the direction that reflection ray goes, we use the property that of a diamond
+         * Let the direction vector be d, normal vector of a surface be n, reflecting direction be r
+         * let N = ^n, then r = d - 2(d dot N)N
+         */
+
+                
         for (int i = 0; i < sourcesCount; i++) {
-            // test 
+            // test if the reversed reflection light can directly reaches the light source
         }
     }
     ScreenColor finalColor = {// ambient + ...
                               (uint8_t)(ambient * 255 * finalCollisionResult.color.R),
                               (uint8_t)(ambient * 255 * finalCollisionResult.color.G),
                               (uint8_t)(ambient * 255 * finalCollisionResult.color.B), (uint8_t)0};
-    
 
     *accessScreen(s, x, y) = finalColor;
 }
