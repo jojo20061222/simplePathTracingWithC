@@ -2,7 +2,6 @@
 #include "base.h"
 #include <math.h>
 #include <stdlib.h>
-static const double error = 1e-8;
 
 CollisionResult detectTriangleCollide(const struct _Shape *self, const ReversedRay *ray) {
     CollisionResult result = {false, INFINITY};
