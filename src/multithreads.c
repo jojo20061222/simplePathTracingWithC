@@ -16,7 +16,7 @@ void initBarrier(Barrier *barrier, int count) {
 // wait until contition satisfies
 void waitBarrier(Barrier *barrier) {
     pthread_mutex_lock(&barrier->mtx);
-    int curGeneration = barrier->generation;
+    unsigned int curGeneration = barrier->generation;
     // add the counter and check if counter reaches the threshold
     if (++barrier->currentWaitingCount >= barrier->passThreshold) {
         barrier->generation++;
@@ -57,7 +57,6 @@ typedef struct {
 void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
-    VirtualScreen *vs = workerPara->vs;
     const Object **objects = workerPara->objects;
     int objectsCount = workerPara->objectsCount;
     const LightSource **sources = workerPara->sources;

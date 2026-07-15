@@ -97,7 +97,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                 sources[i]->shape->detectCollide(sources[i]->shape, &reflectionRay);
             if (reflectLightSourceResult.collide) {
                 if (reflectObjectResult.finalCollisionResult.t >= reflectLightSourceResult.t)
-                    specularIntensity = plusLightIntensity(specularIntensity, sources[i]->intensity);
+                    specularIntensity =
+                        plusLightIntensity(specularIntensity, sources[i]->intensity);
             }
 
             // Diffusion Part
@@ -108,10 +109,10 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         }
     }
     ScreenColor finalColor = {
-        // ambient + diffuse + specular
-        (uint8_t)(255 * (ambient * finalCollisionResult.color.R + specularIntensity.R)),
-        (uint8_t)(ambient * 255 * finalCollisionResult.color.G + specularIntensity.G),
-        (uint8_t)(ambient * 255 * finalCollisionResult.color.B + specularIntensity.B), (uint8_t)0};
+        (uint8_t){255 * (ambient * finalCollisionResult.color.R + specularIntensity.R)},
+        (uint8_t){255 * (ambient * finalCollisionResult.color.G + specularIntensity.G)},
+        (uint8_t){255 * (ambient * finalCollisionResult.color.B + specularIntensity.B)},
+        (uint8_t)0};
 
     *accessScreen(s, x, y) = finalColor;
 }

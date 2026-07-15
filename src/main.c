@@ -34,12 +34,15 @@ int main() {
     Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0, 0};
     objects[1] = &obj3;
 
-    Sphere lightSource = 
+    Sphere lightSourceSph = newSphere((Point){1000, 1000, -100}, 100);
+    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}, {1000, 1000, -100}};
+    LightSource **sources = getDynamicArray(1, LightSource *);
+    sources[0] = &lightSource;
 
     double angle = 0;
 
-    Multithreads *mul =
-        initMultithreads(vs, 11, (const Object **)objects, getSize(objects), &camera, );
+    Multithreads *mul = initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
+                                         (const LightSource **)sources, 1, &camera);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

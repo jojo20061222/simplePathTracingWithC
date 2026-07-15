@@ -52,7 +52,7 @@ CollisionResult detectTriangleCollide(const struct _Shape *self, const ReversedR
     return result;
 }
 
-Vector normalVectorOfTriangle(const struct _Shape *self, Point p) {
+Vector normalVectorOfTriangle(const struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
     return cross(minus(tri->p2, tri->p1), minus(tri->p3, tri->p1));
 }

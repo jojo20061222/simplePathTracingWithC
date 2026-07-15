@@ -18,7 +18,7 @@ if [[ ! (-d $sourcePath) ]]; then
 fi
 
 
-optimizationFlags="-O2 -g -pthread"
+optimizationFlags="-O2 -pthread -g"
 
 echo "all: $binaryPath/main"
 
