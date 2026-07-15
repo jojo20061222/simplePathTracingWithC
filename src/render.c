@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
 VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(VirtualScreen));
     result->width = width;
@@ -26,26 +25,26 @@ typedef struct {
     int capacity;
     int size;
     int head, rear;
-    ReversedRay **array;
-} RayQueue;
+    void **array;
+} Queue;
 
-RayQueue newQueue() {
+Queue newQueue() {
     const int initCapacity = 1024;
-    RayQueue result;
+    Queue result;
     result.capacity = initCapacity;
     result.head = 0;
     result.rear = 0;
     result.size = 0;
-    result.array = malloc(sizeof(Object *) * initCapacity);
+    result.array = malloc(sizeof(void *) * initCapacity);
     return result;
 }
-void freeQueue(RayQueue queue) { free(queue.array); }
+void freeQueue(Queue queue) { free(queue.array); }
 
-void push(RayQueue *queue, ReversedRay *ray) {
-    queue->array[queue->rear++] = ray;
+void push(Queue *queue, void *newobj) {
+    queue->array[queue->rear++] = newobj;
     queue->size++;
     if (queue->size == queue->capacity) {
-        ReversedRay **moveTo = malloc(sizeof(Object *) * queue->capacity * 2);
+        void **moveTo = malloc(sizeof(void *) * queue->capacity * 2);
         for (int i = 0; i < queue->size; i++) {
             moveTo[i] = queue->array[(queue->head + i) % queue->capacity];
         }
@@ -60,7 +59,7 @@ void push(RayQueue *queue, ReversedRay *ray) {
     }
 }
 
-ReversedRay *pop(RayQueue *queue) {
+void *pop(Queue *queue) {
     assert(queue->size > 0);
     queue->size--;
     ReversedRay *result = queue->array[queue->head++];
@@ -68,7 +67,7 @@ ReversedRay *pop(RayQueue *queue) {
     return result;
 }
 
-int size(RayQueue *queue) { return queue->size; }
+int size(Queue *queue) { return queue->size; }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount) {
