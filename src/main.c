@@ -23,6 +23,8 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height, -4000};
 
+    LightIntensity *lightIntensitySum = newLightIntensitySum(width, height);
+
     Object **objects = getDynamicArray(2, Object *);
 
     Triangle tri =
@@ -42,7 +44,7 @@ int main() {
     double angle = 0;
 
     Multithreads *mul = initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                                         (const LightSource **)sources, 1, &camera, 2);
+                                         (const LightSource **)sources, 1, &camera, 2, lightIntensitySum);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

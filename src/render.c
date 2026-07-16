@@ -24,6 +24,14 @@ void freeScreen(VirtualScreen *screen) {
     return;
 }
 
+LightIntensity *newLightIntensitySum(int width, int height) {
+    LightIntensity *result = malloc(sizeof(LightIntensity) * width * height);
+    for (int i = 0; i < width * height; i++) {
+        result[i] = (LightIntensity){0.0, 0.0, 0.0};
+    }
+    return result;
+}
+
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
@@ -119,9 +127,14 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         firstCollideObjectResult.color);
 }
 
+static inline LightIntensity *accessLightIntensitySum(LightIntensity *lightIntensitySum, int x,
+                                                      int y, int width) {
+    return &lightIntensitySum[y * width + x];
+}
+
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount, LightIntensity *intensitySum,
-                 MT19937 *mt, int maxDepth) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 LightIntensity *intensitySum, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
@@ -133,6 +146,14 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     // Path tracing
     LightIntensity intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
-    
-    *accessScreen(s, x, y) = *accessScreen(s, x, y) * (renderCount - 1);
+
+    *accessLightIntensitySum(intensitySum, x, y, s->width) =
+        plusLightIntensity(*accessLightIntensitySum(intensitySum, x, y, s->width), intensityResult);
+
+    LightIntensity averageIntensity = *accessLightIntensitySum(intensitySum, x, y, s->width);
+    averageIntensity.R /= (double)renderCount;
+    averageIntensity.G /= (double)renderCount;
+    averageIntensity.B /= (double)renderCount;
+
+    *accessScreen(s, x, y) = intensityToColor(averageIntensity);
 }
