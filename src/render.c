@@ -14,7 +14,11 @@ VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(VirtualScreen));
     result->width = width;
     result->height = height;
-    result->buffer = calloc(width * height, sizeof(ScreenColor *));
+    result->buffer = calloc(width * height, sizeof(ScreenColor));
+    result->sum = malloc(sizeof(LightIntensity) * width * height);
+    for (int i = 0; i < width * height; i++) {
+        result->sum[i] = (LightIntensity){0, 0, 0};
+    }
     return result;
 }
 
@@ -22,14 +26,6 @@ void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen);
     return;
-}
-
-LightIntensity *newLightIntensitySum(int width, int height) {
-    LightIntensity *result = malloc(sizeof(LightIntensity) * width * height);
-    for (int i = 0; i < width * height; i++) {
-        result[i] = (LightIntensity){0.0, 0.0, 0.0};
-    }
-    return result;
 }
 
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
@@ -70,7 +66,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
 
     // case 2: first collide with source, so we return the intensity of light source directly
-    if (firstCollideSourceResult.t <= firstCollideObjectResult.t) {
+    if (firstCollideSourceResult.t <= firstCollideObjectResult.t && firstCollideSource != NULL) {
         return firstCollideSourceResult.intensity;
     }
 
@@ -79,17 +75,16 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Point collidePoint = plus(ray.start, scalerMultiplication(firstCollideObjectResult.t, d));
     Vector N = unitVector(
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
+    if (dot(N, d) > 0) N = (Vector){-N.x, -N.y, -N.z};
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
-    double dice = (double)extractNumber(mt) / (double)UINT_MAX;
-    if (dice <= firstCollideObject->diffuseFactor) {
+    if (randomReal(mt) <= firstCollideObject->diffuseFactor) {
         // first we generate a random point within a circle (uniformly)
         // To convert this into distribution of probabilty, we find the probability near center
         // of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2)
         // we want to use a uniform distributed variable u1 to decide if the point is in such area,
         // so u = (r/R)^2, r = Rsqrt(u)
-        // idk, the this is the link from stack overflow
         // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
         double u1 = randomReal(mt), u2 = randomReal(mt);
         double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
@@ -101,14 +96,14 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
 
         // finally we turn this into right angle
-        Vector helper = 1 - N.x < error ? (Vector){0, 1, 0} : (Vector){1, 0, 0};
+        Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
         Vector T = cross(helper, N);
-        Vector B = cross(helper, T);
+        Vector B = cross(N, T);
         // project the unturned to turned
-        // [N B T]X
-        nxtDirection = (Vector){dot((Vector){N.x, B.x, T.x}, unturnedDirection),
-                                dot((Vector){N.y, B.y, T.y}, unturnedDirection),
-                                dot((Vector){N.z, B.z, T.z}, unturnedDirection)};
+        nxtDirection = (Vector){
+            unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
+            unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
+            unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
     }
 
     // case specular
@@ -127,14 +122,13 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         firstCollideObjectResult.color);
 }
 
-static inline LightIntensity *accessLightIntensitySum(LightIntensity *lightIntensitySum, int x,
-                                                      int y, int width) {
-    return &lightIntensitySum[y * width + x];
+static inline LightIntensity *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
+    return &vs->sum[y * vs->width + x];
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
-                 LightIntensity *intensitySum, MT19937 *mt, int maxDepth) {
+                 MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
@@ -147,10 +141,10 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     LightIntensity intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
 
-    *accessLightIntensitySum(intensitySum, x, y, s->width) =
-        plusLightIntensity(*accessLightIntensitySum(intensitySum, x, y, s->width), intensityResult);
+    *accessLightIntensitySum(s, x, y) =
+        plusLightIntensity(*accessLightIntensitySum(s, x, y), intensityResult);
 
-    LightIntensity averageIntensity = *accessLightIntensitySum(intensitySum, x, y, s->width);
+    LightIntensity averageIntensity = *accessLightIntensitySum(s, x, y);
     averageIntensity.R /= (double)renderCount;
     averageIntensity.G /= (double)renderCount;
     averageIntensity.B /= (double)renderCount;

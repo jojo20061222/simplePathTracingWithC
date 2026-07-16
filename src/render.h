@@ -11,6 +11,7 @@
 
 typedef struct {
     ScreenColor *buffer;
+    LightIntensity *sum;
     int width, height;
 } VirtualScreen;
 
@@ -24,8 +25,7 @@ void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
-                 LightIntensity *intensitySum, MT19937 *mt, int maxDepth);
+                  MT19937 *mt, int maxDepth);
 
-LightIntensity *newLightIntensitySum(int width, int height);
 
 #endif
