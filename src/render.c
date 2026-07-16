@@ -58,6 +58,5 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     CollideColorResult finalcollideResult = result.finalcollideResult;
     const Object *firstcollideObj = result.finalcollideObj;
     if (firstcollideObj == NULL) return;
-    
-    
+
 }
