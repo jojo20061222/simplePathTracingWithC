@@ -23,21 +23,21 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height, -4000};
 
-    Object **objects = getDynamicArray(1, Object *);
-    /*
+    Object **objects = getDynamicArray(3, Object *);
+    
     Triangle tri1 =
         newTriangle((Point){980, 720, 0}, (Point){0, 720, 1500}, (Point){1080, 0, 1500});
     Object obj1 = (Object){(Shape *)&tri1, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0.9};
-    objects[2] = &obj1;
+    objects[0] = &obj1;
     Triangle tri =
         newTriangle((Point){100, 0, 3000}, (Point){0, height, 1500}, (Point){width, 0, 1500});
-    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0.9};
-    objects[0] = &obj2;
-    */
+    Object obj2 = (Object){(Shape *)&tri, {100.0 / 255, 100.0 / 255, 255.0 / 255}, 0.9};
+    objects[1] = &obj2;
+    
 
     Sphere sph = newSphere((Point){300, 300, 1550}, 100);
-    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0.9};
-    objects[0] = &obj3;
+    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0.5};
+    objects[2] = &obj3;
 
     Sphere lightSourceSph = newSphere((Point){700, -500, 1500}, 100);
     LightSource lightSource = {(Shape *)&lightSourceSph, {100, 100, 100}};

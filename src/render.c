@@ -96,8 +96,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
 
         // finally we turn this into right angle
-        Vector helper = (fabs(N.x) > 0.999) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
-        Vector T = cross(helper, N);
+        Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
+        Vector T = unitVector(cross(helper, N));
         Vector B = cross(N, T);
         // project the unturned to turned
         nxtDirection = (Vector){
