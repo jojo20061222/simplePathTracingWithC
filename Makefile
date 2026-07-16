@@ -2,7 +2,7 @@ all: bin/main
 build/base.o: src/base.c src/base.h
 	clang -o $@ -c $< -O2 -pthread -g
 build/main.o: src/main.c src/dynamicArray.h src/multithreads.h src/render.h \
-  src/base.h src/lightSource.h src/shapes.h src/object.h \
+  src/base.h src/lightSource.h src/object.h src/shapes.h \
   /opt/homebrew/include/SDL2/SDL.h /opt/homebrew/include/SDL2/SDL_main.h \
   /opt/homebrew/include/SDL2/SDL_stdinc.h \
   /opt/homebrew/include/SDL2/SDL_config.h \
@@ -55,17 +55,19 @@ build/main.o: src/main.c src/dynamicArray.h src/multithreads.h src/render.h \
   /opt/homebrew/include/SDL2/SDL_misc.h
 	clang -o $@ -c $< `sdl2-config --cflags` -O2 -pthread -g
 build/multithreads.o: src/multithreads.c src/multithreads.h src/render.h \
-  src/base.h src/dynamicArray.h src/lightSource.h src/shapes.h \
-  src/object.h
+  src/base.h src/dynamicArray.h src/lightSource.h src/object.h \
+  src/shapes.h
 	clang -o $@ -c $< -O2 -pthread -g
 build/object.o: src/object.c src/object.h src/base.h src/shapes.h
 	clang -o $@ -c $< -O2 -pthread -g
+build/random.o: src/random.c src/random.h
+	clang -o $@ -c $< -O2 -pthread -g
 build/render.o: src/render.c src/render.h src/base.h src/dynamicArray.h \
-  src/lightSource.h src/shapes.h src/object.h
+  src/lightSource.h src/object.h src/shapes.h
 	clang -o $@ -c $< -O2 -pthread -g
 build/shapes.o: src/shapes.c src/shapes.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g
-bin/main: build/base.o build/main.o build/multithreads.o build/object.o build/render.o build/shapes.o 
+bin/main: build/base.o build/main.o build/multithreads.o build/object.o build/random.o build/render.o build/shapes.o 
 	clang $^ -o $@ `sdl2-config --libs` -lm -lpthread
 
 .PHONY: clean
