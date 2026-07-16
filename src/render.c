@@ -67,6 +67,12 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
 
     // case 3: we collide with an object first
+    Vector d = ray.direction;
+    Point collidePoint = plus(ray.start, scalerMultiplication(firstCollideObjectResult.t, d));
+    Vector N = unitVector(
+        firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
+    Vector nxtDirection;
+
     // in such case we need to throw a dice first to decide which way to reflect
     double dice = (double)extractNumber(mt) / (double)UINT_MAX;
     if (dice <= firstCollideObject->diffuseFactor) {
@@ -78,31 +84,43 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         // idk, the this is the link from stack overflow
         // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
         double u1 = randomReal(mt), u2 = randomReal(mt);
-        double r = sqrt(u1), theta = 2 * M_PI * u2;
+        double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
 
         // then we shall project it onto an sphere, then we get the cosine distribution normally
-        Vector 
+        // suppose the normal vector point towards z-axis, then base on sphirical coordinate
+        // <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
+        // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
+        Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+
+        // finally we turn this into right angle
+        Vector helper = 1 - N.x < error ? (Vector){0, 1, 0} : (Vector){1, 0, 0};
+        Vector T = cross(helper, N);
+        Vector B = cross(helper, T);
+        // project the unturned to turned
+        // [N B T]X
+        nxtDirection = (Vector){dot((Vector){N.x, B.x, T.x}, unturnedDirection),
+                                dot((Vector){N.y, B.y, T.y}, unturnedDirection),
+                                dot((Vector){N.z, B.z, T.z}, unturnedDirection)};
     }
 
     // case specular
-    // the direction of reflection can be calculated as r = d - 2(d dot ^n)^n
-    // where ^n stands for unit vector of normal vector (hat), d is the direction of original
+    // the direction of reflection can be calculated as r = d - 2(d dot N)N
+    // where N stands for unit vector of normal vector (n hat), d is the direction of original
     // ray, r is the direction of reflection
-
-    Vector d = ray.direction;
-    Point collidePoint = plus(ray.start, scalerMultiplication(firstCollideObjectResult.t, d));
-    Vector n = unitVector(
-        firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
-    Vector r = minus(d, scalerMultiplication(2 * dot(d, n), n));
+    else {
+        nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
+    }
 
     return irradiate(
-        simulateSingleRay((ReversedRay){plus(collidePoint, scalerMultiplication(error * 10, r)), r},
-                          objects, objectsCount, sources, sourcesCount, mt, maxDepth - 1),
+        simulateSingleRay(
+            (ReversedRay){plus(collidePoint, scalerMultiplication(error * 10, nxtDirection)),
+                          nxtDirection},
+            objects, objectsCount, sources, sourcesCount, mt, maxDepth - 1),
         firstCollideObjectResult.color);
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount, LightIntensity *intensitySum,
                  MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     /*
@@ -115,5 +133,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     // Path tracing
     LightIntensity intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
-    *accessScreen(s, x, y) = intensityToColor(intensityResult);
+    
+    *accessScreen(s, x, y) = *accessScreen(s, x, y) * (renderCount - 1);
 }
