@@ -1,4 +1,5 @@
 #include "multithreads.h"
+#include "random.h"
 #include "render.h"
 #include <pthread.h>
 #include <stdio.h>
@@ -34,15 +35,18 @@ void *worker(void *para) {
 
 
     int renderCount = 0;
+    MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
+
     while (*workerPara->exit == 0) {
         renderCount++;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount);
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt);
         }
     }
 
+    destroyMT19937(mt);
     free(para);
 
     return NULL;

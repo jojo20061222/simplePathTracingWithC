@@ -7,6 +7,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include "random.h"
 
 typedef struct {
     ScreenColor *buffer;
@@ -22,7 +23,7 @@ VirtualScreen *newScreen(int width, int height);
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount);
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount, MT19937 *mt);
 
 
 

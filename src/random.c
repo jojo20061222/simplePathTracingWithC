@@ -2,8 +2,6 @@
 #include <limits.h>
 #include <stdlib.h>
 
-static inline uint32_t MOD624(uint32_t x) { return x >= 624 ? x - 624 : x; }
-
 MT19937 *initMT19937(uint32_t seed) {
     MT19937 *mt = malloc(sizeof(MT19937));
     mt->mt = malloc(sizeof(uint32_t) * 624);
@@ -18,11 +16,22 @@ MT19937 *initMT19937(uint32_t seed) {
 
 static inline void twist(MT19937 *mt) {
     uint32_t x;
-    for (int i = 0; i < 624; i++) {
-        x = (mt->mt[i] & 0x80000000U) | (mt->mt[MOD624(i + 1)] & 0x7fffffffU);
-        mt->mt[i] = (x >> 1) ^ mt->mt[MOD624(i + 397)];
-        if (x & 1) mt->mt[i] ^= 0x9908b0dfU;
+    int i;
+    
+    // here I apply the optimized version vibe coded by Gemini
+    // the updated version need no MOD624
+    for (i = 0; i < 227; i++) {
+        x = (mt->mt[i] & 0x80000000U) | (mt->mt[i + 1] & 0x7fffffffU);
+        mt->mt[i] = mt->mt[i + 397] ^ (x >> 1) ^ ((x & 1) ? 0x9908b0dfU : 0);
     }
+
+    for (; i < 623; i++) {
+        x = (mt->mt[i] & 0x80000000U) | (mt->mt[i + 1] & 0x7fffffffU);
+        mt->mt[i] = mt->mt[i - 227] ^ (x >> 1) ^ ((x & 1) ? 0x9908b0dfU : 0);
+    }
+    
+    x = (mt->mt[623] & 0x80000000U) | (mt->mt[0] & 0x7fffffffU);
+    mt->mt[623] = mt->mt[396] ^ (x >> 1) ^ ((x & 1) ? 0x9908b0dfU : 0);
 }
 
 uint32_t extractNumber(MT19937 *mt) {
@@ -34,7 +43,7 @@ uint32_t extractNumber(MT19937 *mt) {
     x ^= x << 7 & 2636928640U;
     x ^= x << 15 & 4022730752U;
     x ^= x >> 18;
-    mt->mti = MOD624(mt->mti + 1);
+    mt->mti = mt->mti + 1 == 624 ? 0 : mt->mti + 1;
     return x;
 }
 

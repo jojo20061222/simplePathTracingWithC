@@ -13,6 +13,4 @@ uint32_t extractNumber(MT19937 *mt);
 
 void destroyMT19937(MT19937 *mt);
 
-
-
 #endif

@@ -1,6 +1,7 @@
 #include "render.h"
 #include "base.h"
 #include "lightSource.h"
+#include "random.h"
 #include <assert.h>
 #include <math.h>
 #include <pthread.h>
@@ -46,7 +47,8 @@ RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Obj
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 MT19937 *mt) {
     if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
@@ -59,4 +61,12 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     const Object *firstcollideObj = result.finalcollideObj;
     if (firstcollideObj == NULL) return;
 
+    if (extractNumber(mt) <= firstcollideObj->diffuseFactor) {
+        // do diffucion
+        // to generate a ray that is obeys cosine distribution, we do some math
+        // 
+    }
+    else {
+        // do reflection
+    }
 }
