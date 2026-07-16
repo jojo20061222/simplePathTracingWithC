@@ -11,7 +11,7 @@ const int height = 720;
 int main() {
     SDL_Init(SDL_INIT_VIDEO);
 
-    SDL_Window *window = SDL_CreateWindow("Rotating Cube", SDL_WINDOWPOS_CENTERED,
+    SDL_Window *window = SDL_CreateWindow("Path Tracing", SDL_WINDOWPOS_CENTERED,
                                           SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_METAL);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -24,18 +24,21 @@ int main() {
     Point camera = {(double)width / 2, (double)height, -4000};
 
     Object **objects = getDynamicArray(2, Object *);
-
+    Triangle tri1 =
+        newTriangle((Point){980, 720, 0}, (Point){0, 720, 1500}, (Point){1080, 0, 1500});
+    Object obj1 = (Object){(Shape *)&tri1, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0.9};
+    objects[2] = &obj1;
     Triangle tri =
-        newTriangle((Point){100, 0, 1500}, (Point){0, height, 1500}, (Point){width, 0, 1500});
-    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0.5};
+        newTriangle((Point){100, 0, 3000}, (Point){0, height, 1500}, (Point){width, 0, 1500});
+    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0.9};
     objects[0] = &obj2;
 
     Sphere sph = newSphere((Point){300, 300, 1550}, 100);
-    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0.5};
+    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 255.0 / 255}, 0.9};
     objects[1] = &obj3;
 
-    Sphere lightSourceSph = newSphere((Point){300, 300, -100}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}};
+    Sphere lightSourceSph = newSphere((Point){300, -500, 1500}, 100);
+    LightSource lightSource = {(Shape *)&lightSourceSph, {200, 200, 200}};
     LightSource **sources = getDynamicArray(1, LightSource *);
     sources[0] = &lightSource;
 
