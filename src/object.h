@@ -18,11 +18,11 @@ typedef struct {
 typedef struct _Object {
     Shape *shape;
     ObjectColor color;
-    double diffuseFactor, specularFactor;
+    double diffuseFactor;
 } Object;
 
 CollideColorResult collideObject(const struct _Object *self, const ReversedRay *ray);
 
-Object newObject(Shape *shape, ObjectColor color, double diffuseFactor, double specularFactor);
+Object newObject(Shape *shape, ObjectColor color, double diffuseFactor);
 
 #endif

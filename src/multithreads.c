@@ -4,43 +4,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// initialize the barrier
-void initBarrier(Barrier *barrier, int count) {
-    barrier->currentWaitingCount = 0;
-    barrier->passThreshold = count;
-    pthread_mutex_init(&barrier->mtx, NULL);
-    pthread_cond_init(&barrier->cond, NULL);
-    barrier->generation = 0;
-}
-
-// wait until contition satisfies
-void waitBarrier(Barrier *barrier) {
-    pthread_mutex_lock(&barrier->mtx);
-    unsigned int curGeneration = barrier->generation;
-    // add the counter and check if counter reaches the threshold
-    if (++barrier->currentWaitingCount >= barrier->passThreshold) {
-        barrier->generation++;
-        barrier->currentWaitingCount = 0;
-        pthread_cond_broadcast(&barrier->cond);
-    }
-    // otherwise wait until being notified
-    else {
-        /*
-         * we rely on generation of barrier to judge if we need to unlock again
-         * or barrier->currentWaitingCount set by the last thread will cause counter < threshold so
-         * that other threads are stuck and finally reaches deadlock
-         */
-        while (barrier->generation == curGeneration)
-            pthread_cond_wait(&barrier->cond, &barrier->mtx);
-    }
-    pthread_mutex_unlock(&barrier->mtx);
-}
-
-void destroyBarrier(Barrier *barrier) {
-    pthread_mutex_destroy(&barrier->mtx);
-    pthread_cond_destroy(&barrier->cond);
-}
-
 typedef struct {
     int id;
     VirtualScreen *vs;
@@ -48,7 +11,6 @@ typedef struct {
     int objectsCount;
     const LightSource **sources;
     int sourcesCount;
-    Barrier *start, *end;
     Point *camera;
     int workerCount;
     int *exit;
@@ -61,8 +23,6 @@ void *worker(void *para) {
     int objectsCount = workerPara->objectsCount;
     const LightSource **sources = workerPara->sources;
     int sourcesCount = workerPara->sourcesCount;
-    Barrier *start = workerPara->start;
-    Barrier *end = workerPara->end;
     Point *camera = workerPara->camera;
     int workerCount = workerPara->workerCount;
     VirtualScreen *s = workerPara->vs;
@@ -72,14 +32,13 @@ void *worker(void *para) {
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
 
+
     while (*workerPara->exit == 0) {
-        waitBarrier(start);
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
             renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, 0.1);
         }
-        waitBarrier(end);
     }
 
     free(para);
@@ -91,11 +50,13 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
                                int objectsCount, const LightSource **sources, int sourcesCount, Point *camera) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
-    Barrier *start = malloc(sizeof(Barrier));
-    Barrier *end = malloc(sizeof(Barrier));
+    
+    // for the reason that I want to see the whole process of rendering this is deprecated
+    // Barrier *start = malloc(sizeof(Barrier));
+    // Barrier *end = malloc(sizeof(Barrier));
 
-    initBarrier(start, threadCount + 1);
-    initBarrier(end, threadCount + 1);
+    // initBarrier(start, threadCount + 1);
+    // initBarrier(end, threadCount + 1);
 
     result->exit = malloc(sizeof(int));
     *result->exit = 0;
@@ -108,8 +69,8 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
         parai->sources = sources;
         parai->sourcesCount = sourcesCount;
         parai->vs = vs;
-        parai->start = start;
-        parai->end = end;
+        // parai->start = start;
+        // parai->end = end;
         parai->workerCount = threadCount;
         parai->camera = camera;
         parai->exit = result->exit;
@@ -117,20 +78,16 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
     }
 
     result->threadPool = threadPool;
-    result->start = start;
-    result->end = end;
+    // result->start = start;
+    // result->end = end;
     result->threadCount = threadCount;
     return result;
 }
 
 void destroyMultithreads(Multithreads *mul) {
     *mul->exit = 1;
-    waitBarrier(mul->start);
-    waitBarrier(mul->end);
     for (int i = 0; i < mul->threadCount; i++)
         pthread_join(mul->threadPool[i], NULL);
-    destroyBarrier(mul->start);
-    destroyBarrier(mul->end);
     free(mul->threadPool);
     free(mul->exit);
     free(mul);

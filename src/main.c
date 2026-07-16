@@ -27,15 +27,15 @@ int main() {
 
     Triangle tri =
         newTriangle((Point){100, 0, 1500}, (Point){0, height, 1500}, (Point){width, 0, 1500});
-    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0, 0};
+    Object obj2 = (Object){(Shape *)&tri, {255.0 / 255, 100.0 / 255, 100.0 / 255}, 0};
     objects[0] = &obj2;
 
     Sphere sph = newSphere((Point){300, 300, 1550}, 100);
-    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0, 0};
+    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 100.0 / 255}, 0};
     objects[1] = &obj3;
 
     Sphere lightSourceSph = newSphere((Point){300, 300, -100}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}, {1000, 1000, -100}};
+    LightSource lightSource = {(Shape *)&lightSourceSph, {1, 1, 1}};
     LightSource **sources = getDynamicArray(1, LightSource *);
     sources[0] = &lightSource;
 
@@ -52,14 +52,11 @@ int main() {
         angle += M_PI / 180 * 2;
         sph.center = (Vector){300, 300, 1500 + 300 * sin(angle)};
 
-        waitBarrier(mul->start);
-        waitBarrier(mul->end);
-
         SDL_UpdateTexture(texture, NULL, vs->buffer, width * sizeof(ScreenColor));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(5);
+        SDL_Delay(8);
     }
 
     destroyMultithreads(mul);

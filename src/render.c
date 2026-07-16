@@ -45,8 +45,9 @@ RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Obj
     return (RayCollideWithObjectsResult){finalCollisionResult, finalCollisionObj};
 }
 
-void renderPixelPhong(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
+void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount, double ambient) {
+    if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
@@ -58,54 +59,11 @@ void renderPixelPhong(Point *camera, VirtualScreen *s, int x, int y, const Objec
     const Object *finalCollisionObj = result.finalCollisionObj;
     if (finalCollisionObj == NULL) return;
 
-    // calculate the diffuse and specular part
-
-    LightIntensity specularIntensity = {0, 0, 0};
-    LightIntensity diffusionIntensity = {0, 0, 0};
-
-    if (sources != NULL) {
-        // first we generate the reflection light
-        // direction be r let N = ^n, then r = d - 2(d dot N)N
-
-        // d = initRay.direction
-
-        Point collidePoint =
-            plus(initRay.start, scalerMultiplication(finalCollisionResult.t, initRay.direction));
-
-        Vector nHat = unitVector(
-            finalCollisionObj->shape->normalVector(finalCollisionObj->shape, collidePoint));
-
-        if (dot(nHat, initRay.direction) > 0) {
-            nHat = (Vector){-nHat.x, -nHat.y, -nHat.z};
-        }
-        Vector reflectDirection =
-            minus(initRay.direction, scalerMultiplication(2 * dot(initRay.direction, nHat), nHat));
-        ReversedRay reflectionRay = {
-            plus(scalerMultiplication(error * 10, reflectDirection), collidePoint),
-            reflectDirection};
-
-        RayCollideWithObjectsResult reflectObjectResult =
-            rayCollideWithObjects(reflectionRay, objects, objectsCount);
-
-        for (int i = 0; i < sourcesCount; i++) {
-            // test if the reversed reflection light can directly reaches the light source
-            // Specular Part
-            CollisionResult reflectLightSourceResult =
-                sources[i]->shape->detectCollide(sources[i]->shape, &reflectionRay);
-            if (reflectLightSourceResult.collide) {
-                if (reflectObjectResult.finalCollisionResult.t >= reflectLightSourceResult.t)
-                    specularIntensity = plusLightIntensity(
-                        specularIntensity,
-                        irradiate(sources[i]->intensity, finalCollisionObj->color));
-            }
-            // Diffusion Part
-            Vector diffuseRayDirection = minus(sources[i]->center, collidePoint);
-            ReversedRay diffuseRay = {
-                plus(scalerMultiplication(error * 10, diffuseRayDirection), collidePoint),
-                diffuseRayDirection};
-        }
-    }
-    LightIntensity ambientIntensity = irradiate((LightIntensity){ambient, ambient, ambient}, finalCollisionObj->color);
-    ScreenColor finalColor = intensityToColor(plusLightIntensity(ambientIntensity, specularIntensity));
-    *accessScreen(s, x, y) = finalColor;
+    /*
+    ScreenColor finalColor = {(uint8_t)(finalCollisionObj->color.R * 255),
+                              (uint8_t)(finalCollisionObj->color.G * 255),
+                              (uint8_t)(finalCollisionObj->color.B * 255), 0U};
+    */
+    
+    *accessScreen(s, x, y) = (ScreenColor)0U;
 }

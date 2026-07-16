@@ -21,8 +21,8 @@ VirtualScreen *newScreen(int width, int height);
 
 void freeScreen(VirtualScreen *screen);
 
-void renderPixelPhong(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, PointSource *sources, int sourcesCount, double ambient);
+void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
+                 int objectsCount, const LightSource **sources, int sourcesCount, double ambient);
 
 
 

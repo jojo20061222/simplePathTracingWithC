@@ -27,5 +27,4 @@ static inline ScreenColor intensityToColor(LightIntensity intensity) {
                          (uint8_t)(255 * intensity.B / (1 + intensity.B))};
 }
 
-
 #endif

@@ -5,6 +5,6 @@ CollideColorResult collideObject(const struct _Object *self, const ReversedRay *
     return (CollideColorResult){collideShapeRes.collide, collideShapeRes.t, self->color};
 }
 
-Object newObject(Shape *shape, ObjectColor color, double diffuseFactor, double specularFactor) {
-    return (Object){shape, color, diffuseFactor, specularFactor};
+Object newObject(Shape *shape, ObjectColor color, double diffuseFactor) {
+    return (Object){shape, color, diffuseFactor};
 }
