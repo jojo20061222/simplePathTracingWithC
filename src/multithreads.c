@@ -33,11 +33,13 @@ void *worker(void *para) {
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
 
 
+    int renderCount = 0;
     while (*workerPara->exit == 0) {
+        renderCount++;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, 0.1);
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount);
         }
     }
 

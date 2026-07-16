@@ -24,29 +24,29 @@ void freeScreen(VirtualScreen *screen) {
 }
 
 typedef struct {
-    CollideColorResult finalCollisionResult;
-    const Object *finalCollisionObj;
+    CollideColorResult finalcollideResult;
+    const Object *finalcollideObj;
 } RayCollideWithObjectsResult;
 
 RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Object **objects,
                                                   int objectsCount) {
     double minT = INFINITY;
-    const Object *finalCollisionObj = NULL;
-    CollideColorResult finalCollisionResult;
+    const Object *finalcollideObj = NULL;
+    CollideColorResult finalcollideResult;
     for (int i = 0; i < objectsCount; i++) {
-        CollideColorResult collisionResult = collideObject(objects[i], &initRay);
-        if (!collisionResult.collide) continue;
-        if (collisionResult.t < minT) {
-            finalCollisionObj = objects[i];
-            minT = collisionResult.t;
-            finalCollisionResult = collisionResult;
+        CollideColorResult collideResult = collideObject(objects[i], &initRay);
+        if (!collideResult.collide) continue;
+        if (collideResult.t < minT) {
+            finalcollideObj = objects[i];
+            minT = collideResult.t;
+            finalcollideResult = collideResult;
         }
     }
-    return (RayCollideWithObjectsResult){finalCollisionResult, finalCollisionObj};
+    return (RayCollideWithObjectsResult){finalcollideResult, finalcollideObj};
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, double ambient) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount) {
     if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
@@ -55,15 +55,9 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
      */
     ReversedRay initRay = {*camera, minus((Vector){x, y, 0}, *camera)};
     RayCollideWithObjectsResult result = rayCollideWithObjects(initRay, objects, objectsCount);
-    CollideColorResult finalCollisionResult = result.finalCollisionResult;
-    const Object *finalCollisionObj = result.finalCollisionObj;
-    if (finalCollisionObj == NULL) return;
-
-    /*
-    ScreenColor finalColor = {(uint8_t)(finalCollisionObj->color.R * 255),
-                              (uint8_t)(finalCollisionObj->color.G * 255),
-                              (uint8_t)(finalCollisionObj->color.B * 255), 0U};
-    */
+    CollideColorResult finalcollideResult = result.finalcollideResult;
+    const Object *firstcollideObj = result.finalcollideObj;
+    if (firstcollideObj == NULL) return;
     
-    *accessScreen(s, x, y) = (ScreenColor)0U;
+    
 }
