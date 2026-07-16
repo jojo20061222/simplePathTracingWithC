@@ -17,7 +17,7 @@ MT19937 *initMT19937(uint32_t seed) {
 static inline void twist(MT19937 *mt) {
     uint32_t x;
     int i;
-    
+
     // here I apply the optimized version vibe coded by Gemini
     // the updated version need no MOD624
     for (i = 0; i < 227; i++) {
@@ -29,7 +29,7 @@ static inline void twist(MT19937 *mt) {
         x = (mt->mt[i] & 0x80000000U) | (mt->mt[i + 1] & 0x7fffffffU);
         mt->mt[i] = mt->mt[i - 227] ^ (x >> 1) ^ ((x & 1) ? 0x9908b0dfU : 0);
     }
-    
+
     x = (mt->mt[623] & 0x80000000U) | (mt->mt[0] & 0x7fffffffU);
     mt->mt[623] = mt->mt[396] ^ (x >> 1) ^ ((x & 1) ? 0x9908b0dfU : 0);
 }
@@ -51,3 +51,5 @@ void destroyMT19937(MT19937 *mt) {
     free(mt->mt);
     free(mt);
 }
+
+double randomReal(MT19937 *mt) { return (double)extractNumber(mt) / (double)UINT_MAX; }

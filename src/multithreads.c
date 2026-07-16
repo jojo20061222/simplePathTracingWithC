@@ -14,6 +14,7 @@ typedef struct {
     int sourcesCount;
     Point *camera;
     int workerCount;
+    int maxDepth;
     int *exit;
 } WorkerPara;
 
@@ -26,6 +27,7 @@ void *worker(void *para) {
     int sourcesCount = workerPara->sourcesCount;
     Point *camera = workerPara->camera;
     int workerCount = workerPara->workerCount;
+    int maxDepth = workerPara->maxDepth;
     VirtualScreen *s = workerPara->vs;
 
     int rangeLength = s->width * s->height;
@@ -42,7 +44,7 @@ void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             *accessScreen(s, x, y) = (ScreenColor)0U;
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt);
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt, maxDepth);
         }
     }
 
@@ -53,7 +55,7 @@ void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               int objectsCount, const LightSource **sources, int sourcesCount, Point *camera) {
+                               int objectsCount, const LightSource **sources, int sourcesCount, Point *camera, int maxDepth) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
     
@@ -79,6 +81,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
         // parai->end = end;
         parai->workerCount = threadCount;
         parai->camera = camera;
+        parai->maxDepth = maxDepth;
         parai->exit = result->exit;
         pthread_create(&threadPool[i], NULL, worker, parai);
     }

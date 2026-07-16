@@ -42,7 +42,7 @@ int main() {
     double angle = 0;
 
     Multithreads *mul = initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                                         (const LightSource **)sources, 1, &camera);
+                                         (const LightSource **)sources, 1, &camera, 2);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
