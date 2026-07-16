@@ -46,6 +46,7 @@ void *worker(void *para) {
             // *accessScreen(s, x, y) = (ScreenColor)0U;
             renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt, maxDepth);
         }
+        if (renderCount == 30000) printf("hello from worker %d\n", id);
     }
 
     destroyMT19937(mt);
