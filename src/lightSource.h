@@ -11,7 +11,6 @@ typedef struct {
 typedef struct {
     Shape *shape;
     LightIntensity intensity;
-    Point center;
 } LightSource;
 
 static inline LightIntensity plusLightIntensity(LightIntensity a, LightIntensity b) {
@@ -27,5 +26,6 @@ static inline ScreenColor intensityToColor(LightIntensity intensity) {
                          (uint8_t)(255 * intensity.G / (1 + intensity.G)),
                          (uint8_t)(255 * intensity.B / (1 + intensity.B))};
 }
+
 
 #endif

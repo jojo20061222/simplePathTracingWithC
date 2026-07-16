@@ -45,7 +45,7 @@ RayCollideWithObjectsResult rayCollideWithObjects(ReversedRay initRay, const Obj
     return (RayCollideWithObjectsResult){finalCollisionResult, finalCollisionObj};
 }
 
-void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
+void renderPixelPhong(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount, double ambient) {
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
