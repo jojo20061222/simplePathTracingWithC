@@ -3,8 +3,8 @@
 #include <math.h>
 #include <stdlib.h>
 
-CollisionResult detectTriangleCollide(const struct _Shape *self, const ReversedRay *ray) {
-    CollisionResult result = {false, INFINITY};
+CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay *ray) {
+    CollideResult result = {false, INFINITY};
     /*
      * Möller-Trumbore intersection algorithm
      * Parametrize the triangle with T(u, v) and the points lies in the triangle can be expressed as
@@ -47,7 +47,7 @@ CollisionResult detectTriangleCollide(const struct _Shape *self, const ReversedR
     double t = deltaT / delta;
     if (t < 0) return result;
 
-    result = (CollisionResult){true, t};
+    result = (CollideResult){true, t};
 
     return result;
 }
@@ -61,7 +61,7 @@ Triangle newTriangle(Point p1, Point p2, Point p3) {
     return (Triangle){(Shape){detectTriangleCollide, normalVectorOfTriangle}, p1, p2, p3};
 }
 
-CollisionResult detectSphereCollide(const struct _Shape *self, const ReversedRay *ray) {
+CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *ray) {
     /*
      * Some math.
      * Let R(t) = O + tD = <a + tx, b + ty, c + tz>, center of sphere C = <e, f, g>
@@ -78,13 +78,13 @@ CollisionResult detectSphereCollide(const struct _Shape *self, const ReversedRay
     double B = 2 * dot(ray->direction, W);
     double C = dot(W, W) - sphere->radius * sphere->radius;
     double Delta = B * B - 4 * A * C;
-    if (Delta < 0) return (CollisionResult){false, INFINITY};
+    if (Delta < 0) return (CollideResult){false, INFINITY};
     double t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
     if (t1 < 0 && t2 < 0)
-        return (CollisionResult){false, INFINITY};
+        return (CollideResult){false, INFINITY};
     else if (t1 < 0)
-        return (CollisionResult){true, t2};
-    return (CollisionResult){true, t1};
+        return (CollideResult){true, t2};
+    return (CollideResult){true, t1};
 }
 
 Vector normalVectorOfSphere(const struct _Shape *self, Point p) {

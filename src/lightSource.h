@@ -2,6 +2,7 @@
 #define LIGHTSOURCE_H
 #include "base.h"
 #include "object.h"
+#include <stdbool.h>
 #include "shapes.h"
 
 typedef struct {
@@ -12,6 +13,14 @@ typedef struct {
     Shape *shape;
     LightIntensity intensity;
 } LightSource;
+
+typedef struct {
+   bool collide;
+   double t;
+   LightIntensity intensity;
+} CollideLightSourceResult;
+
+CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
 
 static inline LightIntensity plusLightIntensity(LightIntensity a, LightIntensity b) {
     return (LightIntensity){a.R + b.R, a.G + b.G, a.B + b.B};
