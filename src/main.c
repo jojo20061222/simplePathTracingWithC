@@ -27,31 +27,30 @@ int main() {
     
     
     
-    Point p1 = {150, 450, 1200};
-    Point p2 = {150, 350, 1800};
-    Point p3 = {450, 350, 1800};
-    Point p4 = {450, 450, 1200};
+    Point p1 = {0, 600, 900};
+    Point p2 = {0, 200, 2100};
+    Point p3 = {600, 200, 2100};
+    Point p4 = {600, 600, 900};
     Triangle tri1 = newTriangle(p1, p2, p3);
     Triangle tri2 = newTriangle(p3, p4, p1);
     Object obj1 = newObject((Shape*)&tri1, (ObjectColor){1, 1, 1}, 0.1);
     Object obj2 = newObject((Shape*)&tri2, (ObjectColor){1, 1, 1}, 0.1);
-    // pushBack(&objects, &obj1, Object*); 
-    // pushBack(&objects, &obj2, Object*);
+    pushBack(&objects, &obj1, Object*); 
+    pushBack(&objects, &obj2, Object*);
 
     Sphere sph = newSphere((Point){300, 300, 1500}, 100);
-    Object obj3 = (Object){(Shape *)&sph, {0.0 / 255, 0.0 / 255, 250.0 / 255}, 0.9};
+    Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 255.0 / 255}, 0.9};
     pushBack(&objects, &obj3, Object*);
-
-    Sphere sph2 = newSphere((Point){0, 0, -4000}, 8000);
-    Object background = newObject((Shape*)&sph2, (ObjectColor){1, 1, 1}, 1);
-    pushBack(&objects, &background, Object*);
     
-    Sphere lightSourceSph = newSphere((Point){300, -400, 1500}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, {100, 100, 100}};
+    Sphere lightSourceSph = newSphere((Point){0, -400, 900}, 100);
+    LightSource lightSource = {(Shape *)&lightSourceSph, {300, 50, 50}};
+    Sphere lightSourceSph1 = newSphere((Point){600, -400, 900}, 100);
+    LightSource lightSource1 = {(Shape *)&lightSourceSph1, {50, 50, 300}};
     
     LightSource **sources = getDynamicArray(0, LightSource *);
     
     pushBack(&sources, &lightSource, LightSource*);
+    pushBack(&sources, &lightSource1, LightSource*);
 
     double angle = 0;
 
