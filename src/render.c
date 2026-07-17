@@ -24,6 +24,7 @@ VirtualScreen *newScreen(int width, int height) {
 
 void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
+    free(screen->sum);
     free(screen);
     return;
 }
