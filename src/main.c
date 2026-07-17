@@ -33,8 +33,8 @@ int main() {
     Point p4 = {600, 600, 900};
     Triangle tri1 = newTriangle(p1, p2, p3);
     Triangle tri2 = newTriangle(p3, p4, p1);
-    Object obj1 = newObject((Shape*)&tri1, (ObjectColor){1, 1, 1}, 0.1);
-    Object obj2 = newObject((Shape*)&tri2, (ObjectColor){1, 1, 1}, 0.1);
+    Object obj1 = newObject((Shape*)&tri1, (ObjectColor){1, 1, 1}, 1);
+    Object obj2 = newObject((Shape*)&tri2, (ObjectColor){1, 1, 1}, 1);
     pushBack(&objects, &obj1, Object*); 
     pushBack(&objects, &obj2, Object*);
 
