@@ -3,6 +3,7 @@
 
 #include "base.h"
 #include "shapes.h"
+#include "texture.h"
 #include <stdbool.h>
 
 typedef struct {
@@ -13,8 +14,8 @@ typedef struct {
 
 typedef struct _Object {
     Shape *shape;
-    double (*reflectivity)(double waveLength);
-    double diffuseFactor;
+    Texture texture;
+    
 } Object;
 
 CollideColorResult collideObject(const struct _Object *self, const ReversedRay *ray);

@@ -32,7 +32,7 @@ static inline ColorXYZ addColor(ColorXYZ a, ColorXYZ b) {
 }
 
 static inline ColorXYZ colorComponent(double c, ColorXYZ color) {
-    return 
+    return (ColorXYZ){c * color.X, c * color.Y, c * color.Z}; 
 }
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
