@@ -26,9 +26,7 @@ void initLightIntensity();
 
 ColorXYZ getXYZ(double waveLength);
 
-static inline ColorXYZ addColor(ColorXYZ a, ColorXYZ b) {
-    return (ColorXYZ){a.X + b.X, a.Y + b.Y, a.Z + b.Z};
-}
+ScreenColor XYZtoRGB(ColorXYZ xyz);
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
 
