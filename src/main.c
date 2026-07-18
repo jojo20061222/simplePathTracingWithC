@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 3024;
-const int height = 1800;
+const int width = 1080;
+const int height = 720;
 
 int main() {
     SDL_Init(SDL_INIT_VIDEO);
@@ -25,10 +25,10 @@ int main() {
 
     Object **objects = getDynamicArray(0, Object *);
 
-    Point p1 = {0, 600 + 400, 900};
-    Point p2 = {0, 200 + 400, 2100};
-    Point p3 = {(double)width, 200 + 400, 2100};
-    Point p4 = {(double)width, 600 + 400, 900};
+    Point p1 = {0, 600, 900};
+    Point p2 = {0, 200, 2100};
+    Point p3 = {(double)width, 200, 2100};
+    Point p4 = {(double)width, 600, 900};
     Triangle tri1 = newTriangle(p1, p2, p3);
     Triangle tri2 = newTriangle(p3, p4, p1);
     Object obj1 = newObject((Shape *)&tri1, (ObjectColor){1, 1, 1}, 1);
@@ -36,7 +36,7 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 300, 1500}, 200);
+    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
     Object obj3 = (Object){(Shape *)&sph, {255.0 / 255, 255.0 / 255, 255.0 / 255}, 0.9};
     pushBack(&objects, &obj3, Object *);
 
