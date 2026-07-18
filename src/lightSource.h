@@ -22,7 +22,13 @@ typedef struct {
     double X, Y, Z;
 } ColorXYZ;
 
-void initLightIntensity(); 
+void initLightIntensity();
+
+ColorXYZ getXYZ(double waveLength);
+
+static inline ColorXYZ addColor(ColorXYZ a, ColorXYZ b) {
+    return (ColorXYZ){a.X + b.X, a.Y + b.Y, a.Z + b.Z};
+}
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
 

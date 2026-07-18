@@ -1,4 +1,4 @@
-// #include "lightSource.h"
+#include "lightSource.h"
 #include <stdio.h>
 /*
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray) {
@@ -8,24 +8,33 @@ CollideLightSourceResult collideLightSource(const LightSource *source, const Rev
     */
 
 static const int startWavelength = 390;
-static double convertTable[90][3];
+static const int waveLengthStep = 5;
+static const int dataCount = 89;
+static ColorXYZ convertTable[90];
 
 void initLightIntensity() {
-    FILE *csv = fopen("wavelengthToXYZ", "r");
-    for (int i = 0; i < 90; i++) {
+    FILE *csv = fopen("wavelengthToXYZ.csv", "r");
+    for (int i = 0; i < 89; i++) {
         int lambda;
-        scanf("%d,", &lambda);
-        scanf("%lf,%lf,%lf", &convertTable[lambda - startWavelength][0],
-              &convertTable[lambda - startWavelength][1],
-              &convertTable[lambda - startWavelength][2]);
+        fscanf(csv, "%d,", &lambda);
+        fscanf(csv, "%lf,%lf,%lf", &convertTable[i].X, &convertTable[i].Y, &convertTable[i].Z);
     }
     fclose(csv);
 }
 
-int main() {
-    initLightIntensity();
-    for (int i = 0; i < 90; i++) {
-        printf("%d, %lf, %lf, %lf\n", i + startWavelength, convertTable[i][0], convertTable[i][1],
-               convertTable[i][2]);
-    }
+ColorXYZ getXYZ(double waveLength) {
+    if (waveLength < startWavelength || waveLength > startWavelength + waveLengthStep * dataCount)
+        return (ColorXYZ){0, 0, 0};
+
+    // we shall find which two the slots that should be used
+    int slot = (waveLength - startWavelength) / waveLengthStep;
+    // so we use slot and slot + 1.
+    // Theoretically slot + 1 should < end of wavelength data except wavelength is exactly equal to
+    // 830 nm.
+    if (slot == 89) return convertTable[89];
+
+    double slot1WaveLength = startWavelength + waveLengthStep * slot;
+    double slot2WaveLength = startWavelength + waveLengthStep * (slot + 1);
+    // lerp
+    double X = convertTable[slot].X + 
 }
