@@ -11,7 +11,7 @@
 
 typedef struct {
     ScreenColor *buffer;
-    LightIntensity *sum;
+    ColorXYZ *sum;
     int width, height;
 } VirtualScreen;
 
