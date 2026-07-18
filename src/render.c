@@ -115,16 +115,11 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
     }
 
-    return irradiate(
-        simulateSingleRay(
-            (ReversedRay){plus(collidePoint, scalerMultiplication(error * 10, nxtDirection)),
-                          nxtDirection},
-            objects, objectsCount, sources, sourcesCount, mt, maxDepth - 1),
-        firstCollideObjectResult.color);
+
 }
 
-static inline LightIntensity *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
-    return &vs->sum[y * vs->width + x];
+static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
+    return &vs->sum[y * vs->width + x]; 
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
@@ -143,12 +138,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
 
     *accessLightIntensitySum(s, x, y) =
-        plusLightIntensity(*accessLightIntensitySum(s, x, y), intensityResult);
 
-    LightIntensity averageIntensity = *accessLightIntensitySum(s, x, y);
-    averageIntensity.R /= (double)renderCount;
-    averageIntensity.G /= (double)renderCount;
-    averageIntensity.B /= (double)renderCount;
 
-    *accessScreen(s, x, y) = intensityToColor(averageIntensity);
 }

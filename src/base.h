@@ -44,6 +44,7 @@ static inline Vector unitVector(Vector vec) {
 typedef struct {
     Point start;
     Vector direction;
+    double waveLength;
 } ReversedRay;
 
 typedef struct {
@@ -63,5 +64,6 @@ void *pop(Queue *);
 
 int size(Queue *);
 
+typedef double LightIntensity;
 
 #endif
