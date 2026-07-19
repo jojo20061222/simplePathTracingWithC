@@ -39,7 +39,7 @@ void *worker(void *para) {
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
     static const int batchSize = 200;
-    static const double rebootProbability = 0.03;
+    static const double rebootProbability = 0.05;
     static const int threshold = 3000;
 
     while (*workerPara->exit == 0) {
@@ -48,16 +48,15 @@ void *worker(void *para) {
             if (randomReal(mt) < rebootProbability) *accessConverge(s, x, y) = false;
         }
 
-        for (int _ = 0; _ < batchSize; _++) {
+        for (int _ = 0; _ < batchSize && *workerPara->exit == 0; _++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 int x = i % s->width, y = i / s->width;
                 // adaptive sampling
                 // skip if the pixel has converged
-                if (*accessConverge(s, x, y)) continue;
                 renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
                             maxDepth);
             }
-        }
+        
 
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
