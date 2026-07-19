@@ -43,7 +43,6 @@ void *worker(void *para) {
         renderCount++;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
-            // *accessScreen(s, x, y) = (ScreenColor)0U;
             renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt, maxDepth);
         }
     }

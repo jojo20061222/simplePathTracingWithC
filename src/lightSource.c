@@ -98,5 +98,5 @@ double getBlackbodyIntensity(double wavelength, double T) {
 }
 
 double tungstenLamp(double wavelength) {
-    return 1e-12 * getBlackbodyIntensity(wavelength, 2800);
+    return getBlackbodyIntensity(wavelength, 2800) / getBlackbodyIntensity(555, 2800);
 }

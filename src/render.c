@@ -130,6 +130,8 @@ static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y)
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
                  MT19937 *mt, int maxDepth) {
+    double fixedX = (double)x + randomReal(mt);
+    double fixedY = (double)y + randomReal(mt);
     if (sources == NULL) return;
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
@@ -138,6 +140,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
      */
     // we divide the interval [390, 790] into 4 intervals averagely
     const int intervalCount = 4;
+        const double intervalSize = (endWavelength - startWavelength) / (double)intervalCount;
     ReversedRay initRays[intervalCount];
     LightIntensity intensityResults[intervalCount];
     double randomWavelength =
@@ -145,9 +148,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     for (int i = 0; i < intervalCount; i++) {
         initRays[i] =
-            (ReversedRay){*camera, minus((Vector){x, y, 0}, *camera), randomWavelength + 100 * i};
+            (ReversedRay){*camera, minus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength + intervalSize * i};
 
-        const double intervalSize = (startWavelength - endWavelength) / (double)intervalCount;
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
                                                 sourcesCount, mt, maxDepth);
@@ -156,8 +158,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
         colorResult =
-            addColor(colorResult, colorComponent(intensityResults[i] * 100, // * 100 here is PDF
-                                                 wavelengthToXYZ(randomWavelength + 100 * i)));
+            addColor(colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
+                                                 wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 
     *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), colorResult);

@@ -55,7 +55,7 @@ int main() {
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                         (const LightSource **)sources, getSize(sources), &camera, 10);
+                         (const LightSource **)sources, getSize(sources), &camera, 5);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
