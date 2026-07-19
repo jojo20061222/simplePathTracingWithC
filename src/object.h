@@ -20,5 +20,5 @@ typedef struct _Object {
 
 CollideColorResult collideObject(const struct _Object *self, const ReversedRay *ray);
 
-Object newObject(Shape *shape, double (*reflectivity)(double), double diffuseFactor);
+Object newObject(Shape *shape, Texture texture);
 #endif

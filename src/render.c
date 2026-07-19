@@ -140,7 +140,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     const int intervalCount = 4;
     ReversedRay initRays[intervalCount];
     LightIntensity intensityResults[intervalCount];
-    double randomWavelength = randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
+    double randomWavelength =
+        randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
 
     for (int i = 0; i < intervalCount; i++) {
         initRays[i] =
@@ -152,13 +153,15 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                                                 sourcesCount, mt, maxDepth);
     }
 
-    ColorXYZ colorResults[intervalCount];
+    ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
-        colorResults[i] =
-            colorComponent(intensityResults[i], wavelengthToXYZ(randomWavelength + 100 * i));
+        colorResult =
+            addColor(colorResult, colorComponent(intensityResults[i] * 100, // * 100 here is PDF
+                                                 wavelengthToXYZ(randomWavelength + 100 * i)));
     }
 
-    *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), in);
-    // TODO: to fix this to adapt wavelength and light intensity, xyz color
+    *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), colorResult);
+    *accessScreen(s, x, y) =
+        XYZtoRGB(colorComponent((double)1 / (double)renderCount, *accessLightIntensitySum(s, x, y)));
     return;
 }

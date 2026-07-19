@@ -5,6 +5,6 @@ CollideColorResult collideObject(const struct _Object *self, const ReversedRay *
     return (CollideColorResult){collideShapeRes.collide, collideShapeRes.t, self->texture.reflectivity(ray->waveLength)};
 }
 
-Object newObject(Shape *shape, double(*reflectivity)(double), double diffuseFactor) {
-    return (Object){shape, reflectivity, diffuseFactor};
+Object newObject(Shape *shape, Texture texture) {
+    return (Object){shape, texture};
 }
