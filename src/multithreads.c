@@ -39,7 +39,7 @@ void *worker(void *para) {
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
     static const int batchSize = 200;
-    static const double rebootProbability = 0.05;
+    static const double rebootProbability = 0.03;
     static const int threshold = 3000;
 
     while (*workerPara->exit == 0) {
