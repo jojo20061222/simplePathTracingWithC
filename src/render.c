@@ -14,6 +14,15 @@ static const double startWavelength = 390;
 static const double endWavelength = 790;
 
 VirtualScreen *newScreen(int width, int height) {
+    /*
+    ScreenColor *buffer;
+    ColorXYZ *sum;
+    double *batchSum;
+    bool *converge;
+    unsigned int *renderCount;
+    int width, height;
+    */
+
     VirtualScreen *result = malloc(sizeof(VirtualScreen));
     result->width = width;
     result->height = height;
