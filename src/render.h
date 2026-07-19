@@ -13,6 +13,8 @@ typedef struct {
     ScreenColor *buffer;
     ColorXYZ *sum;
     double *batchSum;
+    bool *converge;
+    unsigned int *renderCount;
     int width, height;
 } VirtualScreen;
 
@@ -20,12 +22,28 @@ static inline ScreenColor *accessScreen(VirtualScreen *screen, int x, int y) {
     return &screen->buffer[y * screen->width + x];
 }
 
+static inline ColorXYZ *accessSum(VirtualScreen *vs, int x, int y) {
+    return &vs->sum[y * vs->width + x];
+}
+
+static inline double *accessBatchSum(VirtualScreen *vs, int x, int y) {
+    return &vs->batchSum[y * vs->width + x];
+}
+
+static inline bool *accessConverge(VirtualScreen *vs, int x, int y) {
+    return &vs->converge[y * vs->width + x];
+}
+
+static inline unsigned int *accessRenderCount(VirtualScreen *vs, int x, int y) {
+    return &vs->renderCount[y * vs->width + x];
+}
+
 VirtualScreen *newScreen(int width, int height);
 
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 int objectsCount, const LightSource **sources, int renderCount,
                   MT19937 *mt, int maxDepth);
 
 

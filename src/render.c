@@ -28,12 +28,18 @@ VirtualScreen *newScreen(int width, int height) {
         result->batchSum[i] = 0.0;
     }
 
+    result->converge = calloc(width * height, sizeof(bool));
+
+    result->renderCount = calloc(width * height, sizeof(unsigned int));
+
     return result;
 }
 
 void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->sum);
+    free(screen->batchSum);
+    free(screen->converge);
     free(screen);
     return;
 }
@@ -131,16 +137,13 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
            firstCollideObject->texture.reflectivity(ray.waveLength);
 }
 
-static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
-    return &vs->sum[y * vs->width + x];
-}
-
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 int objectsCount, const LightSource **sources, int sourcesCount,
                  MT19937 *mt, int maxDepth) {
+    if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
     double fixedY = (double)y + randomReal(mt);
-    if (sources == NULL) return;
+    unsigned int renderCount = ++(*accessRenderCount(s, x, y));
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
@@ -169,8 +172,9 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 
-    *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), colorResult);
+    *accessSum(s, x, y) = addColor(*accessSum(s, x, y), colorResult);
+    *accessBatchSum(s, x, y) += colorResult.Y;
     *accessScreen(s, x, y) = XYZtoRGB(
-        colorComponent((double)1 / (double)renderCount, *accessLightIntensitySum(s, x, y)));
+        colorComponent((double)1 / (double)renderCount, *accessSum(s, x, y)));
     return;
 }

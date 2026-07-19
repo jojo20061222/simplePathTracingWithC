@@ -40,17 +40,38 @@ void *worker(void *para) {
 
     static const int batchSize = 16;
     static const double rebootProbability = 0.05;
+    static const int threshold = 3000;
 
     while (*workerPara->exit == 0) {
-        renderCount++;
         for (int i = 0; i < batchSize; i++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 int x = i % s->width, y = i / s->width;
-                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount,
-                            renderCount, mt, maxDepth);
+                // adaptive sampling
+                // skip if the pixel has converged
+                if (*accessConverge(s, x, y)) continue;
+                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
+                            maxDepth);
             }
         }
-        
+        for (int i = leftBoundary; i <= rightBoundary; i++) {
+            int x = i % s->width, y = i / s->width;
+            // if the batch sum is close enough to the average, stop spending computing resources on
+            // this pixel
+            if (i > threshold || !*accessConverge(s, x, y) &&
+                fabs(*accessBatchSum(s, x, y) / batchSize -
+                     accessSum(s, x, y)->Y / (double)*accessRenderCount(s, x, y)) /
+                        (accessSum(s, x, y)->Y + 0.001) <
+                    0.1) {
+                *accessConverge(s, x, y) = true;
+            }
+            else {
+                *accessBatchSum(s, x, y) = 0;
+            }
+            // give the pixel a small chance to revive
+            if (randomReal(mt) < rebootProbability) {
+                *accessConverge(s, x, y) = false;
+            }
+        }
     }
 
     destroyMT19937(mt);
