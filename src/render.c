@@ -35,7 +35,7 @@ void freeScreen(VirtualScreen *screen) {
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
-    if (maxDepth == 0) return 0;
+    if (maxDepth == 0) return 0.0;
 
     // first we see if this light first touches a light source
     // to attain that, we need to simulate both collide with sources and objects to decide which is
@@ -66,7 +66,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
     // case 1: we collide with nothing.
     if (firstCollideObject == NULL && firstCollideSource == NULL) {
-        return 0;
+        return 0.0;
     }
 
     // case 2: first collide with source, so we return the intensity of light source directly
@@ -118,7 +118,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
     }
 
-    ReversedRay nxtRay = {collidePoint, nxtDirection, ray.waveLength};
+    ReversedRay nxtRay = {add(collidePoint, scalerMultiplication(0.001, nxtDirection)), nxtDirection, ray.waveLength};
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) * firstCollideObject->texture.reflectivity(ray.waveLength);
 }
@@ -157,9 +157,10 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
-        colorResult =
-            addColor(colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
-                                                 wavelengthToXYZ(randomWavelength + intervalSize * i)));
+        // colorResult =
+        //     addColor(colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
+        //                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
+        colorResult = addColor(colorResult, colorComponent(0.25, intensityResults))
     }
 
     *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), colorResult);
