@@ -17,7 +17,7 @@ VirtualScreen *newScreen(int width, int height) {
     result->buffer = calloc(width * height, sizeof(ScreenColor));
     result->sum = malloc(sizeof(LightIntensity) * width * height);
     for (int i = 0; i < width * height; i++) {
-        result->sum[i] = (LightIntensity){0, 0, 0};
+        result->sum[i] = (ColorXYZ){0, 0, 0};
     }
     return result;
 }
@@ -32,14 +32,14 @@ void freeScreen(VirtualScreen *screen) {
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
-    if (maxDepth == 0) return (LightIntensity){0, 0, 0};
+    if (maxDepth == 0) return 0; 
 
     // first we see if this light first touches a light source
     // to attain that, we need to simulate both collide with sources and objects to decide which is
     // touched first.
 
     // test the first object to touch, ignore light source
-    CollideColorResult firstCollideObjectResult = {false, INFINITY, {0, 0, 0}};
+    CollideColorResult firstCollideObjectResult = {false, INFINITY, 0};
     const Object *firstCollideObject = NULL;
     for (int i = 0; i < objectsCount; i++) {
         CollideColorResult collideResult = collideObject(objects[i], &ray);
@@ -51,7 +51,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
 
     // then we do the same on light source
-    CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, {0, 0, 0}};
+    CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, 0};
     const LightSource *firstCollideSource = NULL;
     for (int i = 0; i < sourcesCount; i++) {
         CollideLightSourceResult collideResult = collideLightSource(sources[i], &ray);
@@ -63,7 +63,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
     // case 1: we collide with nothing.
     if (firstCollideObject == NULL && firstCollideSource == NULL) {
-        return (LightIntensity){0, 0, 0};
+        return 0;
     }
 
     // case 2: first collide with source, so we return the intensity of light source directly
@@ -80,7 +80,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
-    if (randomReal(mt) <= firstCollideObject->diffuseFactor) {
+    if (randomReal(mt) <= firstCollideObject->texture.diffuseFactor) {
         // first we generate a random point within a circle (uniformly)
         // To convert this into distribution of probabilty, we find the probability near center
         // of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2)
@@ -114,8 +114,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     else {
         nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
     }
-
-
+    // TODO: to fix this to adapt wavelength and light intensity, xyz color
+    return 0;
 }
 
 static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
@@ -137,7 +137,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     LightIntensity intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
 
-    *accessLightIntensitySum(s, x, y) =
-
-
+    *accessLightIntensitySum(s, x, y) = (ColorXYZ){0, 0, 0};
+    // TODO: to fix this to adapt wavelength and light intensity, xyz color
+    return;
 }
