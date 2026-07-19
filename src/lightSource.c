@@ -100,3 +100,7 @@ double getBlackbodyIntensity(double wavelength, double T) {
 double tungstenLamp(double wavelength) {
     return getBlackbodyIntensity(wavelength, 2800) / getBlackbodyIntensity(555, 2800);
 }
+
+double sunlight(double wavelength) {
+    return getBlackbodyIntensity(wavelength, 5500) / getBlackbodyIntensity(555, 5500);
+}

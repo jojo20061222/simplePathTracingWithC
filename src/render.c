@@ -118,9 +118,11 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
     }
 
-    ReversedRay nxtRay = {add(collidePoint, scalerMultiplication(0.001, nxtDirection)), nxtDirection, ray.waveLength};
+    ReversedRay nxtRay = {add(collidePoint, scalerMultiplication(0.001, nxtDirection)),
+                          nxtDirection, ray.waveLength};
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                             maxDepth - 1) * firstCollideObject->texture.reflectivity(ray.waveLength);
+                             maxDepth - 1) *
+           firstCollideObject->texture.reflectivity(ray.waveLength);
 }
 
 static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {
@@ -140,16 +142,15 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
      */
     // we divide the interval [390, 790] into 4 intervals averagely
     const int intervalCount = 4;
-        const double intervalSize = (endWavelength - startWavelength) / (double)intervalCount;
+    const double intervalSize = (endWavelength - startWavelength) / (double)intervalCount;
     ReversedRay initRays[intervalCount];
     LightIntensity intensityResults[intervalCount];
     double randomWavelength =
         randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
 
     for (int i = 0; i < intervalCount; i++) {
-        initRays[i] =
-            (ReversedRay){*camera, minus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength + intervalSize * i};
-
+        initRays[i] = (ReversedRay){*camera, minus((Vector){fixedX, fixedY, 0}, *camera),
+                                    randomWavelength + intervalSize * i};
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
                                                 sourcesCount, mt, maxDepth);
@@ -157,14 +158,13 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
-        // colorResult =
-        //     addColor(colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
-        //                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
-        colorResult = addColor(colorResult, colorComponent(0.25, intensityResults))
+        colorResult = addColor(
+            colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
+                                        wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 
     *accessLightIntensitySum(s, x, y) = addColor(*accessLightIntensitySum(s, x, y), colorResult);
-    *accessScreen(s, x, y) =
-        XYZtoRGB(colorComponent((double)1 / (double)renderCount, *accessLightIntensitySum(s, x, y)));
+    *accessScreen(s, x, y) = XYZtoRGB(
+        colorComponent((double)1 / (double)renderCount, *accessLightIntensitySum(s, x, y)));
     return;
 }

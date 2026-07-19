@@ -45,7 +45,7 @@ int main() {
     pushBack(&objects, &obj3, Object *);
 
     Sphere lightSourceSph = newSphere((Point){0, -400, 900}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, tungstenLamp};
+    LightSource lightSource = {(Shape *)&lightSourceSph, sunlight};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 
@@ -55,7 +55,7 @@ int main() {
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                         (const LightSource **)sources, getSize(sources), &camera, 5);
+                         (const LightSource **)sources, getSize(sources), &camera, 10);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
