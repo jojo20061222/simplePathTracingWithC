@@ -69,3 +69,24 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     double B = adj(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z);
     return (ScreenColor){R, G, B, 0};
 }
+
+double getBlackbodyIntensity(double wavelength, double T) {
+    double lambda = wavelength * 1e-9; // 轉成公尺 (m)
+    
+    static const double h = 6.62607015e-34;
+    static const double c = 2.99792458e+8;
+    static const double kB = 1.380649e-23;
+    
+    static const double c1 = 2.0 * h * c * c;
+    static const double c2 = (h * c) / kB;
+    
+    double exponent = c2 / (lambda * T);
+    
+    if (exponent > 700.0) return 0.0; 
+    
+    return c1 / (pow(lambda, 5.0) * (exp(exponent) - 1.0));
+}
+
+double tungstenLamp(double wavelength) {
+    return getBlackbodyIntensity(wavelength, 2800);
+}

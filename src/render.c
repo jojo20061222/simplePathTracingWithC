@@ -120,7 +120,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     ReversedRay nxtRay = {collidePoint, nxtDirection, ray.waveLength};
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                             maxDepth - 1);
+                             maxDepth - 1) * firstCollideObject->texture.reflectivity(ray.waveLength);
 }
 
 static inline ColorXYZ *accessLightIntensitySum(VirtualScreen *vs, int x, int y) {

@@ -3,7 +3,7 @@
 
 #include "base.h"
 #include "shapes.h"
-#include "texture.h"
+#include "textures.h"
 #include <stdbool.h>
 
 typedef struct {

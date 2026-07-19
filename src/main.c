@@ -24,7 +24,8 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height, -4000};
 
-    Texture 
+    Texture plaster = newTexture(pureWhite, 1);
+    Texture plastic = newTexture(pureWhite, 0.9);
 
     Object **objects = getDynamicArray(0, Object *);
 
@@ -34,24 +35,21 @@ int main() {
     Point p4 = {(double)width, 600, 900};
     Triangle tri1 = newTriangle(p1, p2, p3);
     Triangle tri2 = newTriangle(p3, p4, p1);
-    Object obj1 = newObject((Shape *)&tri1, pureWhite, 1);
-    Object obj2 = newObject((Shape *)&tri2, pureWhite, 1);
+    Object obj1 = newObject((Shape *)&tri1, plaster);
+    Object obj2 = newObject((Shape *)&tri2, plaster);
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
     Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 10);
-    Object obj3 = newObject((Shape *)&sph, pureWhite, 0.9);
+    Object obj3 = newObject((Shape *)&sph, plastic);
     pushBack(&objects, &obj3, Object *);
 
     Sphere lightSourceSph = newSphere((Point){0, -400, 900}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, };
-    Sphere lightSourceSph1 = newSphere((Point){(double)width, -400, 900}, 100);
-    LightSource lightSource1 = {(Shape *)&lightSourceSph1, {50, 50, 300}};
+    LightSource lightSource = {(Shape *)&lightSourceSph, tungstenLamp};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 
     pushBack(&sources, &lightSource, LightSource *);
-    pushBack(&sources, &lightSource1, LightSource *);
 
     double angle = 0;
 

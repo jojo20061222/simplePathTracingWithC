@@ -37,4 +37,8 @@ static inline ColorXYZ colorComponent(double c, ColorXYZ color) {
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
 
+double getBlackbodyIntensity(double T, double waveLength);
+
+double tungstenLamp(double waveLength);
+
 #endif
