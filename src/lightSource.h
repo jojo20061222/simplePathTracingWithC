@@ -23,7 +23,7 @@ typedef struct {
 
 void initLightIntensity();
 
-ColorXYZ getXYZ(double waveLength);
+ColorXYZ waveLengthToXYZ(double waveLength);
 
 ScreenColor XYZtoRGB(ColorXYZ xyz);
 

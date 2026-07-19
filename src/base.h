@@ -1,9 +1,9 @@
 #ifndef BASE_H
 #define BASE_H
 
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <math.h>
 
 typedef union {
     struct {
@@ -23,7 +23,7 @@ static inline Vector cross(Vector a, Vector b) {
     return (Vector){a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
 }
 
-static inline Vector plus(Vector a, Vector b) { return (Vector){a.x + b.x, a.y + b.y, a.z + b.z}; }
+static inline Vector add(Vector a, Vector b) { return (Vector){a.x + b.x, a.y + b.y, a.z + b.z}; }
 
 static inline Vector minus(Vector a, Vector b) { return (Vector){a.x - b.x, a.y - b.y, a.z - b.z}; }
 

@@ -11,6 +11,7 @@ CollideLightSourceResult collideLightSource(const LightSource *source, const Rev
 static const int startWavelength = 390;
 static const int waveLengthStep = 5;
 static const int dataCount = 89;
+// 390 ~ 835 nm
 static ColorXYZ convertTable[90];
 
 void initLightIntensity() {
@@ -23,7 +24,7 @@ void initLightIntensity() {
     fclose(csv);
 }
 
-ColorXYZ getXYZ(double waveLength) {
+ColorXYZ wavelengthToXYZ(double waveLength) {
     if (waveLength < startWavelength || waveLength > startWavelength + waveLengthStep * dataCount)
         return (ColorXYZ){0, 0, 0};
 
@@ -53,7 +54,7 @@ static inline double adj(double C) {
     if (fabs(C) < 0.0031308) {
         return 12.92 * C;
     }
-    return 1.055 * pow(C, 0.41666) - 0.055;
+    return 255 * (1.055 * pow(C, 0.41666) - 0.055);
 }
 
 ScreenColor XYZtoRGB(ColorXYZ xyz) {
