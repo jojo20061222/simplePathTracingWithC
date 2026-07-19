@@ -40,7 +40,7 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 10);
+    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
     Object obj3 = newObject((Shape *)&sph, plastic);
     pushBack(&objects, &obj3, Object *);
 

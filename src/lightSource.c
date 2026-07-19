@@ -1,12 +1,12 @@
 #include "lightSource.h"
 #include <math.h>
 #include <stdio.h>
-/*
+#include <stdlib.h>
+
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray) {
     CollideResult result = source->shape->detectCollide(source->shape, ray);
-    return (CollideLightSourceResult){result.collide, result.t, source->intensity};
+    return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->waveLength)};
 }
-    */
 
 static const int startWavelength = 390;
 static const int waveLengthStep = 5;
@@ -15,7 +15,13 @@ static const int dataCount = 89;
 static ColorXYZ convertTable[90];
 
 void initLightIntensity() {
-    FILE *csv = fopen("wavelengthToXYZ.csv", "r");
+    FILE *csv = fopen("src/wavelengthToXYZ.csv", "r");
+
+    if (csv == NULL) {
+        fprintf(stderr, "Not able to open the csv file\n");
+        exit(1);
+    }
+
     for (int i = 0; i < 89; i++) {
         int lambda;
         fscanf(csv, "%d,", &lambda);
@@ -51,10 +57,14 @@ ColorXYZ wavelengthToXYZ(double waveLength) {
 }
 
 static inline double adj(double C) {
+    double sRGB;
     if (fabs(C) < 0.0031308) {
-        return 12.92 * C;
+        sRGB = 12.92 * C;
     }
-    return 255 * (1.055 * pow(C, 0.41666) - 0.055);
+    else {
+        sRGB = 1.055 * pow(C, 0.41666) - 0.055;
+    }
+    return (sRGB) / (1 + sRGB) * 255;
 }
 
 ScreenColor XYZtoRGB(ColorXYZ xyz) {
@@ -64,14 +74,14 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     double X = xyz.X;
     double Y = xyz.Y;
     double Z = xyz.Z;
-    double R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
-    double G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);
-    double B = adj(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z);
+    uint8_t R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
+    uint8_t G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);
+    uint8_t B = adj(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z);
     return (ScreenColor){R, G, B, 0};
 }
 
 double getBlackbodyIntensity(double wavelength, double T) {
-    double lambda = wavelength * 1e-9; // 轉成公尺 (m)
+    double lambda = wavelength * 1e-9;
     
     static const double h = 6.62607015e-34;
     static const double c = 2.99792458e+8;
@@ -88,5 +98,5 @@ double getBlackbodyIntensity(double wavelength, double T) {
 }
 
 double tungstenLamp(double wavelength) {
-    return getBlackbodyIntensity(wavelength, 2800);
+    return 1e-12 * getBlackbodyIntensity(wavelength, 2800);
 }
