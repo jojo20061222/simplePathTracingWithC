@@ -35,16 +35,22 @@ void *worker(void *para) {
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
 
-
     int renderCount = 0;
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
+    static const int batchSize = 16;
+    static const double rebootProbability = 0.05;
+
     while (*workerPara->exit == 0) {
         renderCount++;
-        for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = i % s->width, y = i / s->width;
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount, mt, maxDepth);
+        for (int i = 0; i < batchSize; i++) {
+            for (int i = leftBoundary; i <= rightBoundary; i++) {
+                int x = i % s->width, y = i / s->width;
+                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount,
+                            renderCount, mt, maxDepth);
+            }
         }
+        
     }
 
     destroyMT19937(mt);
@@ -54,10 +60,11 @@ void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               int objectsCount, const LightSource **sources, int sourcesCount, Point *camera, int maxDepth) {
+                               int objectsCount, const LightSource **sources, int sourcesCount,
+                               Point *camera, int maxDepth) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
-    
+
     // for the reason that I want to see the whole process of rendering this is deprecated
     // Barrier *start = malloc(sizeof(Barrier));
     // Barrier *end = malloc(sizeof(Barrier));

@@ -22,6 +22,12 @@ VirtualScreen *newScreen(int width, int height) {
     for (int i = 0; i < width * height; i++) {
         result->sum[i] = (ColorXYZ){0, 0, 0};
     }
+
+    result->batchSum = malloc(sizeof(double) * width * height);
+    for (int i = 0; i < width * height; i++) {
+        result->batchSum[i] = 0.0;
+    }
+
     return result;
 }
 

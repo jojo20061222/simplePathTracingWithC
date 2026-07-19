@@ -45,7 +45,7 @@ int main() {
     pushBack(&objects, &obj3, Object *);
 
     Sphere lightSourceSph = newSphere((Point){0, -400, 900}, 100);
-    LightSource lightSource = {(Shape *)&lightSourceSph, sunlight};
+    LightSource lightSource = {(Shape *)&lightSourceSph, sunlightBase};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 

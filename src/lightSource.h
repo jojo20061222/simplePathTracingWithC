@@ -39,7 +39,7 @@ CollideLightSourceResult collideLightSource(const LightSource *source, const Rev
 
 double getBlackbodyIntensity(double T, double waveLength);
 
-double tungstenLamp(double waveLength);
+double tungstenLampBase(double waveLength);
 
-double sunlight(double waveLength);
+double sunlightBase(double waveLength);
 #endif
