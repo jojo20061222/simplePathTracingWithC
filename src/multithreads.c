@@ -38,38 +38,14 @@ void *worker(void *para) {
     int renderCount = 0;
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
-    static const int batchSize = 200;
-    static const double rebootProbability = 0.05;
-    static const int threshold = 3000;
-
     while (*workerPara->exit == 0) {
+        renderCount++;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
-            if (randomReal(mt) < rebootProbability) *accessConverge(s, x, y) = false;
-        }
-
-        for (int _ = 0; _ < batchSize && *workerPara->exit == 0; _++) {
-            for (int i = leftBoundary; i <= rightBoundary; i++) {
-                int x = i % s->width, y = i / s->width;
-                // adaptive sampling
-                // skip if the pixel has converged
-                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
-                            maxDepth);
-            }
-        
-
-        for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = i % s->width, y = i / s->width;
-            // if the batch sum is close enough to the average, stop spending computing resources on
-            // this pixel
-            if (*accessRenderCount(s, x, y) > threshold && !*accessConverge(s, x, y)) {
-                double currentAvg = accessSum(s, x, y)->Y / (double)*accessRenderCount(s, x, y);
-                double relativeError =
-                    fabs(*accessBatchSum(s, x, y) / (double)batchSize - currentAvg) /
-                    (currentAvg + 0.001);
-                if (relativeError < 0.1) *accessConverge(s, x, y) = true;
-            }
-            *accessBatchSum(s, x, y) = 0;
+            // adaptive sampling
+            // skip if the pixel has converged
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount,
+                        mt, maxDepth);
         }
     }
 

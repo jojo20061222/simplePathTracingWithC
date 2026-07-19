@@ -31,24 +31,12 @@ VirtualScreen *newScreen(int width, int height) {
     for (int i = 0; i < width * height; i++) {
         result->sum[i] = (ColorXYZ){0, 0, 0};
     }
-
-    result->batchSum = malloc(sizeof(double) * width * height);
-    for (int i = 0; i < width * height; i++) {
-        result->batchSum[i] = 0.0;
-    }
-
-    result->converge = calloc(width * height, sizeof(bool));
-
-    result->renderCount = calloc(width * height, sizeof(unsigned int));
-
     return result;
 }
 
 void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->sum);
-    free(screen->batchSum);
-    free(screen->converge);
     free(screen);
     return;
 }
@@ -148,11 +136,10 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
                  int objectsCount, const LightSource **sources, int sourcesCount,
-                 MT19937 *mt, int maxDepth) {
+                 int renderCount, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
     double fixedY = (double)y + randomReal(mt);
-    unsigned int renderCount = ++(*accessRenderCount(s, x, y));
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
@@ -182,7 +169,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     }
 
     *accessSum(s, x, y) = addColor(*accessSum(s, x, y), colorResult);
-    *accessBatchSum(s, x, y) += colorResult.Y;
     *accessScreen(s, x, y) = XYZtoRGB(
         colorComponent((double)1 / (double)renderCount, *accessSum(s, x, y)));
     return;
