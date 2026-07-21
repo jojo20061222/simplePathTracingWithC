@@ -1,7 +1,9 @@
 #include "textures.h"
 
-Texture newTexture(double (*reflectivity)(double), double diffuseFactor) {
-    return (Texture){reflectivity, diffuseFactor};
+Texture newTexture(double (*reflectivity)(double), double (*refractiveIndex)(double)) {
+    return (Texture){reflectivity, refractiveIndex};
 }
 
-double pureWhite(double waveLength) { return 0.5; }
+double pureWhite(double _) { return 0.5; }
+
+double plastic(double _) { return 1.5; }

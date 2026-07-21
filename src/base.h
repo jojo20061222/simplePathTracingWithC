@@ -27,9 +27,7 @@ static inline Vector add(Vector a, Vector b) { return (Vector){a.x + b.x, a.y + 
 
 static inline Vector minus(Vector a, Vector b) { return (Vector){a.x - b.x, a.y - b.y, a.z - b.z}; }
 
-static inline Vector scalerMultiplication(double c, Vector a) {
-    return (Vector){c * a.x, c * a.y, c * a.z};
-}
+static inline Vector multiply(double c, Vector a) { return (Vector){c * a.x, c * a.y, c * a.z}; }
 
 static inline double dot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
@@ -41,11 +39,18 @@ static inline Vector unitVector(Vector vec) {
     return (Vector){vec.x / length, vec.y / length, vec.z / length};
 }
 
+static inline double lengthOf(Vector v) {
+    return sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+}
+
 typedef struct {
     Point start;
     Vector direction;
     double waveLength;
+    double refractiveIndex;
 } ReversedRay;
+
+ReversedRay newRay(Point start, Vector direction, double waveLength, double refractiveIndex);
 
 typedef struct {
     int capacity;

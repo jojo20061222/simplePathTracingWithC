@@ -85,14 +85,24 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     // case 3: we collide with an object first
     Vector d = ray.direction;
-    Point collidePoint = add(ray.start, scalerMultiplication(firstCollideObjectResult.t, d));
+    Point collidePoint = add(ray.start, multiply(firstCollideObjectResult.t, d));
     Vector N = unitVector(
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
     if (dot(N, d) > 0) N = (Vector){-N.x, -N.y, -N.z};
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
-    if (randomReal(mt) <= firstCollideObject->texture.diffuseFactor) {
+    double cosTheta = -dot(d, N) / (lengthOf(d) * lengthOf(N));
+    // the reflection probability is decided by Fresnell Equaltion
+
+    double n2 = firstCollideObject->texture.refrectiveIndex(ray.waveLength);
+    double n1 = ray.refractiveIndex;
+    double F0 = pow((n1 - n2) / (n1 + n2), 2);
+    double F = F0 + (1 - F0) * pow(1 - cosTheta, 5);
+
+    double albedo;
+
+    if (randomReal(mt) > F) {
         // first we generate a random point within a circle (uniformly)
         // To convert this into distribution of probabilty, we find the probability near center
         // of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2)
@@ -117,6 +127,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
             unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
             unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
             unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
+
+        albedo = firstCollideObject->texture.reflectivity(ray.waveLength);
     }
 
     // case specular
@@ -124,19 +136,20 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // where N stands for unit vector of normal vector (n hat), d is the direction of original
     // ray, r is the direction of reflection
     else {
-        nxtDirection = minus(d, scalerMultiplication(2 * dot(d, N), N));
+        nxtDirection = minus(d, multiply(2 * dot(d, N), N));
+        albedo = 1.0;
     }
 
-    ReversedRay nxtRay = {add(collidePoint, scalerMultiplication(0.001, nxtDirection)),
-                          nxtDirection, ray.waveLength};
+    ReversedRay nxtRay =
+        newRay(add(collidePoint, multiply(0.001, nxtDirection)), nxtDirection, ray.waveLength, ray.refractiveIndex);
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) *
-           firstCollideObject->texture.reflectivity(ray.waveLength);
+           albedo;
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount,
-                 int renderCount, MT19937 *mt, int maxDepth) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
     double fixedY = (double)y + randomReal(mt);
@@ -154,8 +167,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
 
     for (int i = 0; i < intervalCount; i++) {
-        initRays[i] = (ReversedRay){*camera, minus((Vector){fixedX, fixedY, 0}, *camera),
-                                    randomWavelength + intervalSize * i};
+        initRays[i] = newRay(*camera, minus((Vector){fixedX, fixedY, 0}, *camera),
+                             randomWavelength + intervalSize * i, 1.0);
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
                                                 sourcesCount, mt, maxDepth);
@@ -169,7 +182,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     }
 
     *accessSum(s, x, y) = addColor(*accessSum(s, x, y), colorResult);
-    *accessScreen(s, x, y) = XYZtoRGB(
-        colorComponent((double)1 / (double)renderCount, *accessSum(s, x, y)));
+    *accessScreen(s, x, y) =
+        XYZtoRGB(colorComponent((double)1 / (double)renderCount, *accessSum(s, x, y)));
     return;
 }
