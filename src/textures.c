@@ -8,7 +8,7 @@ Texture newTexture(double (*baseColor)(double), double (*refractiveIndex)(double
 double pureWhite(double _) { return 0.5; }
 
 double red(double lambda) {
-    return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 605)));
+    return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650)));
 }
 
 double plastic(double _) { return 1.5; }
