@@ -12,4 +12,6 @@ double pureWhite(double lambda);
 
 double plastic(double lambda);
 
+double red(double lambda);
+
 #endif

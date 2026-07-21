@@ -25,6 +25,7 @@ int main() {
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
     Texture whitePlastic= newTexture(pureWhite, plastic);
+    Texture redPlastic = newTexture(red, plastic); 
 
     Object **objects = getDynamicArray(0, Object *);
 
@@ -40,7 +41,7 @@ int main() {
     pushBack(&objects, &obj2, Object *);
 
     Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, whitePlastic);
+    Object obj3 = newObject((Shape *)&sph, redPlastic);
     pushBack(&objects, &obj3, Object *);
 
     Sphere lightSourceSph = newSphere((Point){0, -400, 1200}, 150);
