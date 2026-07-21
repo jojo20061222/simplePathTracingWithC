@@ -40,6 +40,8 @@ void *worker(void *para) {
     static const int blockSize = 16;
     static const int threshold = 200;
     int blockCount = 0;
+    // int total = rightBoundary - leftBoundary + 1;
+    // int working = total;
 
     while (*workerPara->exit == 0) {
         for (int i = 0; i < blockSize && *workerPara->exit == 0; i++) {
@@ -56,10 +58,12 @@ void *worker(void *para) {
             if (!*accessConverge(s, x, y)) {
                 double RE = getRelativeError(s, x, y);
                 if (RE < 0.0001) {
+                    // working--;
                     *accessConverge(s, x, y) = true;
                 }
             }
         }
+        // printf("worker %d: left %lf %% working\n", workerPara->id, (double)workerCount / (double)total * 100);
     }
 
     destroyMT19937(mt);
