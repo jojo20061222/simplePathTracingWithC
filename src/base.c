@@ -1,7 +1,6 @@
 #include "base.h"
-#include <stdlib.h>
 #include <assert.h>
-
+#include <stdlib.h>
 
 Queue newQueue() {
     const int initCapacity = 1024;
@@ -44,7 +43,6 @@ void *pop(Queue *queue) {
 }
 
 int size(Queue *queue) { return queue->size; }
-
 
 ReversedRay newRay(Point start, Vector direction, double waveLength, double refractiveIndex) {
     return (ReversedRay){start, direction, waveLength, refractiveIndex};

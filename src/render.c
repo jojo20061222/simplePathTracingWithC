@@ -14,31 +14,44 @@ static const double startWavelength = 390;
 static const double endWavelength = 790;
 
 VirtualScreen *newScreen(int width, int height) {
-    /*
-    ScreenColor *buffer;
-    ColorXYZ *sum;
-    double *batchSum;
-    bool *converge;
-    unsigned int *renderCount;
-    int width, height;
-    */
-
     VirtualScreen *result = malloc(sizeof(VirtualScreen));
     result->width = width;
     result->height = height;
     result->buffer = calloc(width * height, sizeof(ScreenColor));
-    result->sum = malloc(sizeof(LightIntensity) * width * height);
+    result->renderCount = calloc(width * height, sizeof(unsigned int));
+    result->mean = malloc(sizeof(LightIntensity) * width * height);
     for (int i = 0; i < width * height; i++) {
-        result->sum[i] = (ColorXYZ){0, 0, 0};
+        result->mean[i] = (ColorXYZ){0, 0, 0};
+    }
+    result->m2 = malloc(sizeof(double) * width * height);
+    for (int i = 0; i < width * height; i++) {
+        result->m2[i] = 0;
     }
     return result;
 }
 
 void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
-    free(screen->sum);
+    free(screen->mean);
+    free(screen->renderCount);
+    free(screen->m2);
     free(screen);
     return;
+}
+
+static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color) {
+    int i = y * vs->width + x;
+    // use Wellford's Algorithm to calculate variance
+    int n = ++vs->renderCount[i];
+    double delta = color.Y - vs->mean[i].Y;
+    vs->mean[i].X += (color.X - vs->mean[i].X) / n;
+    vs->mean[i].Y += (color.Y - vs->mean[i].Y) / n;
+    vs->mean[i].Z += (color.Z - vs->mean[i].Z) / n;
+
+    double delta2 = color.Y - vs->mean[i].Y;
+    vs->m2[i] += delta * delta2; 
+
+    vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
@@ -153,7 +166,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, int renderCount,
+                 int objectsCount, const LightSource **sources, int sourcesCount, 
                  MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
@@ -186,8 +199,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 
-    *accessSum(s, x, y) = addColor(*accessSum(s, x, y), colorResult);
-    *accessScreen(s, x, y) =
-        XYZtoRGB(colorComponent((double)1 / (double)renderCount, *accessSum(s, x, y)));
+    updateScreen(s, x, y, colorResult);
     return;
 }

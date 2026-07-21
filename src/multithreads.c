@@ -35,16 +35,14 @@ void *worker(void *para) {
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
 
-    int renderCount = 0;
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
     while (*workerPara->exit == 0) {
-        renderCount++;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
             // adaptive sampling
             // skip if the pixel has converged
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, renderCount,
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount,
                         mt, maxDepth);
         }
     }
