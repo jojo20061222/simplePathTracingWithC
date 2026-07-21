@@ -14,20 +14,20 @@ static const double startWavelength = 390;
 static const double endWavelength = 790;
 
 VirtualScreen *newScreen(int width, int height) {
-    VirtualScreen *result = malloc(sizeof(VirtualScreen));
+    VirtualScreen *result = malloc(sizeof(*result));
     result->width = width;
     result->height = height;
-    result->buffer = calloc(width * height, sizeof(ScreenColor));
-    result->renderCount = calloc(width * height, sizeof(unsigned int));
-    result->mean = malloc(sizeof(LightIntensity) * width * height);
+    result->buffer = calloc(width * height, sizeof(*result->buffer));
+    result->renderCount = calloc(width * height, sizeof(*result->renderCount));
+    result->mean = malloc(sizeof(*result->mean) * width * height);
     for (int i = 0; i < width * height; i++) {
         result->mean[i] = (ColorXYZ){0, 0, 0};
     }
-    result->m2 = malloc(sizeof(double) * width * height);
+    result->m2 = malloc(sizeof(*result->m2) * width * height);
     for (int i = 0; i < width * height; i++) {
-        result->m2[i] = 0;
+        result->m2[i] = 0.0;
     }
-    result->converge = calloc(width * height, sizeof(bool));
+    result->converge = calloc(width * height, sizeof(*result->converge));
 
     return result;
 }
@@ -37,6 +37,7 @@ void freeScreen(VirtualScreen *screen) {
     free(screen->mean);
     free(screen->renderCount);
     free(screen->m2);
+    free(screen->converge);
     free(screen);
     return;
 }
