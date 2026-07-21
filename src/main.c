@@ -50,9 +50,7 @@ int main() {
     LightSource **sources = getDynamicArray(0, LightSource *);
 
     pushBack(&sources, &lightSource, LightSource *);
-
-    double angle = 0;
-
+    
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
                          (const LightSource **)sources, getSize(sources), &camera, 10);
