@@ -101,6 +101,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double F = F0 + (1 - F0) * pow(1 - cosTheta, 5);
 
     double albedo;
+    double branchPDF;
 
     if (randomReal(mt) > F) {
         // first we generate a random point within a circle (uniformly)
@@ -128,7 +129,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
             unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
             unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
 
-        albedo = firstCollideObject->texture.reflectivity(ray.waveLength);
+        albedo = firstCollideObject->texture.baseColor(ray.waveLength);
+        branchPDF = 1 - F;
     }
 
     // case specular
@@ -138,10 +140,13 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     else {
         nxtDirection = minus(d, multiply(2 * dot(d, N), N));
         albedo = 1.0;
+        branchPDF = F;
     }
 
-    ReversedRay nxtRay =
-        newRay(add(collidePoint, multiply(0.001, nxtDirection)), nxtDirection, ray.waveLength, ray.refractiveIndex);
+    ReversedRay nxtRay = newRay(add(collidePoint, multiply(1e-4, N)), nxtDirection, ray.waveLength,
+                                ray.refractiveIndex);
+
+    branchPDF = fmax(branchPDF, 1e-4);
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) *
            albedo;

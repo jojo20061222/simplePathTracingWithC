@@ -2,11 +2,11 @@
 #define TEXTURES_H
 
 typedef struct {
-    double (*reflectivity)(double lambda);
+    double (*baseColor)(double lambda);
     double (*refrectiveIndex)(double lambda);
 } Texture;
 
-Texture newTexture(double (*reflectivity)(double), double (*refrectiveIndex)(double));
+Texture newTexture(double (*baseColor)(double), double (*refrectiveIndex)(double));
 
 double pureWhite(double lambda);
 

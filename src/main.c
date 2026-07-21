@@ -22,7 +22,7 @@ int main() {
     bool isRunning = true;
 
     VirtualScreen *vs = newScreen(width, height);
-    Point camera = {(double)width / 2, (double)height, -4000};
+    Point camera = {(double)width / 2, (double)height / 2, -4000};
 
     Texture whitePlastic= newTexture(pureWhite, plastic);
 
@@ -43,7 +43,7 @@ int main() {
     Object obj3 = newObject((Shape *)&sph, whitePlastic);
     pushBack(&objects, &obj3, Object *);
 
-    Sphere lightSourceSph = newSphere((Point){0, -400, 900}, 100);
+    Sphere lightSourceSph = newSphere((Point){0, -400, 1200}, 150);
     LightSource lightSource = {(Shape *)&lightSourceSph, sunlightBase};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
