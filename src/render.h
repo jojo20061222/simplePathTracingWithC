@@ -14,6 +14,7 @@ typedef struct {
     unsigned int *renderCount;
     ColorXYZ *mean;
     double *m2;
+    bool *converge;
     int width, height;
 } VirtualScreen;
 
@@ -26,7 +27,15 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
                  int maxDepth);
 
 
-static inline getRelativeError() {
+static inline double getRelativeError(VirtualScreen *vs, int x, int y) {
+    // for convenient I uses pop std error
+    int i = y * vs->width + x;
+    double SE = sqrt(vs->m2[i] / vs->renderCount[i]);
+    return SE / vs->mean[i].Y;
+}
+
+static inline bool *accessConverge(VirtualScreen *vs, int x, int y) {
+    return &vs->converge[y * vs->width + x];
 }
 
 #endif

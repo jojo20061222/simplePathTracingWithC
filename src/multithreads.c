@@ -37,14 +37,31 @@ void *worker(void *para) {
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
+    static const int blockSize = 100;
+    double total = rightBoundary - leftBoundary + 1;
+    double running = total;
+
     while (*workerPara->exit == 0) {
-        for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = i % s->width, y = i / s->width;
-            // adaptive sampling
-            // skip if the pixel has converged
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount,
-                        mt, maxDepth);
+        for (int i = 0; i < blockSize && *workerPara->exit == 0; i++) {
+            for (int i = leftBoundary; i <= rightBoundary; i++) {
+                int x = i % s->width, y = i / s->width;
+                if (*accessConverge(s, x, y)) continue;
+                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
+                            maxDepth);
+            }
         }
+        for (int i = leftBoundary; i <= rightBoundary && *workerPara->exit == 0; i++) {
+            int x = i % s->width, y = i / s->width;
+            if (!*accessConverge(s, x, y)) {
+                double RE = getRelativeError(s, x, y);
+                printf("RE: %lf\n", RE);
+                if (RE < 0.001) {
+                    *accessConverge(s, x, y) = true;
+                    running--;
+                }
+            }
+        }
+        printf("%d: %lf\n", workerPara->id, total / running);
     }
 
     destroyMT19937(mt);

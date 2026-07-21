@@ -27,6 +27,8 @@ VirtualScreen *newScreen(int width, int height) {
     for (int i = 0; i < width * height; i++) {
         result->m2[i] = 0;
     }
+    result->converge = calloc(width * height, sizeof(bool));
+
     return result;
 }
 
@@ -53,6 +55,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
+
 
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
