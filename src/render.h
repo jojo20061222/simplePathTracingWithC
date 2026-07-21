@@ -28,11 +28,10 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
 
 static inline double getRelativeError(VirtualScreen *vs, int x, int y) {
-    // for convenient I uses pop std deviation
     int i = y * vs->width + x;
-    double SD = sqrt(vs->m2[i] / vs->renderCount[i]);
-    if (SD < error) return 0;
-    return SD / (vs->mean[i].Y + error);
+    int n = vs->renderCount[i];
+    double SE = sqrt(vs->m2[i] / (n * (n - 1)));
+    return SE / (vs->mean[i].Y + 1e-4);
 }
 
 static inline bool *accessConverge(VirtualScreen *vs, int x, int y) {

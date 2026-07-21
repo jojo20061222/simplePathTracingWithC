@@ -67,7 +67,7 @@ int main() {
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 
-        SDL_Delay(100);
+        SDL_Delay(8);
     }
 
     destroyMultithreads(mul);

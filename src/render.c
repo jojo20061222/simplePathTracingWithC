@@ -19,14 +19,8 @@ VirtualScreen *newScreen(int width, int height) {
     result->height = height;
     result->buffer = calloc(width * height, sizeof(*result->buffer));
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
-    result->mean = malloc(sizeof(*result->mean) * width * height);
-    for (int i = 0; i < width * height; i++) {
-        result->mean[i] = (ColorXYZ){0, 0, 0};
-    }
-    result->m2 = malloc(sizeof(*result->m2) * width * height);
-    for (int i = 0; i < width * height; i++) {
-        result->m2[i] = 0.0;
-    }
+    result->mean = calloc(width * height, sizeof(*result->mean));
+    result->m2 = calloc(width * height, sizeof(*result->m2));
     result->converge = calloc(width * height, sizeof(*result->converge));
 
     return result;
