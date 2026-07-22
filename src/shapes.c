@@ -15,9 +15,9 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
      */
 
     const Triangle *tri = (const Triangle *)self;
-    Vector A = minus(tri->p2, tri->p1);
-    Vector B = minus(tri->p3, tri->p1);
-    Vector W = minus(ray->start, tri->p1); // let W = O - P
+    Vector A = vecMinux(tri->p2, tri->p1);
+    Vector B = vecMinux(tri->p3, tri->p1);
+    Vector W = vecMinux(ray->start, tri->p1); // let W = O - P
     Vector D = ray->direction;
 
     /*
@@ -56,7 +56,7 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
 // Then, the result of this function should return upward vector
 Vector normalVectorOfTriangle(const struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
-    return cross(minus(tri->p2, tri->p1), minus(tri->p3, tri->p1));
+    return vecCross(vecMinux(tri->p2, tri->p1), vecMinux(tri->p3, tri->p1));
 }
 
 Triangle newTriangle(Point p1, Point p2, Point p3) {
@@ -75,10 +75,10 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
 
     const Sphere *sphere = (const Sphere *)self;
 
-    Vector W = minus(ray->start, sphere->center);
-    double A = dot(ray->direction, ray->direction);
-    double B = 2 * dot(ray->direction, W);
-    double C = dot(W, W) - sphere->radius * sphere->radius;
+    Vector W = vecMinux(ray->start, sphere->center);
+    double A = vecDot(ray->direction, ray->direction);
+    double B = 2 * vecDot(ray->direction, W);
+    double C = vecDot(W, W) - sphere->radius * sphere->radius;
     double Delta = B * B - 4 * A * C;
     if (Delta < 0) return (CollideResult){false, INFINITY};
     double t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
@@ -92,7 +92,7 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
 // Returns outward normal vector
 Vector normalVectorOfSphere(const struct _Shape *self, Point p) {
     const Sphere *sph = (const Sphere *)self;
-    return minus(p, sph->center);
+    return vecMinux(p, sph->center);
 }
 
 Sphere newSphere(Point center, double radius) {

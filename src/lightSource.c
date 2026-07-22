@@ -15,7 +15,7 @@ static const int dataCount = 89;
 static ColorXYZ convertTable[90];
 
 void initLightIntensity() {
-    FILE *csv = fopen("src/wavelengthToXYZ.csv", "r");
+    FILE *csv = fopen("src/static/wavelengthToXYZ.csv", "r");
 
     if (csv == NULL) {
         fprintf(stderr, "Not able to open the csv file\n");

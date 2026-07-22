@@ -17,4 +17,6 @@ double air(double lambda);
 
 double red(double lambda);
 
+void initTexture();
+
 #endif

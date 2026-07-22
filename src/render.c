@@ -95,12 +95,12 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     // case 3: we collide with an object first
     Vector d = ray.direction;
-    Point collidePoint = add(ray.start, multiply(firstCollideObjectResult.t, d));
+    Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
     Vector N = unitVector(
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
     double n1, n2;
-    if (dot(N, d) > 0) {
-        // N dot d > 0 implys the ray is now in the object
+    if (vecDot(N, d) > 0) {
+        // N vecDot d > 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
         N = (Vector){-N.x, -N.y, -N.z};
         n1 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
@@ -113,7 +113,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
-    double cosTheta = -dot(d, N) / (lengthOf(d) * lengthOf(N));
+    double cosTheta = -vecDot(d, N) / (lengthOf(d) * lengthOf(N));
     // the reflection probability is decided by Fresnell Equaltion
 
     double x = (n1 - n2) / (n1 + n2);
@@ -144,8 +144,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
         // finally we turn this into right angle
         Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
-        Vector T = unitVector(cross(helper, N));
-        Vector B = cross(N, T);
+        Vector T = unitVector(vecCross(helper, N));
+        Vector B = vecCross(N, T);
         // project the unturned to turned
         nxtDirection = (Vector){
             unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
@@ -157,16 +157,17 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     }
 
     // case specular
-    // the direction of reflection can be calculated as r = d - 2(d dot N)N
+    // the direction of reflection can be calculated as r = d - 2(d vecDot N)N
     // where N stands for unit vector of normal vector (n hat), d is the direction of original
     // ray, r is the direction of reflection
     else {
-        nxtDirection = minus(d, multiply(2 * dot(d, N), N));
+        nxtDirection = vecMinux(d, vecMultiply(2 * vecDot(d, N), N));
         albedo = 1.0;
         branchPDF = F;
     }
 
-    ReversedRay nxtRay = newRay(add(collidePoint, multiply(1e-4, N)), nxtDirection, ray.waveLength);
+    ReversedRay nxtRay =
+        newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
 
     branchPDF = fmax(branchPDF, 1e-4);
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
@@ -194,7 +195,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
 
     for (int i = 0; i < intervalCount; i++) {
-        initRays[i] = newRay(*camera, minus((Vector){fixedX, fixedY, 0}, *camera),
+        initRays[i] = newRay(*camera, vecMinux((Vector){fixedX, fixedY, 0}, *camera),
                              randomWavelength + intervalSize * i);
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,

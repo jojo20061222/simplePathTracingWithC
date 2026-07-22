@@ -1,4 +1,5 @@
 #include "textures.h"
+#include <stdio.h>
 #include <math.h>
 
 Texture newTexture(double (*baseColor)(double), double (*refractiveIndexInside)(double),
@@ -6,7 +7,16 @@ Texture newTexture(double (*baseColor)(double), double (*refractiveIndexInside)(
     return (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside};
 }
 
-void initTexture();
+static double AgEta[446];
+static double AuEta[46];
+static double CuEta[46];
+
+void initTexture() {
+    // init Ag (Silver)
+    int AgLineCount;
+    FILE *Ag = fopen("src/static/ag_k", const char *)
+    fscanf("%d", &AgLineCount);     
+}
 
 double pureWhite(double _) { return 0.5; }
 
