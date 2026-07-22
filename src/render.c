@@ -123,10 +123,10 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
 
-    double albedo = 1;
+    double energyCoefficient = 1;
     if (firstCollideObject->texture.metalic) {
         nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-        albedo = F;
+        energyCoefficient = F;
     }
 
     else if (randomReal(mt) > F) {
@@ -158,7 +158,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                 unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
                 unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
 
-            albedo *= firstCollideObject->texture.baseColor(ray.waveLength);
+            energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
         }
         else if (!firstCollideObject->texture.metalic) {
             // TODO: refraction!
@@ -171,7 +171,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // ray, r is the direction of reflection
     else {
         nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-        albedo = 1;
+        energyCoefficient = 1;
     }
 
     ReversedRay nxtRay =
@@ -179,7 +179,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) *
-           albedo;
+           energyCoefficient;
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,

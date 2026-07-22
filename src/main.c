@@ -26,10 +26,11 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    Texture whitePlastic= newTexture(pureWhite, plastic, air, false, false);
-    Texture redPlastic = newTexture(red, plastic, air, false, false); 
+    Texture whitePlastic = newTexture(pureWhite, plastic, air, false, false);
+    Texture redPlastic = newTexture(red, plastic, air, false, false);
     Texture gold = newTexture(NULL, getGoldRefractivity, air, false, true);
-    Texture copper = newTexture(NULL, getCopperRefractivity,air, false, true);
+    Texture copper = newTexture(NULL, getCopperRefractivity, air, false, true);
+    Texture silver = newTexture(NULL, getSilverRefractivity, air, false, true);
 
     Object **objects = getDynamicArray(0, Object *);
 
@@ -48,7 +49,15 @@ int main() {
     Object obj3 = newObject((Shape *)&sph, gold);
     pushBack(&objects, &obj3, Object *);
 
-    Sphere lightSourceSph = newSphere((Point){0, -400, 1200}, 150);
+    Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
+    Object obj4 = newObject((Shape *)&sph2, copper);
+    pushBack(&objects, &obj4, Object *);
+
+    Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
+    Object obj5 = newObject((Shape *)&sph3, silver);
+    pushBack(&objects, &obj5, Object *);
+
+    Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 150);
     LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
