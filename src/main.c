@@ -10,6 +10,8 @@ const int height = 720;
 
 int main() {
     initLightIntensity();
+    initTexture();
+
     SDL_Init(SDL_INIT_VIDEO);
 
     SDL_Window *window = SDL_CreateWindow("Path Tracing", SDL_WINDOWPOS_CENTERED,
