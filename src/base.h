@@ -47,10 +47,9 @@ typedef struct {
     Point start;
     Vector direction;
     double waveLength;
-    double refractiveIndex;
 } ReversedRay;
 
-ReversedRay newRay(Point start, Vector direction, double waveLength, double refractiveIndex);
+ReversedRay newRay(Point start, Vector direction, double waveLength); 
 
 typedef struct {
     int capacity;

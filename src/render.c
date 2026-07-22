@@ -46,11 +46,10 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->mean[i].Z += (color.Z - vs->mean[i].Z) / n;
 
     double delta2 = color.Y - vs->mean[i].Y;
-    vs->m2[i] += delta * delta2; 
+    vs->m2[i] += delta * delta2;
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
-
 
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
@@ -84,7 +83,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
             firstCollideSource = sources[i];
         }
     }
-    // case 1: we collide with nothing.
+    // case 1: collide with nothing.
     if (firstCollideObject == NULL && firstCollideSource == NULL) {
         return 0.0;
     }
@@ -99,15 +98,24 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Point collidePoint = add(ray.start, multiply(firstCollideObjectResult.t, d));
     Vector N = unitVector(
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
-    if (dot(N, d) > 0) N = (Vector){-N.x, -N.y, -N.z};
+    double n1, n2;
+    if (dot(N, d) > 0) {
+        // N dot d > 0 implys the ray is now in the object
+        // n1 = inside, n2 = outside, since we goes from inside to outside
+        N = (Vector){-N.x, -N.y, -N.z};
+        n1 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
+        n2 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
+    }
+    else {
+        n1 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
+        n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
+    }
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
     double cosTheta = -dot(d, N) / (lengthOf(d) * lengthOf(N));
     // the reflection probability is decided by Fresnell Equaltion
 
-    double n2 = firstCollideObject->texture.refrectiveIndex(ray.waveLength);
-    double n1 = ray.refractiveIndex;
     double F0 = pow((n1 - n2) / (n1 + n2), 2);
     double F = F0 + (1 - F0) * pow(1 - cosTheta, 5);
 
@@ -154,8 +162,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         branchPDF = F;
     }
 
-    ReversedRay nxtRay = newRay(add(collidePoint, multiply(1e-4, N)), nxtDirection, ray.waveLength,
-                                ray.refractiveIndex);
+    ReversedRay nxtRay = newRay(add(collidePoint, multiply(1e-4, N)), nxtDirection, ray.waveLength);
 
     branchPDF = fmax(branchPDF, 1e-4);
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
@@ -164,8 +171,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, 
-                 MT19937 *mt, int maxDepth) {
+                 int objectsCount, const LightSource **sources, int sourcesCount, MT19937 *mt,
+                 int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
     double fixedY = (double)y + randomReal(mt);
@@ -184,7 +191,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     for (int i = 0; i < intervalCount; i++) {
         initRays[i] = newRay(*camera, minus((Vector){fixedX, fixedY, 0}, *camera),
-                             randomWavelength + intervalSize * i, 1.0);
+                             randomWavelength + intervalSize * i);
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
                                                 sourcesCount, mt, maxDepth);

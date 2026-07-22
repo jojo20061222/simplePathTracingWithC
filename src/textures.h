@@ -3,15 +3,17 @@
 
 typedef struct {
     double (*baseColor)(double lambda);
-    double (*refractiveIndexOutSide)(double lambda);
-    double (*refractiveIndexInside)
+    double (*refractiveIndexOutside)(double lambda);
+    double (*refractiveIndexInside)(double lambda);
 } Texture;
 
-Texture newTexture(double (*baseColor)(double), double (*refrectiveIndex)(double));
+Texture newTexture(double (*baseColor)(double), double (*refractiveIndexInside)(double), double (*refractiveIndexOutside)(double));
 
 double pureWhite(double lambda);
 
 double plastic(double lambda);
+
+double air(double lambda);
 
 double red(double lambda);
 

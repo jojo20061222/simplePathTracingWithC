@@ -52,6 +52,8 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
     return result;
 }
 
+// Looks down from the top, (p1, p2, p3) in counter-clockwise order
+// Then, the result of this function should return upward vector
 Vector normalVectorOfTriangle(const struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
     return cross(minus(tri->p2, tri->p1), minus(tri->p3, tri->p1));
@@ -87,6 +89,7 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
     return (CollideResult){true, t1};
 }
 
+// Returns outward normal vector
 Vector normalVectorOfSphere(const struct _Shape *self, Point p) {
     const Sphere *sph = (const Sphere *)self;
     return minus(p, sph->center);
