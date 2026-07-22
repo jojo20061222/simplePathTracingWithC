@@ -5,7 +5,6 @@
 #include "shapes.h"
 #include <stdbool.h>
 
-
 typedef struct {
     Shape *shape;
     LightIntensity (*intensity)(double waveLength);
@@ -27,12 +26,12 @@ ColorXYZ wavelengthToXYZ(double waveLength);
 
 ScreenColor XYZtoRGB(ColorXYZ xyz);
 
-static inline ColorXYZ addColor(ColorXYZ a, ColorXYZ b) {
+static inline ColorXYZ colorAdd(ColorXYZ a, ColorXYZ b) {
     return (ColorXYZ){a.X + b.X, a.Y + b.Y, a.Z + b.Z};
 }
 
 static inline ColorXYZ colorComponent(double c, ColorXYZ color) {
-    return (ColorXYZ){c * color.X, c * color.Y, c * color.Z}; 
+    return (ColorXYZ){c * color.X, c * color.Y, c * color.Z};
 }
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);

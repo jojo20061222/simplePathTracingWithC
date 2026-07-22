@@ -161,7 +161,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // where N stands for unit vector of normal vector (n hat), d is the direction of original
     // ray, r is the direction of reflection
     else {
-        nxtDirection = vecMinux(d, vecMultiply(2 * vecDot(d, N), N));
+        nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
         albedo = 1.0;
         branchPDF = F;
     }
@@ -195,7 +195,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
         randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
 
     for (int i = 0; i < intervalCount; i++) {
-        initRays[i] = newRay(*camera, vecMinux((Vector){fixedX, fixedY, 0}, *camera),
+        initRays[i] = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera),
                              randomWavelength + intervalSize * i);
 
         intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
@@ -204,7 +204,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
-        colorResult = addColor(
+        colorResult = colorAdd(
             colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }

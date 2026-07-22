@@ -15,9 +15,9 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
      */
 
     const Triangle *tri = (const Triangle *)self;
-    Vector A = vecMinux(tri->p2, tri->p1);
-    Vector B = vecMinux(tri->p3, tri->p1);
-    Vector W = vecMinux(ray->start, tri->p1); // let W = O - P
+    Vector A = vecMinus(tri->p2, tri->p1);
+    Vector B = vecMinus(tri->p3, tri->p1);
+    Vector W = vecMinus(ray->start, tri->p1); // let W = O - P
     Vector D = ray->direction;
 
     /*
@@ -56,7 +56,7 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
 // Then, the result of this function should return upward vector
 Vector normalVectorOfTriangle(const struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
-    return vecCross(vecMinux(tri->p2, tri->p1), vecMinux(tri->p3, tri->p1));
+    return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
 }
 
 Triangle newTriangle(Point p1, Point p2, Point p3) {
@@ -75,7 +75,7 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
 
     const Sphere *sphere = (const Sphere *)self;
 
-    Vector W = vecMinux(ray->start, sphere->center);
+    Vector W = vecMinus(ray->start, sphere->center);
     double A = vecDot(ray->direction, ray->direction);
     double B = 2 * vecDot(ray->direction, W);
     double C = vecDot(W, W) - sphere->radius * sphere->radius;
@@ -92,7 +92,7 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
 // Returns outward normal vector
 Vector normalVectorOfSphere(const struct _Shape *self, Point p) {
     const Sphere *sph = (const Sphere *)self;
-    return vecMinux(p, sph->center);
+    return vecMinus(p, sph->center);
 }
 
 Sphere newSphere(Point center, double radius) {
