@@ -3,7 +3,8 @@
 
 typedef struct {
     double (*baseColor)(double lambda);
-    double (*refrectiveIndex)(double lambda);
+    double (*refractiveIndexOutSide)(double lambda);
+    double (*refractiveIndexInside)
 } Texture;
 
 Texture newTexture(double (*baseColor)(double), double (*refrectiveIndex)(double));
