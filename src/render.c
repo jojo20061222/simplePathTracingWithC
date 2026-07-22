@@ -61,10 +61,10 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // touched first.
 
     // test the first object to touch, ignore light source
-    CollideColorResult firstCollideObjectResult = {false, INFINITY, 0};
+    CollideResult firstCollideObjectResult = {false, INFINITY};
     const Object *firstCollideObject = NULL;
     for (int i = 0; i < objectsCount; i++) {
-        CollideColorResult collideResult = collideObject(objects[i], &ray);
+        CollideResult collideResult = collideObject(objects[i], &ray);
         if (!collideResult.collide) continue;
         if (collideResult.t < firstCollideObjectResult.t) {
             firstCollideObjectResult = collideResult;
@@ -110,6 +110,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         n1 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
         n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
     }
+    // printf("n2: %lf + %lfi\n", n2.R, n2.I);
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
@@ -123,11 +124,11 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
 
-    double  = 1;
+    double albedo = 1;
 
     if (randomReal(mt) > F && !firstCollideObject->texture.metalic) {
         // We DO NOT consider the refraction of metals
-        if  (!firstCollideObject->texture.transparent) {
+        if (!firstCollideObject->texture.transparent) {
             // Branch Diffusion, only non-transparent materials need to do this
             // first we generate a random point within a circle (uniformly)
             // To convert this into distribution of probabilty, we find the probability near center
@@ -154,7 +155,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                 unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
                 unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
 
-            energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
+            albedo *= firstCollideObject->texture.baseColor(ray.waveLength);
         }
         else if (!firstCollideObject->texture.metalic) {
             // TODO: refraction!
@@ -167,7 +168,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // ray, r is the direction of reflection
     else {
         nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-        ener = 1.0;
+        // the color of metal is decided by its refractivity, so no need to consider its base color
+        albedo = 1;
     }
 
     ReversedRay nxtRay =

@@ -75,7 +75,8 @@ Complex air(double _) { return (Complex){1.0, 0}; };
 Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lineCount) {
     if (lambda <= startLambda) return (Complex){0, 0};
     if (lambda >= startLambda + lineCount * lambdaStep) return (Complex){0, 0};
-    int slot = (lambda - lambdaStep) / lambdaStep;
+    int slot = (lambda - startLambda) / lambdaStep;
+    if (slot == lineCount) return (Complex){0, 0};
     int preLambda = startLambda + lambdaStep * slot;
     int nxtLambda = startLambda + lambdaStep * (slot + 1);
     return (Complex){lerp(preLambda, nxtLambda, lambda, eta[slot].R, eta[slot + 1].R),

@@ -24,4 +24,10 @@ double red(double lambda);
 
 void initTexture();
 
+Complex getSilverRefractivity(double lambda);
+
+Complex getGoldRefractivity(double lambda);
+
+Complex getCopperRefractivity(double lambda);
+
 #endif
