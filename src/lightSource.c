@@ -44,15 +44,12 @@ ColorXYZ wavelengthToXYZ(double waveLength) {
     double slot1WaveLength = startWavelength + waveLengthStep * slot;
     double slot2WaveLength = startWavelength + waveLengthStep * (slot + 1);
     // lerp
-    double X = (convertTable[slot].X * (slot2WaveLength - waveLength) +
-                convertTable[slot + 1].X * (waveLength - slot1WaveLength)) /
-               waveLengthStep;
-    double Y = (convertTable[slot].Y * (slot2WaveLength - waveLength) +
-                convertTable[slot + 1].Y * (waveLength - slot1WaveLength)) /
-               waveLengthStep;
-    double Z = (convertTable[slot].Z * (slot2WaveLength - waveLength) +
-                convertTable[slot + 1].Z * (waveLength - slot1WaveLength)) /
-               waveLengthStep;
+    double X = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].X,
+                    convertTable[slot + 1].X);
+    double Y = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Y,
+                    convertTable[slot + 1].Y);
+    double Z = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Z,
+                    convertTable[slot + 1].Z);
     return (ColorXYZ){X, Y, Z};
 }
 

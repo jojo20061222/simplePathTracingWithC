@@ -94,16 +94,17 @@ static inline Complex cplxDivide(Complex a, Complex b) {
     return (Complex){(a.R * b.R + a.I * b.I) / denominator, (a.I * b.R - a.R * b.I) / denominator};
 }
 
-static inline double cplxModulus(Complex z) {
-    return sqrt(z.R * z.R + z.I * z.I);
-}
+static inline double cplxModulus(Complex z) { return sqrt(z.R * z.R + z.I * z.I); }
 
 static inline double cplxArg(Complex z) {
-    if (z.R == 0 && z.I == 0) return NAN; // x = 0 and y = 0
+    if (z.R == 0 && z.I == 0)
+        return NAN; // x = 0 and y = 0
     else if (z.R == 0) {
-        if (z.I > 0) return M_PI / 2; // x = 0 and y > 0
-        else return -M_PI / 2; // x = 0 and y < 0
-    } 
+        if (z.I > 0)
+            return M_PI / 2; // x = 0 and y > 0
+        else
+            return -M_PI / 2; // x = 0 and y < 0
+    }
     else if (z.R > 0) { // x > 0
         return atan(z.I / z.R);
     }
@@ -111,6 +112,14 @@ static inline double cplxArg(Complex z) {
         return atan(z.I / z.R) + M_PI;
     }
     return atan(z.I / z.R) - M_PI; // x < 0 and y < 0
+}
+
+static inline double lerp(double x1, double x2, double x, double y1, double y2) {
+    // since (y - y1) / (x - x1) = (y2 - y) / (x2 - x)
+    // we have (y - y1)(x2 - x) = (y2 - y)(x - x1)
+    // x2y - xy - x2y1 + y1x = y2x - x1y2 - xy + x1y
+    // (x2 - x1)y = x2y1 - x1y2 + y2x - y1x = y1(x2 - x) + y2(x - x1)
+    return (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1);
 }
 
 #endif

@@ -29,31 +29,20 @@ static double CuLambdaStep = 0.01;
 
 static const double startLambda = 390;
 
-void readFile(const char *filePathN, const char *filePathK, Complex Eta[], int lineCount) {
-    printf("%s %s %d\n", filePathN, filePathK, lineCount);
-    /*
+static void readFile(const char *filePathN, const char *filePathK, Complex eta[], int lineCount) {
     int lineCountFromFile;
-    const char *failedPath;
-    int errorCode = 0;
 
     FILE *fN = fopen(filePathN, "r");
     if (fN == NULL) {
-        fprintf(stderr, "fuck\n");
         exit(1);
     }
+    
     fscanf(fN, "%d", &lineCount);
-    if (lineCount != lineCountFromFile) {
-        exit(1);
-    }
     for (int i = 0; i < lineCount; i++) {
         double lambda;
-        int successfulCount = fscanf(fN, "%lf,%lf", &lambda, &Eta[i].R);
-        if (successfulCount == 0) {
-            exit(1);
-        }
+        int successfulCount = fscanf(fN, "%lf,%lf", &lambda, &eta[i].R);
     }
     fclose(fN);
-    printf("File loaded successfully: %s\n", filePathN);
 
 
     FILE *fK = fopen(filePathK, "r");
@@ -61,19 +50,11 @@ void readFile(const char *filePathN, const char *filePathK, Complex Eta[], int l
         exit(1);
     }
     fscanf(fK, "%d", &lineCount);
-    if (lineCount != lineCountFromFile) {
-        exit(1);
-    }
     for (int i = 0; i < lineCount; i++) {
         double lambda;
-        int successfulCount = fscanf(fK, "%lf,%lf", &lambda, &Eta[i].I);
-        if (successfulCount == 0) {
-            exit(1);
-        }
+        int successfulCount = fscanf(fK, "%lf,%lf", &lambda, &eta[i].I);
     }
     fclose(fK);
-    printf("File loaded successfully: %s\n", filePathK);
-*/
     return;
 }
 
@@ -90,3 +71,8 @@ double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650)
 double plastic(double _) { return 1.5; }
 
 double air(double _) { return 1.0; };
+
+static inline double getReflectivity(double lambda, Complex eta[], double LambdaStep, int lineCount) {
+    if (lambda <= startLambda) return 0;
+    if (lambda >= startLambda + lineCount )
+}
