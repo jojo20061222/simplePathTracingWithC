@@ -116,8 +116,12 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double cosTheta = -dot(d, N) / (lengthOf(d) * lengthOf(N));
     // the reflection probability is decided by Fresnell Equaltion
 
-    double F0 = pow((n1 - n2) / (n1 + n2), 2);
-    double F = F0 + (1 - F0) * pow(1 - cosTheta, 5);
+    double x = (n1 - n2) / (n1 + n2);
+    double F0 = x * x; // F0 = (n1 - n2)^2
+    double y = 1 - cosTheta;
+    double y2 = y * y;
+    double y5 = y2 * y2 * y;
+    double F = F0 + (1 - F0) * y5;
 
     double albedo;
     double branchPDF;
