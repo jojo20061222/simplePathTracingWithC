@@ -100,6 +100,10 @@ double tungstenLampBase(double wavelength) {
 }
 
 double sunlightBase(double wavelength) {
-    return getBlackbodyIntensity(wavelength, 5500) /
+    return getBlackbodyIntensity(wavelength, 5500)/
            20481294390815.578125; // getBlackbodyIntensity(555, 5500)
+}
+
+double whiteLight(double wavelength) {
+    return getBlackbodyIntensity(wavelength, 6500)/ getBlackbodyIntensity(555, 6500);
 }

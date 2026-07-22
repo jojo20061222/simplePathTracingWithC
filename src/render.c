@@ -124,8 +124,12 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double F = F0 + (1 - F0) * y5;
 
     double albedo = 1;
+    if (firstCollideObject->texture.metalic) {
+        nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
+        albedo = F;
+    }
 
-    if (randomReal(mt) > F && !firstCollideObject->texture.metalic) {
+    else if (randomReal(mt) > F) {
         // We DO NOT consider the refraction or diffusion of metals
         if (!firstCollideObject->texture.transparent) {
             // Branch Diffusion, only non-transparent materials need to do this
@@ -167,12 +171,11 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // ray, r is the direction of reflection
     else {
         nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-        // the color of metal is decided by its refractivity, so no need to consider its base color
         albedo = 1;
     }
 
     ReversedRay nxtRay =
-        newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
+        newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)), nxtDirection, ray.waveLength);
 
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) *

@@ -68,9 +68,9 @@ double pureWhite(double _) { return 0.5; }
 
 double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 
-Complex plastic(double _) { return (Complex){1.5, 0}; }
+Complex plastic(double _) { return (Complex){1.5, 0.0}; }
 
-Complex air(double _) { return (Complex){1.0, 0}; };
+Complex air(double _) { return (Complex){1.0, 0.0}; };
 
 Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lineCount) {
     if (lambda < startLambda) return (Complex){0, 0};

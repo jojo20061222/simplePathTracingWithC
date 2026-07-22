@@ -41,4 +41,6 @@ double getBlackbodyIntensity(double T, double waveLength);
 double tungstenLampBase(double waveLength);
 
 double sunlightBase(double waveLength);
+
+double whiteLight(double wavelength);
 #endif

@@ -45,11 +45,11 @@ int main() {
     pushBack(&objects, &obj2, Object *);
 
     Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, copper);
+    Object obj3 = newObject((Shape *)&sph, gold);
     pushBack(&objects, &obj3, Object *);
 
     Sphere lightSourceSph = newSphere((Point){0, -400, 1200}, 150);
-    LightSource lightSource = {(Shape *)&lightSourceSph, sunlightBase};
+    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 
