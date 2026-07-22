@@ -5,8 +5,8 @@
 
 typedef struct {
     double (*baseColor)(double lambda);
-    Complex (*refractiveIndexOutside)(double lambda);
     Complex (*refractiveIndexInside)(double lambda);
+    Complex (*refractiveIndexOutside)(double lambda);
     bool transparent;
     bool metalic;
 } Texture;

@@ -14,19 +14,19 @@ static const int AG_LINE_COUNT = 446;
 static Complex AgEta[AG_LINE_COUNT];
 static const char AG_PATH_N[] = "src/static/ag_n.csv";
 static const char AG_PATH_K[] = "src/static/ag_k.csv";
-static const double AG_LAMBDA_STEP = 0.001;
+static const double AG_LAMBDA_STEP = 1;
 
 static const int AU_LINE_COUNT = 46;
 static Complex AuEta[AU_LINE_COUNT];
 static const char AU_PATH_N[] = "src/static/au_n.csv";
 static const char AU_PATH_K[] = "src/static/au_k.csv";
-static const double AU_LAMBDA_STEP = 0.01;
+static const double AU_LAMBDA_STEP = 10;
 
 static const int CU_LINE_COUNT = 46;
 static Complex CuEta[CU_LINE_COUNT];
 static const char CU_PATH_N[] = "src/static/cu_n.csv";
 static const char CU_PATH_K[] = "src/static/cu_k.csv";
-static const double CU_LAMBDA_STEP = 0.01;
+static const double CU_LAMBDA_STEP = 10;
 
 static const double startLambda = 390;
 
@@ -73,10 +73,11 @@ Complex plastic(double _) { return (Complex){1.5, 0}; }
 Complex air(double _) { return (Complex){1.0, 0}; };
 
 Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lineCount) {
-    if (lambda <= startLambda) return (Complex){0, 0};
-    if (lambda >= startLambda + lineCount * lambdaStep) return (Complex){0, 0};
+    if (lambda < startLambda) return (Complex){0, 0};
+    if (lambda > startLambda + lineCount * lambdaStep) return (Complex){0, 0};
     int slot = (lambda - startLambda) / lambdaStep;
-    if (slot == lineCount) return (Complex){0, 0};
+    if (slot < 0) return (Complex){0, 0};
+    if (slot >= lineCount) return (Complex){0, 0};
     int preLambda = startLambda + lambdaStep * slot;
     int nxtLambda = startLambda + lambdaStep * (slot + 1);
     return (Complex){lerp(preLambda, nxtLambda, lambda, eta[slot].R, eta[slot + 1].R),

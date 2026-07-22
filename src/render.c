@@ -7,8 +7,8 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
+#include <stdio.h>
 
 static const double startWavelength = 390;
 static const double endWavelength = 790;
@@ -100,7 +100,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
     Complex n1, n2;
     if (vecDot(N, d) > 0) {
-        // N vecDot d > 0 implys the ray is now in the object
+        // N vecDot d < 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
         N = (Vector){-N.x, -N.y, -N.z};
         n1 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
@@ -110,7 +110,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         n1 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
         n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
     }
-    // printf("n2: %lf + %lfi\n", n2.R, n2.I);
     Vector nxtDirection;
 
     // in such case we need to throw a dice first to decide which way to reflect
@@ -118,7 +117,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // the reflection probability is decided by Fresnell Equaltion
 
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
-    double F0 = x * x; // F0 = (n1 - n2)^2
+    double F0 = x * x;
     double y = 1 - cosTheta;
     double y2 = y * y;
     double y5 = y2 * y2 * y;
@@ -127,7 +126,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double albedo = 1;
 
     if (randomReal(mt) > F && !firstCollideObject->texture.metalic) {
-        // We DO NOT consider the refraction of metals
+        // We DO NOT consider the refraction or diffusion of metals
         if (!firstCollideObject->texture.transparent) {
             // Branch Diffusion, only non-transparent materials need to do this
             // first we generate a random point within a circle (uniformly)
