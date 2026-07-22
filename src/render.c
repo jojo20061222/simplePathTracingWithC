@@ -98,7 +98,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
     Vector N = unitVector(
         firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
-    double n1, n2;
+    Complex n1, n2;
     if (vecDot(N, d) > 0) {
         // N vecDot d > 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
@@ -116,44 +116,49 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double cosTheta = -vecDot(d, N) / (lengthOf(d) * lengthOf(N));
     // the reflection probability is decided by Fresnell Equaltion
 
-    double x = (n1 - n2) / (n1 + n2);
+    double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x; // F0 = (n1 - n2)^2
     double y = 1 - cosTheta;
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
 
-    double albedo;
-    double branchPDF;
+    double  = 1;
 
-    if (randomReal(mt) > F) {
-        // first we generate a random point within a circle (uniformly)
-        // To convert this into distribution of probabilty, we find the probability near center
-        // of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2)
-        // we want to use a uniform distributed variable u1 to decide if the point is in such area,
-        // so u = (r/R)^2, r = Rsqrt(u)
-        // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-        double u1 = randomReal(mt), u2 = randomReal(mt);
-        double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
+    if (randomReal(mt) > F && !firstCollideObject->texture.metalic) {
+        // We DO NOT consider the refraction of metals
+        if  (!firstCollideObject->texture.transparent) {
+            // Branch Diffusion, only non-transparent materials need to do this
+            // first we generate a random point within a circle (uniformly)
+            // To convert this into distribution of probabilty, we find the probability near center
+            // of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2)
+            // we want to use a uniform distributed variable u1 to decide if the point is in such
+            // area, so u = (r/R)^2, r = Rsqrt(u)
+            // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
+            double u1 = randomReal(mt), u2 = randomReal(mt);
+            double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
 
-        // then we shall project it onto an sphere, then we get the cosine distribution normally
-        // suppose the normal vector point towards z-axis, then base on sphirical coordinate
-        // <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
-        // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
-        Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+            // then we shall project it onto an sphere, then we get the cosine distribution normally
+            // suppose the normal vector point towards z-axis, then base on sphirical coordinate
+            // <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
+            // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
+            Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
 
-        // finally we turn this into right angle
-        Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
-        Vector T = unitVector(vecCross(helper, N));
-        Vector B = vecCross(N, T);
-        // project the unturned to turned
-        nxtDirection = (Vector){
-            unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
-            unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
-            unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
+            // finally we turn this into right angle
+            Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
+            Vector T = unitVector(vecCross(helper, N));
+            Vector B = vecCross(N, T);
+            // project the unturned to turned
+            nxtDirection = (Vector){
+                unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
+                unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
+                unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
 
-        albedo = firstCollideObject->texture.baseColor(ray.waveLength);
-        branchPDF = 1 - F;
+            energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
+        }
+        else if (!firstCollideObject->texture.metalic) {
+            // TODO: refraction!
+        }
     }
 
     // case specular
@@ -162,14 +167,12 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     // ray, r is the direction of reflection
     else {
         nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-        albedo = 1.0;
-        branchPDF = F;
+        ener = 1.0;
     }
 
     ReversedRay nxtRay =
         newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
 
-    branchPDF = fmax(branchPDF, 1e-4);
     return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                              maxDepth - 1) *
            albedo;

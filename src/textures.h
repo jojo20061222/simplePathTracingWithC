@@ -1,23 +1,27 @@
 #ifndef TEXTURES_H
 #define TEXTURES_H
+#include "base.h"
+#include <stdbool.h>
 
 typedef struct {
     double (*baseColor)(double lambda);
-    double (*refractiveIndexOutside)(double lambda);
-    double (*refractiveIndexInside)(double lambda);
+    Complex (*refractiveIndexOutside)(double lambda);
+    Complex (*refractiveIndexInside)(double lambda);
+    bool transparent;
+    bool metalic;
 } Texture;
 
-Texture newTexture(double (*baseColor)(double), double (*refractiveIndexInside)(double), double (*refractiveIndexOutside)(double));
+Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
+                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic);
 
 double pureWhite(double lambda);
 
-double plastic(double lambda);
+Complex plastic(double lambda);
 
-double air(double lambda);
+Complex air(double lambda);
 
 double red(double lambda);
 
 void initTexture();
-
 
 #endif
