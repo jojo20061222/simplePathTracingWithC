@@ -14,22 +14,23 @@ typedef struct {
 Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic);
 
-double pureWhite(double lambda);
-
-Complex plastic(double lambda);
-
-Complex air(double lambda);
-
-double red(double lambda);
-
 void initTexture();
 
+// base colors
+double pureWhite(double lambda);
+double red(double lambda);
+
+// refractivities
+Complex getPlasticRefractivity(double lambda);
+Complex getAirRefractivity(double lambda);
 Complex getSilverRefractivity(double lambda);
-
 Complex getGoldRefractivity(double lambda);
-
 Complex getCopperRefractivity(double lambda);
-
 Complex getIronRefractivity(double lambda);
+
+Texture getGold();
+Texture getSilver();
+Texture getCopper();
+Texture getIron();
 
 #endif

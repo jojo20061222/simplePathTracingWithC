@@ -106,3 +106,7 @@ Complex getCopperRefractivity(double lambda) {
 Complex getIronRefractivity(double lambda) {
     return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
+
+Texture getGold() {
+    return newTexture(NULL, getGoldRefractivity, air, transparent, bool metalic)
+}
