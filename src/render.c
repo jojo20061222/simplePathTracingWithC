@@ -54,14 +54,13 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
 static inline Vector GGXVectorSamle(MT19937 *mt, double alpha) {
     double u1 = randomReal(mt), u2 = randomReal(mt);
     double theta = 2 * M_PI * u1;
-    double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u1));
+    double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
     double sinPhi = sqrt(1 - cosPhi * cosPhi);
     // <cos theta sihPhi, sin theta sin phi, cos phi>
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
 
 static inline Vector toWorld(Vector local, Vector N) {
-    // finally we turn this into right angle
     Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
     Vector T = unitVector(vecCross(helper, N));
     Vector B = vecCross(N, T);
@@ -134,28 +133,29 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector nxtDirection;
 
     double energyCoefficient = 1;
-    if (firstCollideObject->texture.metalic) {
-        // BRDF
-        Vector v = vecNegative(unitVector(ray.direction));
-        double alpha = fmax(1e-4, firstCollideObject->texture.roughness *
-                                      firstCollideObject->texture.roughness);
 
-        Vector h = toWorld(GGXVectorSamle(mt, alpha), N);
-        Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v);
-        // calculate F part
-        double cosTheta = vecDot(v, h);
-        double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
-        double F0 = x * x;
-        double y = 1 - cosTheta;
-        double y2 = y * y;
-        double y5 = y2 * y2 * y;
-        double F = F0 + (1 - F0) * y5;
+    Vector v = vecNegative(unitVector(ray.direction));
+    double alpha = firstCollideObject->texture.roughness * firstCollideObject->texture.roughness;
+
+    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);
+    Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v);
+    // calculate F part
+    double cosTheta = vecDot(v, h);
+    double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
+    double F0 = x * x;
+    double y = 1 - cosTheta;
+    double y2 = y * y;
+    double y5 = y2 * y2 * y;
+    double F = F0 + (1 - F0) * y5;
+    if (randomReal(mt) <= F) {
+        // BRDF
+
         // calculate V part = DG / PDF
-        double V =
-            0.5 / (vecDot(N, l) *
-                       sqrt(alpha * alpha + (1 - alpha * alpha) * vecDot(N, v) * vecDot(N, v)) +
-                   vecDot(N, v) *
-                       sqrt(alpha * alpha + (1 - alpha * alpha) * vecDot(N, l) * vecDot(N, l)));
+        double NdotV = vecDot(N, v);
+        double NdotL = vecDot(N, l);
+        double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
+                          NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
+
         nxtDirection = l;
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
@@ -164,50 +164,27 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                                  maxDepth - 1);
     }
 
-    else {
-        // in such case we need to throw a dice first to decide which way to reflect
-        double cosTheta = -vecDot(d, N) / (lengthOf(d) * lengthOf(N));
-        // the reflection probability is decided by Fresnell Equaltion
-        double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
-        double F0 = x * x;
-        double y = 1 - cosTheta;
-        double y2 = y * y;
-        double y5 = y2 * y2 * y;
-        double F = F0 + (1 - F0) * y5;
+    if (!firstCollideObject->texture.transparent) {
+        // Branch Diffusion, only non-transparent materials need to do this
+        // first we generate a random point within a circle (uniformly)
+        // To convert this into distribution of probabilty, we find the probability near
+        // center of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2) we want to use a
+        // uniform distributed variable u1 to decide if the point is in such area, so u =
+        // (r/R)^2, r = Rsqrt(u)
+        // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
+        double u1 = randomReal(mt), u2 = randomReal(mt);
+        double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
 
-        if (randomReal(mt) > F) {
-            // We DO NOT consider the refraction or diffusion of metals
-            if (!firstCollideObject->texture.transparent) {
-                // Branch Diffusion, only non-transparent materials need to do this
-                // first we generate a random point within a circle (uniformly)
-                // To convert this into distribution of probabilty, we find the probability near
-                // center of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2) we want to use a
-                // uniform distributed variable u1 to decide if the point is in such area, so u =
-                // (r/R)^2, r = Rsqrt(u)
-                // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-                double u1 = randomReal(mt), u2 = randomReal(mt);
-                double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
-
-                // then we shall project it onto an sphere, then we get the cosine distribution
-                // normally suppose the normal vector point towards z-axis, then base on sphirical
-                // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
-                // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
-                Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
-                nxtDirection = toWorld(local, N);
-                energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
-            }
-            else if (!firstCollideObject->texture.metalic) {
-                // TODO: refraction!
-            }
-        }
-        // case specular
-        // the direction of reflection can be calculated as r = d - 2(d vecDot N)N
-        // where N stands for unit vector of normal vector (n hat), d is the direction of original
-        // ray, r is the direction of reflection
-        else {
-            nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
-            energyCoefficient = 1;
-        }
+        // then we shall project it onto an sphere, then we get the cosine distribution
+        // normally suppose the normal vector point towards z-axis, then base on sphirical
+        // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
+        // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
+        Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+        nxtDirection = toWorld(local, N);
+        energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
+    }
+    else if (!firstCollideObject->texture.metalic) {
+        // TODO: refraction!
     }
 
     ReversedRay nxtRay =
