@@ -9,10 +9,11 @@ typedef struct {
     Complex (*refractiveIndexOutside)(double lambda);
     bool transparent;
     bool metalic;
+    double roughness;
 } Texture;
 
 Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic);
+                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic, double roughness);
 
 void initTexture();
 
@@ -28,9 +29,9 @@ Complex getGoldRefractivity(double lambda);
 Complex getCopperRefractivity(double lambda);
 Complex getIronRefractivity(double lambda);
 
-Texture getGold();
-Texture getSilver();
-Texture getCopper();
-Texture getIron();
+Texture getGold(double roughness);
+Texture getSilver(double roughness);
+Texture getCopper(double roughness);
+Texture getIron(double roughness);
 
 #endif

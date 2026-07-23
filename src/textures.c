@@ -5,9 +5,9 @@
 #include <stdlib.h>
 
 Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic) {
+                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic, double roughness) {
     return (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent,
-                     metalic};
+                     metalic, roughness};
 }
 
 static const int AG_LINE_COUNT = 446;
@@ -107,18 +107,18 @@ Complex getIronRefractivity(double lambda) {
     return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
 
-Texture getGold() {
-    return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true);
+Texture getGold(double roughness) {
+    return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getSilver() {
-    return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true);
+Texture getSilver(double roughness) {
+    return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getCopper() {
-    return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true);
+Texture getCopper(double roughness) {
+    return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getIron() {
-    return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true);
+Texture getIron(double roughness) {
+    return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
 }
