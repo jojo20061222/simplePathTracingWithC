@@ -33,7 +33,7 @@ static inline Vector vecMinus(Vector a, Vector b) {
 }
 
 static inline Vector vecNegative(Vector v) {
-    return 
+    return (Vector){-v.x, -v.y, -v.z};
 }
 
 static inline Vector vecMultiply(double c, Vector a) { return (Vector){c * a.x, c * a.y, c * a.z}; }
