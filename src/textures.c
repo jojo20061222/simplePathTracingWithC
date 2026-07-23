@@ -75,9 +75,9 @@ double pureWhite(double _) { return 0.5; }
 
 double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 
-Complex plastic(double _) { return (Complex){1.5, 0.0}; }
+Complex getPlasticRefractivity(double _) { return (Complex){1.5, 0.0}; }
 
-Complex air(double _) { return (Complex){1.0, 0.0}; };
+Complex getAirRefractivity(double _) { return (Complex){1.0, 0.0}; };
 
 Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lineCount) {
     if (lambda < startLambda) return (Complex){0, 0};
@@ -108,5 +108,17 @@ Complex getIronRefractivity(double lambda) {
 }
 
 Texture getGold() {
-    return newTexture(NULL, getGoldRefractivity, air, transparent, bool metalic)
+    return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true);
+}
+
+Texture getSilver() {
+    return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true);
+}
+
+Texture getCopper() {
+    return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true);
+}
+
+Texture getIron() {
+    return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true);
 }
