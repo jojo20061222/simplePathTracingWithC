@@ -130,39 +130,44 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         n1 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
         n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
     }
-    Vector nxtDirection;
 
-    double energyCoefficient = 1;
-
-    Vector v = vecNegative(unitVector(ray.direction));
+    Vector v = vecNegative(unitVector(ray.direction)); // from collide point to observer
     double alpha = firstCollideObject->texture.roughness * firstCollideObject->texture.roughness;
 
-    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);
-    Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v);
+    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample through GGX
+    Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double cosTheta = vecDot(v, h);
+    if (cosTheta <= 0) return 0;
+
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x;
     double y = 1 - cosTheta;
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
+
     if (randomReal(mt) <= F) {
         // BRDF
 
-        // calculate V part = DG / PDF
+        // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
+        if (NdotV <= 0) return 0;
         double NdotL = vecDot(N, l);
+        if (NdotL <= 0) return 0;
+
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
+        double finalFactor = V * vecDot(v, h) / vecDot(N, h);
 
-        nxtDirection = l;
+        Vector nxtDirection = l;
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
-        return F * V *
-               simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                                 maxDepth - 1);
+        return finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount,
+                                               mt, maxDepth - 1);
     }
+
+    if (firstCollideObject->texture.metalic) return 0; // metal only has specular
 
     if (!firstCollideObject->texture.transparent) {
         // Branch Diffusion, only non-transparent materials need to do this
@@ -180,19 +185,19 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
         // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
         Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
-        nxtDirection = toWorld(local, N);
-        energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
+        Vector nxtDirection = toWorld(local, N);
+        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+                                    nxtDirection, ray.waveLength);
+
+        return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+                                 maxDepth - 1) *
+               firstCollideObject->texture.baseColor(ray.waveLength);
     }
-    else if (!firstCollideObject->texture.metalic) {
+    else {
         // TODO: refraction!
     }
 
-    ReversedRay nxtRay =
-        newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)), nxtDirection, ray.waveLength);
-
-    return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                             maxDepth - 1) *
-           energyCoefficient;
+    return 0;
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
