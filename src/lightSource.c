@@ -104,6 +104,6 @@ double sunlightBase(double wavelength) {
            20481294390815.578125; // getBlackbodyIntensity(555, 5500)
 }
 
-double whiteLight(double wavelength) {
+double whiteLightBase(double wavelength) {
     return getBlackbodyIntensity(wavelength, 6500)/ getBlackbodyIntensity(555, 6500);
 }

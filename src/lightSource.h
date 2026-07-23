@@ -42,5 +42,5 @@ double tungstenLampBase(double waveLength);
 
 double sunlightBase(double waveLength);
 
-double whiteLight(double wavelength);
+double whiteLightBase(double wavelength);
 #endif

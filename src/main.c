@@ -8,6 +8,10 @@
 const int width = 1080;
 const int height = 720;
 
+LightIntensity whiteLight(double lambda) {
+    return whiteLightBase(lambda) * 100;
+}
+
 int main() {
     initLightIntensity();
     initTexture();
