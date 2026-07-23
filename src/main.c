@@ -26,7 +26,7 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    Texture whitePlastic = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 0);
+    Texture whitePlastic = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
     Texture redPlastic = newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
     
 
@@ -48,11 +48,11 @@ int main() {
     pushBack(&objects, &obj3, Object *);
 
     Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
-    Object obj4 = newObject((Shape *)&sph2, getGold(0)); 
+    Object obj4 = newObject((Shape *)&sph2, getGold(0.5)); 
     pushBack(&objects, &obj4, Object *);
 
     Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
-    Object obj5 = newObject((Shape *)&sph3, whitePlastic);
+    Object obj5 = newObject((Shape *)&sph3, redPlastic);
     pushBack(&objects, &obj5, Object *);
 
     Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 150);
