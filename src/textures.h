@@ -30,4 +30,6 @@ Complex getGoldRefractivity(double lambda);
 
 Complex getCopperRefractivity(double lambda);
 
+Complex getIronRefractivity(double lambda);
+
 #endif

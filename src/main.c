@@ -31,6 +31,7 @@ int main() {
     Texture gold = newTexture(NULL, getGoldRefractivity, air, false, true);
     Texture copper = newTexture(NULL, getCopperRefractivity, air, false, true);
     Texture silver = newTexture(NULL, getSilverRefractivity, air, false, true);
+    Texture iron = newTexture(NULL, getIronRefractivity, air, false, true);
 
     Object **objects = getDynamicArray(0, Object *);
 
@@ -50,7 +51,7 @@ int main() {
     pushBack(&objects, &obj3, Object *);
 
     Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
-    Object obj4 = newObject((Shape *)&sph2, copper);
+    Object obj4 = newObject((Shape *)&sph2, iron);
     pushBack(&objects, &obj4, Object *);
 
     Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);

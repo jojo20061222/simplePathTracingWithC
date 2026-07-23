@@ -28,6 +28,12 @@ static const char CU_PATH_N[] = "src/static/cu_n.csv";
 static const char CU_PATH_K[] = "src/static/cu_k.csv";
 static const double CU_LAMBDA_STEP = 10;
 
+static const int FE_LINE_COUNT = 46;
+static Complex FeEta[FE_LINE_COUNT];
+static const char FE_PATH_N[] = "src/static/fe_n.csv";
+static const char FE_PATH_K[] = "src/static/fe_k.csv";
+static const double FE_LAMBDA_STEP = 10;
+
 static const double startLambda = 390;
 
 static void readFile(const char *filePathN, const char *filePathK, Complex eta[], int lineCount) {
@@ -62,6 +68,7 @@ void initTexture() {
     readFile(AG_PATH_N, AG_PATH_K, AgEta, AG_LINE_COUNT);
     readFile(AU_PATH_N, AU_PATH_K, AuEta, AU_LINE_COUNT);
     readFile(CU_PATH_N, CU_PATH_K, CuEta, CU_LINE_COUNT);
+    readFile(FE_PATH_N, FE_PATH_K, FeEta, FE_LINE_COUNT);
 }
 
 double pureWhite(double _) { return 0.5; }
@@ -94,4 +101,8 @@ Complex getGoldRefractivity(double lambda) {
 
 Complex getCopperRefractivity(double lambda) {
     return getRefractivity(lambda, CuEta, CU_LAMBDA_STEP, CU_LINE_COUNT);
+}
+
+Complex getIronRefractivity(double lambda) {
+    return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
