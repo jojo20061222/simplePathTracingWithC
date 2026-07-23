@@ -51,7 +51,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
-Vector GGXAngleSamle(MT19937 *mt, double alpha) {
+static inline Vector GGXAngleSamle(MT19937 *mt, double alpha) {
     double u1 = randomReal(mt), u2 = randomReal(mt);
     double theta = 2 * M_PI * u1;
     double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u1));
@@ -60,7 +60,7 @@ Vector GGXAngleSamle(MT19937 *mt, double alpha) {
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
 
-Vector toWorld(Vector local, Vector N) {
+static inline Vector toWorld(Vector local, Vector N) {
     // finally we turn this into right angle
     Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
     Vector T = unitVector(vecCross(helper, N));
@@ -147,7 +147,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     double energyCoefficient = 1;
     if (firstCollideObject->texture.metalic) {
-        nxtDirection = vecMinus(d, vecMultiply(2 * vecDot(d, N), N));
+        // BRDF
+        Vector omega1 = unitVector(ray.direction);
         energyCoefficient = F;
     }
 
@@ -224,7 +225,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
         colorResult = colorAdd(
-            colorResult, colorComponent(intensityResults[i],
+            colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 

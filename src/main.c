@@ -8,10 +8,6 @@
 const int width = 1080;
 const int height = 720;
 
-LightIntensity whiteLight(double lambda) {
-    return whiteLightBase(lambda) * 100;
-}
-
 int main() {
     initLightIntensity();
     initTexture();
@@ -60,7 +56,7 @@ int main() {
     pushBack(&objects, &obj5, Object *);
 
     Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 150);
-    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
+    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLightBase};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 

@@ -32,6 +32,10 @@ static inline Vector vecMinus(Vector a, Vector b) {
     return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
+static inline Vector vecNegative(Vector v) {
+    return 
+}
+
 static inline Vector vecMultiply(double c, Vector a) { return (Vector){c * a.x, c * a.y, c * a.z}; }
 
 static inline double vecDot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
