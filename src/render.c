@@ -224,7 +224,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     ColorXYZ colorResult = {0, 0, 0};
     for (int i = 0; i < intervalCount; i++) {
         colorResult = colorAdd(
-            colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
+            colorResult, colorComponent(intensityResults[i],
                                         wavelengthToXYZ(randomWavelength + intervalSize * i)));
     }
 
