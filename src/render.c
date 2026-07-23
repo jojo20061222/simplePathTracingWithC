@@ -7,8 +7,8 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 static const double startWavelength = 390;
 static const double endWavelength = 790;
@@ -49,6 +49,28 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->m2[i] += delta * delta2;
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
+}
+
+Vector GGXAngleSamle(MT19937 *mt, double alpha) {
+    double u1 = randomReal(mt), u2 = randomReal(mt);
+    double theta = 2 * M_PI * u1;
+    double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u1));
+    double sinPhi = sqrt(1 - cosPhi * cosPhi);
+    // <cos theta sihPhi, sin theta sin phi, cos phi>
+    return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
+}
+
+Vector toWorld(Vector local, Vector N) {
+    // finally we turn this into right angle
+    Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
+    Vector T = unitVector(vecCross(helper, N));
+    Vector B = vecCross(N, T);
+    // project the unturned to turned
+    Vector nxtDirection =
+        (Vector){local.x * T.x + local.y * B.x + local.z * N.x,
+                 local.x * T.y + local.y * B.y + local.z * N.y,
+                 local.x * T.z + local.y * B.z + local.z * N.z};
+    return nxtDirection;
 }
 
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
@@ -146,18 +168,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
             // suppose the normal vector point towards z-axis, then base on sphirical coordinate
             // <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
             // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
-            Vector unturnedDirection = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
-
-            // finally we turn this into right angle
-            Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
-            Vector T = unitVector(vecCross(helper, N));
-            Vector B = vecCross(N, T);
-            // project the unturned to turned
-            nxtDirection = (Vector){
-                unturnedDirection.x * T.x + unturnedDirection.y * B.x + unturnedDirection.z * N.x,
-                unturnedDirection.x * T.y + unturnedDirection.y * B.y + unturnedDirection.z * N.y,
-                unturnedDirection.x * T.z + unturnedDirection.y * B.z + unturnedDirection.z * N.z};
-
+            Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+            nxtDirection = toWorld(local, N);
             energyCoefficient *= firstCollideObject->texture.baseColor(ray.waveLength);
         }
         else if (!firstCollideObject->texture.metalic) {
