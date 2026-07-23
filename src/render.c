@@ -136,22 +136,32 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double energyCoefficient = 1;
     if (firstCollideObject->texture.metalic) {
         // BRDF
-        Vector omegaI = vecNegative(unitVector(ray.direction));
-        double alpha =
-            firstCollideObject->texture.roughness * firstCollideObject->texture.roughness;
-        Vector m = toWorld(GGXVectorSamle(mt, alpha), N);
-        Vector omegaO = vecMinus(d, vecMultiply(2 * vecDot(d, m), m));
+        Vector v = vecNegative(unitVector(ray.direction));
+        double alpha = fmax(1e-4, firstCollideObject->texture.roughness *
+                                      firstCollideObject->texture.roughness);
+
+        Vector h = toWorld(GGXVectorSamle(mt, alpha), N);
+        Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v);
         // calculate F part
-        double cosTheta = vecDot(omegaI, m);
+        double cosTheta = vecDot(v, h);
         double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
         double F0 = x * x;
         double y = 1 - cosTheta;
         double y2 = y * y;
         double y5 = y2 * y2 * y;
         double F = F0 + (1 - F0) * y5;
-        // calculate G part
-        // Smith Model
-        double G = ;
+        // calculate V part = DG / PDF
+        double V =
+            0.5 / (vecDot(N, l) *
+                       sqrt(alpha * alpha + (1 - alpha * alpha) * vecDot(N, v) * vecDot(N, v)) +
+                   vecDot(N, v) *
+                       sqrt(alpha * alpha + (1 - alpha * alpha) * vecDot(N, l) * vecDot(N, l)));
+        nxtDirection = l;
+        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+                                    nxtDirection, ray.waveLength);
+        return F * V *
+               simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+                                 maxDepth - 1);
     }
 
     else {
