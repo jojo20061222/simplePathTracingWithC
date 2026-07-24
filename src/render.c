@@ -65,7 +65,7 @@ static inline Vector toWorld(Vector local, Vector N) {
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
-    if (maxDepth == 0) return NAN;
+    if (maxDepth == 0) return 0;
 
     // first we see if this light first touches a light source
     // to attain that, we need to simulate both collide with sources and objects to decide which is
@@ -129,7 +129,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double vDotH = vecDot(v, h);
-    if (vDotH <= 0) return NAN;
+    if (vDotH <= 0) return 0;
     double cosTheta = vDotH;
 
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
@@ -147,9 +147,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
-        if (NdotV <= 0) return NAN;
-        if (NdotL <= 0) return NAN;
-        if (NdotH <= 0) return NAN;
+        if (NdotV <= 0 || NdotL <= 0 || NdotH <= 0) return 0;
 
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
