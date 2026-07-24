@@ -40,8 +40,6 @@ void *worker(void *para) {
     static const int blockSize = 16;
     static const int threshold = 200;
     int blockCount = 0;
-    // int total = rightBoundary - leftBoundary + 1;
-    // int working = total;
 
     while (*workerPara->exit == 0) {
         for (int i = 0; i < blockSize && *workerPara->exit == 0; i++) {
@@ -52,7 +50,7 @@ void *worker(void *para) {
                             maxDepth);
             }
         }
-        if(++blockCount <= threshold) continue;
+        if (++blockCount <= threshold) continue;
         for (int i = leftBoundary; i <= rightBoundary && *workerPara->exit == 0; i++) {
             int x = i % s->width, y = i / s->width;
             if (!*accessConverge(s, x, y)) {
@@ -63,7 +61,6 @@ void *worker(void *para) {
                 }
             }
         }
-        // printf("worker %d: left %lf %% working\n", workerPara->id, (double)workerCount / (double)total * 100);
     }
 
     destroyMT19937(mt);
@@ -96,8 +93,6 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
         parai->sources = sources;
         parai->sourcesCount = sourcesCount;
         parai->vs = vs;
-        // parai->start = start;
-        // parai->end = end;
         parai->workerCount = threadCount;
         parai->camera = camera;
         parai->maxDepth = maxDepth;
@@ -106,8 +101,6 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object 
     }
 
     result->threadPool = threadPool;
-    // result->start = start;
-    // result->end = end;
     result->threadCount = threadCount;
     return result;
 }

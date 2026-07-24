@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 11;
+static const int threadCount = 30;
 
 int main() {
     initLightIntensity();

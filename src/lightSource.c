@@ -72,9 +72,6 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     double X = xyz.X;
     double Y = xyz.Y;
     double Z = xyz.Z;
-    assert(isfinite(X));
-    assert(isfinite(Y));
-    assert(isfinite(Z));
 
     uint8_t R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
     uint8_t G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);

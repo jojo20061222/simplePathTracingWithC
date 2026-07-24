@@ -212,28 +212,21 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
      * goes through a pixel, then see if it collide with an object. If it collides with an object
      * then do something consequently.
      */
-    // we divide the interval [390, 790] into 4 intervals averagely
-    const int intervalCount = 4;
-    const double intervalSize = (endWavelength - startWavelength) / (double)intervalCount;
-    ReversedRay initRays[intervalCount];
-    LightIntensity intensityResults[intervalCount];
-    double randomWavelength =
-        randomReal(mt) * (endWavelength - startWavelength) / intervalCount + startWavelength;
+    double intervalSize = endWavelength - startWavelength;
+    ReversedRay initRay;
+    LightIntensity intensityResult;
+    double randomWavelength = randomReal(mt) * intervalSize + startWavelength;
 
-    for (int i = 0; i < intervalCount; i++) {
-        initRays[i] = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera),
-                             randomWavelength + intervalSize * i);
+    initRay = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera),
+                     randomWavelength);
 
-        intensityResults[i] = simulateSingleRay(initRays[i], objects, objectsCount, sources,
-                                                sourcesCount, mt, maxDepth);
-    }
+    intensityResult =
+        simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
 
-    ColorXYZ colorResult = {0, 0, 0};
-    for (int i = 0; i < intervalCount; i++) {
-        colorResult = colorAdd(
-            colorResult, colorComponent(intensityResults[i] * intervalSize, // / PDF
-                                        wavelengthToXYZ(randomWavelength + intervalSize * i)));
-    }
+    if (!isfinite(intensityResult * intervalSize)) return;
+
+    ColorXYZ colorResult =
+        colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
 
     updateScreen(s, x, y, colorResult);
     return;
