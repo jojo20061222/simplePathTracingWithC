@@ -148,18 +148,26 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
+    static int i = 0;
 
     if (firstCollideObject->texture.metalic || randomReal(mt) <= F) {
         // BRDF
 
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
+        double NdotL = vecDot(N, l);
+        double NdotH = vecDot(N, h);
+#ifdef DEBUG
+        if (NdotH <= 0 || NdotL <= 0 || NdotH <= 0) {
+            fprintf(stderr,
+                    "vDotH: %lf, F: %lf, NdotV: %lf, NdotL: %lf, NdotH: %lf\n",
+                    vDotH, F, NdotV, NdotL, NdotH);
+        }
+#endif
         if (NdotV <= 0) return 0;
         NdotV = fmax(NdotV, 1e-5);
-        double NdotL = vecDot(N, l);
         if (NdotL <= 0) return 0;
         NdotL = fmax(NdotL, 1e-5);
-        double NdotH = vecDot(N, h);
         if (NdotH <= 0) return 0;
         NdotH = fmax(NdotH, 1e-5);
 
