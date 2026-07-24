@@ -20,8 +20,10 @@ VirtualScreen *newScreen(int width, int height) {
     result->buffer = calloc(width * height, sizeof(*result->buffer));
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
     result->mean = calloc(width * height, sizeof(*result->mean));
+#ifdef ADAPTIVE
     result->m2 = calloc(width * height, sizeof(*result->m2));
     result->converge = calloc(width * height, sizeof(*result->converge));
+#endif
 
     return result;
 }
@@ -30,8 +32,6 @@ void freeScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->mean);
     free(screen->renderCount);
-    free(screen->m2);
-    free(screen->converge);
     free(screen);
     return;
 }

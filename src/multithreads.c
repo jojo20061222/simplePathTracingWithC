@@ -55,7 +55,7 @@ void *worker(void *para) {
             int x = i % s->width, y = i / s->width;
             if (!*accessConverge(s, x, y)) {
                 double RE = getRelativeError(s, x, y);
-                if (RE < 0.0001) {
+                if (RE < error) {
                     *accessConverge(s, x, y) = true;
                 }
             }
