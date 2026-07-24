@@ -1,8 +1,8 @@
 #include "lightSource.h"
+#include <assert.h>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <assert.h>
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray) {
     CollideResult result = source->shape->detectCollide(source->shape, ray);
@@ -51,11 +51,13 @@ ColorXYZ wavelengthToXYZ(double waveLength) {
                     convertTable[slot + 1].Y);
     double Z = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Z,
                     convertTable[slot + 1].Z);
+
     return (ColorXYZ){X, Y, Z};
 }
 
 static inline double adj(double C) {
     double sRGB;
+    if (C < 0) C = 0; // clamp
     if (fabs(C) < 0.0031308) {
         sRGB = 12.92 * C;
     }

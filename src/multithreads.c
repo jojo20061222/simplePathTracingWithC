@@ -56,7 +56,6 @@ void *worker(void *para) {
             if (!*accessConverge(s, x, y)) {
                 double RE = getRelativeError(s, x, y);
                 if (RE < 0.0001) {
-                    // working--;
                     *accessConverge(s, x, y) = true;
                 }
             }
