@@ -37,28 +37,11 @@ void *worker(void *para) {
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
-    static const int blockSize = 16;
-    static const int threshold = 200;
-    int blockCount = 0;
-
     while (*workerPara->exit == 0) {
-        for (int i = 0; i < blockSize && *workerPara->exit == 0; i++) {
-            for (int i = leftBoundary; i <= rightBoundary; i++) {
-                int x = i % s->width, y = i / s->width;
-                if (*accessConverge(s, x, y)) continue;
-                renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
-                            maxDepth);
-            }
-        }
-        if (++blockCount <= threshold) continue;
-        for (int i = leftBoundary; i <= rightBoundary && *workerPara->exit == 0; i++) {
+        for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
-            if (!*accessConverge(s, x, y)) {
-                double RE = getRelativeError(s, x, y);
-                if (RE < error) {
-                    *accessConverge(s, x, y) = true;
-                }
-            }
+            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
+                        maxDepth);
         }
     }
 

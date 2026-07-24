@@ -44,11 +44,11 @@ int main() {
     pushBack(&objects, &obj2, Object *);
 
     Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, getGold(0));
+    Object obj3 = newObject((Shape *)&sph, getGold(0.3));
     pushBack(&objects, &obj3, Object *);
 
     Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
-    Object obj4 = newObject((Shape *)&sph2, getGold(1)); 
+    Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
     pushBack(&objects, &obj4, Object *);
 
     Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);

@@ -20,11 +20,6 @@ VirtualScreen *newScreen(int width, int height) {
     result->buffer = calloc(width * height, sizeof(*result->buffer));
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
     result->mean = calloc(width * height, sizeof(*result->mean));
-#ifdef ADAPTIVE
-    result->m2 = calloc(width * height, sizeof(*result->m2));
-    result->converge = calloc(width * height, sizeof(*result->converge));
-#endif
-
     return result;
 }
 
@@ -40,13 +35,9 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     int i = y * vs->width + x;
     // use Wellford's Algorithm to calculate variance
     int n = ++vs->renderCount[i];
-    double delta = color.Y - vs->mean[i].Y;
     vs->mean[i].X += (color.X - vs->mean[i].X) / n;
     vs->mean[i].Y += (color.Y - vs->mean[i].Y) / n;
     vs->mean[i].Z += (color.Z - vs->mean[i].Z) / n;
-
-    double delta2 = color.Y - vs->mean[i].Y;
-    vs->m2[i] += delta * delta2;
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
