@@ -138,6 +138,8 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double vDotH = vecDot(v, h);
+    if (vDotH <= 0) return 0;
+    vDotH = fmax(vDotH, 1e-5);
     double cosTheta = vDotH;
 
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
@@ -152,7 +154,11 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
+        if (NdotV <= 0) return 0;
+        NdotV = fmax(NdotV, 1e-5);
         double NdotL = vecDot(N, l);
+        if (NdotL <= 0) return 0;
+        NdotL = fmax(NdotL, 1e-5);
         double NdotH = vecDot(N, h);
         if (NdotH <= 0) return 0;
         NdotH = fmax(NdotH, 1e-5);
@@ -167,13 +173,14 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                                     nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources,
                                                         sourcesCount, mt, maxDepth - 1);
-
+#ifdef DEBUG
         if (!isfinite(result)) {
             fprintf(stderr,
                     "vDotH: %lf, F: %lf, NdotV: %lf, NdotL: %lf, NdotH: %lf, V: %lf, finalFactor: "
                     "%lf, result: %lf\n",
                     vDotH, F, NdotV, NdotL, NdotH, V, finalFactor, result);
         }
+#endif
 
         return result;
     }
@@ -232,19 +239,23 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
     intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
 
+#ifdef DEBUG
     if (!isfinite(intensityResult * intervalSize)) {
         fprintf(stderr,
                 "intersityResult: %lf, intervalSize: %lf, intensityResult * intervalsize: %lf",
                 intensityResult, intervalSize, intensityResult * intervalSize);
     }
+#endif
 
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
 
+#ifdef DEBUG
     if (!isfinite(colorResult.X) || !isfinite(colorResult.Y) || !isfinite(colorResult.Z)) {
         printf("colorResult.X: %lf, colorResult.Y: %lf, colorResult.Z: %lf", colorResult.X,
                colorResult.Y, colorResult.Z);
     }
+#endif
 
     updateScreen(s, x, y, colorResult);
     return;
