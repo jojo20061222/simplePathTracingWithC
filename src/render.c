@@ -138,7 +138,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double cosTheta = vecDot(v, h);
-    if (cosTheta <= 0) return 0;
 
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x;
@@ -152,9 +151,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
-        if (NdotV <= 0) return 0;
         double NdotL = vecDot(N, l);
-        if (NdotL <= 0) return 0;
 
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
@@ -164,8 +161,13 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         Vector nxtDirection = l;
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
-        return finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount,
-                                               mt, maxDepth - 1);
+        double result = finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount,
+                                               mt, maxDepth - 1); 
+        
+        if (!isfinite(result)) {
+            printf("")
+        }
+        return result;
     }
 
     if (firstCollideObject->texture.metalic) return 0; // metal only has specular
