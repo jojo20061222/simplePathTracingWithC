@@ -2,6 +2,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 
 CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray) {
     CollideResult result = source->shape->detectCollide(source->shape, ray);
@@ -71,6 +72,10 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     double X = xyz.X;
     double Y = xyz.Y;
     double Z = xyz.Z;
+    assert(isfinite(X));
+    assert(isfinite(Y));
+    assert(isfinite(Z));
+
     uint8_t R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
     uint8_t G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);
     uint8_t B = adj(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z);
@@ -100,10 +105,10 @@ double tungstenLampBase(double wavelength) {
 }
 
 double sunlightBase(double wavelength) {
-    return getBlackbodyIntensity(wavelength, 5500)/
+    return getBlackbodyIntensity(wavelength, 5500) /
            20481294390815.578125; // getBlackbodyIntensity(555, 5500)
 }
 
 double whiteLightBase(double wavelength) {
-    return getBlackbodyIntensity(wavelength, 6500)/ getBlackbodyIntensity(555, 6500);
+    return getBlackbodyIntensity(wavelength, 6500) / getBlackbodyIntensity(555, 6500);
 }

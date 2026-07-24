@@ -2,6 +2,7 @@
 #include <limits.h>
 #include <stdlib.h>
 
+
 MT19937 *initMT19937(uint32_t seed) {
     MT19937 *mt = malloc(sizeof(MT19937));
     mt->mt = malloc(sizeof(uint32_t) * 624);

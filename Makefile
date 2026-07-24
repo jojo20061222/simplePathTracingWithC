@@ -73,7 +73,7 @@ build/render.o: src/render.c src/render.h src/base.h src/dynamicArray.h \
 	clang -o $@ -c $< -O2 -pthread -g
 build/shapes.o: src/shapes.c src/shapes.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g
-build/textures.o: src/textures.c src/textures.h
+build/textures.o: src/textures.c src/textures.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g
 bin/main: build/base.o build/lightSource.o build/main.o build/multithreads.o build/object.o build/random.o build/render.o build/shapes.o build/textures.o 
 	clang $^ -o $@ `sdl2-config --libs` -lm -lpthread

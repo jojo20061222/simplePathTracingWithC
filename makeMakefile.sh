@@ -26,8 +26,14 @@ mainDependency="$binaryPath/main: "
 
 for file in src/*.c; do
     filename=$(basename $file)
+    if [[ $filename == pathTracing.c ]]; then
+        continue
+    fi
+    
     xfpref=${filename%%.*}
     mainDependency+="$buildPath/$xfpref.o "
+
+
     if [[ $filename == main.c ]]; then
         echo "$buildPath/$($CC `sdl2-config --cflags` -MM $file)"
         echo -e "\t$CC -o \$@ -c \$< \`sdl2-config --cflags\` $optimizationFlags"
