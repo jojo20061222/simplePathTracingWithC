@@ -45,7 +45,7 @@ void *worker(void *para) {
         for (int i = 0; i < blockSize && *workerPara->exit == 0; i++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 int x = i % s->width, y = i / s->width;
-                if (*accessConverge(s, x, y)) continue;
+                // if (*accessConverge(s, x, y)) continue;
                 renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
                             maxDepth);
             }
