@@ -74,7 +74,7 @@ static inline Vector toWorld(Vector local, Vector N) {
 LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
-    if (maxDepth == 0) return 0.0;
+    if (maxDepth == 0) return NAN;
 
     // first we see if this light first touches a light source
     // to attain that, we need to simulate both collide with sources and objects to decide which is
@@ -138,8 +138,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double vDotH = vecDot(v, h);
-    if (vDotH <= 0) return 0;
-    vDotH = fmax(vDotH, 1e-5);
+    if (vDotH <= 0) return NAN;
     double cosTheta = vDotH;
 
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
@@ -157,12 +156,9 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
-        if (NdotV <= 0) return 0;
-        NdotV = fmax(NdotV, 1e-5);
-        if (NdotL <= 0) return 0;
-        NdotL = fmax(NdotL, 1e-5);
-        if (NdotH <= 0) return 0;
-        NdotH = fmax(NdotH, 1e-5);
+        if (NdotV <= 0) return NAN;
+        if (NdotL <= 0) return NAN;
+        if (NdotH <= 0) return NAN;
 
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
@@ -174,15 +170,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                                     nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources,
                                                         sourcesCount, mt, maxDepth - 1);
-#ifdef DEBUG
-        if (!isfinite(result)) {
-            fprintf(stderr,
-                    "vDotH: %lf, F: %lf, NdotV: %lf, NdotL: %lf, NdotH: %lf, V: %lf, finalFactor: "
-                    "%lf, result: %lf\n",
-                    vDotH, F, NdotV, NdotL, NdotH, V, finalFactor, result);
-        }
-#endif
-
         return result;
     }
 
@@ -216,7 +203,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         // TODO: refraction!
     }
 
-    return 0;
+    return NAN;
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
@@ -239,24 +226,12 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
+    
+    if (!isfinite(intensityResult)) return;
 
-#ifdef DEBUG
-    if (!isfinite(intensityResult * intervalSize)) {
-        fprintf(stderr,
-                "intersityResult: %lf, intervalSize: %lf, intensityResult * intervalsize: %lf",
-                intensityResult, intervalSize, intensityResult * intervalSize);
-    }
-#endif
 
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
-
-#ifdef DEBUG
-    if (!isfinite(colorResult.X) || !isfinite(colorResult.Y) || !isfinite(colorResult.Z)) {
-        printf("colorResult.X: %lf, colorResult.Y: %lf, colorResult.Z: %lf", colorResult.X,
-               colorResult.Y, colorResult.Z);
-    }
-#endif
 
     updateScreen(s, x, y, colorResult);
     return;
