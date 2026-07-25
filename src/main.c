@@ -8,6 +8,11 @@
 const int width = 1080;
 const int height = 720;
 
+
+double whiteLight(double waveLength) {
+    return 1 * whiteLightBase(waveLength);
+}
+
 int main() {
     initLightIntensity();
     initTexture();
@@ -43,20 +48,20 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, getGold(0.3));
+    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 150, 1500}, 100);
+    Object obj3 = newObject((Shape *)&sph, getGlass());
     pushBack(&objects, &obj3, Object *);
 
     Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
     Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
-    pushBack(&objects, &obj4, Object *);
+    // pushBack(&objects, &obj4, Object *);
 
     Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
     Object obj5 = newObject((Shape *)&sph3, getGold(0.5));
-    pushBack(&objects, &obj5, Object *);
+    // pushBack(&objects, &obj5, Object *);
 
-    Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 150);
-    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLightBase};
+    Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 300);
+    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 
@@ -64,7 +69,7 @@ int main() {
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                         (const LightSource **)sources, getSize(sources), &camera, 10);
+                         (const LightSource **)sources, getSize(sources), &camera, 100);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

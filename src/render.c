@@ -122,64 +122,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
         n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
     }
 
-    if (firstCollideObject->texture.transparent) {
-        // First we test the condition that all transparent object have smooth surface (roughness =
-        // 0)
-        /*
-         * Directly by Snell's law
-         * First we check out the total internal reflection
-         * The condition is n1 sin(theta1) >= n2
-         * Take square both side we have n1^2 (1 - cos^2(theta1)) >= n2^2
-         */
-        Vector I = unitVector(d);
-        double cosTheta1 = -vecDot(N, I);
-        double n1R = n1.R;
-        double n2R = n2.R;
-        if (n1R * n1R * (1 - cosTheta1 * cosTheta1) >= n2R * n2R) {
-            Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
-            ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
-                                        nxtDirection, ray.waveLength);
-            return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                                     maxDepth - 1);
-        }
-
-        /*
-         * We simply assume that
-         * >> I = <sin(Theta1), -cos(Theta1)>
-         * >> O = <sin(Theta2), -cos(Theta2)>
-         * >> N = <0, 1>
-         *
-         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
-         * we simply use these simplified vectors to do linear combinations and the results won't
-         * change
-         *
-         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
-         *
-         * Hence,
-         * >> (n1/n2)sin(Theta1) = sin(Theta2)
-         * we take relative refractivity as eta
-         * >> eta * sin(Theta1) = sin(Theta2)
-         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
-         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
-         *
-         * We first do the cosine part
-         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
-         *
-         * Then the sine part
-         * >> eta * I + eta * cos(Theta1) N
-         * Sum up the reault
-         * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
-         */
-        double eta = n1R / n2R;
-        double coefficientOfSecondPart =
-            eta * cosTheta1 - sqrt(1 - eta * eta * (1 - cosTheta1 * cosTheta1));
-        Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
-        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
-                                    nxtDirection, ray.waveLength);
-        return simulateSingleRay(ray, objects, objectsCount, sources, sourcesCount, mt,
-                                 maxDepth - 1);
-    }
-
     Vector v = vecNegative(unitVector(ray.direction)); // from collide point to observer
     double alpha = firstCollideObject->texture.roughness * firstCollideObject->texture.roughness;
 
@@ -222,7 +164,67 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     if (firstCollideObject->texture.metalic) return 0; // metal only has specular
 
-    if (!firstCollideObject->texture.transparent) {
+    if (firstCollideObject->texture.transparent) {
+        // First we test the condition that all transparent object have smooth surface (roughness =
+        // 0)
+        /*
+         * Directly by Snell's law
+         * First we check out the total internal reflection
+         * The condition is n1 sin(theta1) >= n2
+         * Take square both side we have n1^2 (1 - cos^2(theta1)) >= n2^2
+         */
+        Vector I = unitVector(d);
+        double cosTheta1 = -vecDot(N, I);
+        assert(cosTheta1 >= 0);
+        double n1R = n1.R;
+        double n2R = n2.R;
+        double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
+        if (n1R * n1R * sin2Theta1 >= n2R * n2R) {
+            Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
+            ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+                                        nxtDirection, ray.waveLength);
+            return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+                                     maxDepth - 1);
+        }
+
+        /*
+         * We simply assume that
+         * >> I = <sin(Theta1), -cos(Theta1)>
+         * >> O = <sin(Theta2), -cos(Theta2)>
+         * >> N = <0, 1>
+         *
+         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
+         * we simply use these simplified vectors to do linear combinations and the results won't
+         * change
+         *
+         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
+         *
+         * Hence,
+         * >> (n1/n2)sin(Theta1) = sin(Theta2)
+         * we take relative refractivity as eta
+         * >> eta * sin(Theta1) = sin(Theta2)
+         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
+         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
+         *
+         * We first do the cosine part
+         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
+         *
+         * Then the sine part
+         * >> eta * I + eta * cos(Theta1) N
+         * Sum up the reault
+         * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
+         */
+        double eta = n1R / n2R;
+        double coefficientOfSecondPart =
+            eta * cosTheta1 - sqrt(1 - eta * eta * (1 - cosTheta1 * cosTheta1));
+        Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
+        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+                                    nxtDirection, ray.waveLength);
+        return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+                                 maxDepth - 1);
+    }
+
+    else {
         // Branch Diffusion, only non-transparent materials need to do this
         // first we generate a random point within a circle (uniformly)
         // To convert this into distribution of probabilty, we find the probability near

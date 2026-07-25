@@ -113,6 +113,10 @@ Complex getIronRefractivity(double lambda) {
     return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
 
+Complex getGlassRefractivity(double lambda) {
+    return getRefractivity(lambda, GlassEta, GLASS_LAMBDA_STEP, GLASS_LINE_COUNT);
+}
+
 Texture getGold(double roughness) {
     return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
 }
@@ -127,6 +131,10 @@ Texture getCopper(double roughness) {
 
 Texture getIron(double roughness) {
     return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
+}
+
+Texture getGlass() {
+    return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, 0);
 }
 
 #undef AG_LINE_COUNT

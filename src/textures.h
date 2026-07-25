@@ -13,7 +13,8 @@ typedef struct {
 } Texture;
 
 Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic, double roughness);
+                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
+                   double roughness);
 
 void initTexture();
 
@@ -33,5 +34,6 @@ Texture getGold(double roughness);
 Texture getSilver(double roughness);
 Texture getCopper(double roughness);
 Texture getIron(double roughness);
+Texture getGlass();
 
 #endif
