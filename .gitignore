@@ -3,9 +3,8 @@
 .vscode
 bin/
 build/
-outputimg
-outputimg.zip
-seeImg.c
-proceed_fe.py
+outputimg*
 a.out
+proceed_fe.py
 README.txt
+.venv/

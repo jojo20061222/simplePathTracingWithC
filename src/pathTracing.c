@@ -66,6 +66,7 @@ int main() {
                 printf("open failed\n");
                 continue;
             }
+            fprintf(f, "%d %d\n", width, height);
             for (int i = 0; i < width * height; i++) {
                 fprintf(f, "%u\n", vs->buffer[i].pixel);
             }
