@@ -34,6 +34,12 @@ static const char FE_PATH_N[] = "src/static/fe_n.csv";
 static const char FE_PATH_K[] = "src/static/fe_k.csv";
 static const double FE_LAMBDA_STEP = 10;
 
+#define GLASS_LINE_COUNT 45
+static Complex GlassEta[GLASS_LINE_COUNT];
+static const char GLASS_PATH_N[] = "src/static/glass_n.csv";
+static const char GLASS_PATH_K[] = "src/static/glass_k.csv";
+static const double GLASS_LAMBDA_STEP = 10;
+
 static const double startLambda = 390;
 
 static void readFile(const char *filePathN, const char *filePathK, Complex eta[], int lineCount) {

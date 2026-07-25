@@ -5,6 +5,6 @@ bin/
 build/
 outputimg*
 a.out
-proceed_fe.py
+lerp.py
 README.txt
 .venv/
