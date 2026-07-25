@@ -211,9 +211,30 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
         /*
          * We simply assume that
-         * I = <-cos(Theta1), sin(Theta1)>
-         * O = <cos(Theta2), sin(Theta2)
-         * With snell's law, 
+         * >> I = <-sin(Theta1), cos(Theta1)>
+         * >> O = <sin(Theta2), -cos(Theta2)
+         * >> N = <0, 1>
+         *
+         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
+         * we simply use these simplified vectors to do linear combinations and the results won't
+         * change
+         *
+         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
+         *
+         * Hence,
+         * >> (n1/n2)sin(Theta1) = sin(Theta2)
+         * we take relative refractivity as eta
+         * >> eta * sin(Theta1) = sin(Theta2)
+         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
+         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
+         *
+         * We first do the cosine part
+         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
+         *
+         * Then the sine part
+         * >> eta I - eta * cos(Theta1) N
+         * Sum up the reault
+         * >> etaI - (eta * cos(Theta1) + sqrt(1 - eta^2(1 - cos^2(Theta1))))N
          */
     }
 
