@@ -189,10 +189,35 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
                firstCollideObject->texture.baseColor(ray.waveLength);
     }
     else {
-        // TODO: refraction!
+        // First we test the condition that all transparent object have smooth surface (roughness =
+        // 0)
+        /*
+         * Directly by Snell's law
+         * First we check out the total internal reflection
+         * The condition is n1 sin(theta1) >= n2
+         * Take square both side we have n1^2 (1 - cos^2(theta1)) >= n2^2
+         */
+        Vector I = unitVector(d);
+        double cosTheta1 = -vecDot(N, I);
+        double n1R = n1.R;
+        double n2R = n2.R;
+        if (n1R * n1R * (1 - cosTheta1 * cosTheta1) >= n2R * n2R) {
+            Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
+            ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+                                        nxtDirection, ray.waveLength);
+            return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+                                     maxDepth - 1);
+        }
+
+        /*
+         * We simply assume that
+         * I = <-cos(Theta1), sin(Theta1)>
+         * O = <cos(Theta2), sin(Theta2)
+         * With snell's law, 
+         */
     }
 
-    return NAN;
+    return 0;
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
@@ -215,9 +240,8 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **o
 
     intensityResult =
         simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
-    
-    if (!isfinite(intensityResult)) return;
 
+    if (!isfinite(intensityResult)) return;
 
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
