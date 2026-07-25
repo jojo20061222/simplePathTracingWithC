@@ -75,6 +75,7 @@ void initTexture() {
     readFile(AU_PATH_N, AU_PATH_K, AuEta, AU_LINE_COUNT);
     readFile(CU_PATH_N, CU_PATH_K, CuEta, CU_LINE_COUNT);
     readFile(FE_PATH_N, FE_PATH_K, FeEta, FE_LINE_COUNT);
+    readFile(GLASS_PATH_N, GLASS_PATH_K, GlassEta, GLASS_LINE_COUNT);
 }
 
 double pureWhite(double _) { return 0.5; }

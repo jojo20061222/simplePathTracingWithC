@@ -141,7 +141,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
 
     if (firstCollideObject->texture.metalic || randomReal(mt) <= F) {
         // BRDF
-
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
         double NdotL = vecDot(N, l);
@@ -186,7 +185,6 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
             return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
                                      maxDepth - 1);
         }
-
         /*
          * We simply assume that
          * >> I = <sin(Theta1), -cos(Theta1)>

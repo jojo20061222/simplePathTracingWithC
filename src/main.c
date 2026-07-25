@@ -48,17 +48,17 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 150, 1500}, 100);
+    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
     Object obj3 = newObject((Shape *)&sph, getGlass());
     pushBack(&objects, &obj3, Object *);
 
-    Sphere sph2 = newSphere((Point){(double)width / 2 - 300, (double)height / 2 - 75, 1500}, 100);
+    Sphere sph2 = newSphere((Point){(double)width / 2, (double)height / 2 - 175, 1800}, 100);
     Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
-    // pushBack(&objects, &obj4, Object *);
+    pushBack(&objects, &obj4, Object *);
 
     Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
-    Object obj5 = newObject((Shape *)&sph3, getGold(0.5));
-    // pushBack(&objects, &obj5, Object *);
+    Object obj5 = newObject((Shape *)&sph3, getGold(0.3));
+    pushBack(&objects, &obj5, Object *);
 
     Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 300);
     LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
@@ -75,9 +75,6 @@ int main() {
         while (SDL_PollEvent(&event) != 0) {
             if (event.type == SDL_QUIT) isRunning = false;
         }
-
-        // angle += M_PI / 180 * 2;
-        // sph.center = (Vector){300, 300, 1500 + 300 * sin(angle)};
 
         SDL_UpdateTexture(texture, NULL, vs->buffer, width * sizeof(ScreenColor));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
