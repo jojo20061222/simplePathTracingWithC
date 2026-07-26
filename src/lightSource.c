@@ -112,16 +112,17 @@ double whiteLightBase(double wavelength) {
     return getBlackbodyIntensity(wavelength, 6500) / getBlackbodyIntensity(555, 6500);
 }
 
-
 CollideResult collideWithParallelLight(const Shape *self, const ReversedRay *ray) {
     CollideResult result;
     ParallelLightShape *shape = (ParallelLightShape *)self;
-    result.collide = vecDot(unitVector(ray->direction), unitVector(shape->direction)) > 0.999;
+    result.collide = (vecDot(unitVector(ray->direction), unitVector(shape->direction)) < -0.99);
     result.t = INFINITY;
     return result;
 }
 
 ParallelLightShape getParallelLightShape(Vector direction) {
-    return (ParallelLightShape){collideWithParallelLight,
-                                NULL}; // This should not be treat as an object!
+    return (ParallelLightShape){
+        (Shape){collideWithParallelLight,
+                NULL}, // This should not be treat as an object so it has no normal vector
+        direction};
 }

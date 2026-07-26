@@ -89,7 +89,7 @@ LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int ob
     for (int i = 0; i < sourcesCount; i++) {
         CollideLightSourceResult collideResult = collideLightSource(sources[i], &ray);
         if (!collideResult.collide) continue;
-        if (collideResult.t < firstCollideSourceResult.t) {
+        if (collideResult.t <= firstCollideSourceResult.t) {
             firstCollideSourceResult = collideResult;
             firstCollideSource = sources[i];
         }

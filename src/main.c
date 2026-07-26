@@ -67,7 +67,9 @@ int main() {
 
     // pushBack(&sources, &lightSource, LightSource *);
 
-    LightSource parallelLight = {getParallelLightShape({0, }), sunlightBase};
+    ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 0});
+    LightSource sunlight = {(Shape*)&parallelLightShape, sunlightBase};
+    pushBack(&sources, &sunlight, LightSource *);
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
