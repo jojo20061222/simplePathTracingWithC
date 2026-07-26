@@ -115,7 +115,7 @@ double whiteLightBase(double wavelength) {
 CollideResult collideWithParallelLight(const Shape *self, const ReversedRay *ray) {
     CollideResult result;
     ParallelLightShape *shape = (ParallelLightShape *)self;
-    result.collide = (vecDot(unitVector(ray->direction), unitVector(shape->direction)) < -0.999);
+    result.collide = (vecDot(unitVector(ray->direction), unitVector(shape->direction)) < -0.99);
     result.t = INFINITY;
     return result;
 }

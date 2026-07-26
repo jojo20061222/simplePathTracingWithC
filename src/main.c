@@ -8,7 +8,10 @@
 const int width = 1080;
 const int height = 720;
 
-double whiteLight(double waveLength) { return 50 * whiteLightBase(waveLength); }
+
+double whiteLight(double waveLength) {
+    return 1 * whiteLightBase(waveLength);
+}
 
 int main() {
     initLightIntensity();
@@ -26,127 +29,43 @@ int main() {
     bool isRunning = true;
 
     VirtualScreen *vs = newScreen(width, height);
+    Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    // ==================== Camera ====================
+    Texture whitePlastic = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    Texture redPlastic = newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
+    
 
-    Point camera = {(double)width * 0.5, (double)height * 0.5, -4000};
-
-    // ==================== Objects ====================
-
-    Texture glass = getGlass();
     Object **objects = getDynamicArray(0, Object *);
 
-    // 三稜鏡放在畫面中央偏上
-    double cx = width * 0.5;
-    double cy = height * 0.36;
-    double cz = 1200;
+    Point p1 = {0, 0, 2100};
+    Point p2 = {0, (double)height, 2100};
+    Point p3 = {(double)width, (double)height, 2100};
+    Point p4 = {(double)width, 600, 2100};
+    Triangle tri1 = newTriangle(p3, p2, p1);
+    Triangle tri2 = newTriangle(p4, p3, p1);
+    Object obj1 = newObject((Shape *)&tri1, whitePlastic);
+    Object obj2 = newObject((Shape *)&tri2, whitePlastic);
+    pushBack(&objects, &obj1, Object *);
+    pushBack(&objects, &obj2, Object *);
 
-    double prismLength = 240;
-    double radius = 120;
+    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
+    Object obj3 = newObject((Shape *)&sph, getGlass());
+    pushBack(&objects, &obj3, Object *);
 
-    Point fA = {cx - prismLength / 2, cy - radius, cz};
-    Point fB = {cx - prismLength / 2, cy + radius * 0.5, cz - radius * 0.8660254};
-    Point fC = {cx - prismLength / 2, cy + radius * 0.5, cz + radius * 0.8660254};
+    Sphere sph2 = newSphere((Point){(double)width / 2, (double)height / 2 - 175, 1800}, 100);
+    Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
+    // pushBack(&objects, &obj4, Object *);
 
-    Point bA = {cx + prismLength / 2, cy - radius, cz};
-    Point bB = {cx + prismLength / 2, cy + radius * 0.5, cz - radius * 0.8660254};
-    Point bC = {cx + prismLength / 2, cy + radius * 0.5, cz + radius * 0.8660254};
+    Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
+    Object obj5 = newObject((Shape *)&sph3, getGold(0.3));
+    // pushBack(&objects, &obj5, Object *);
 
-    Vector n_front = {-1, 0, 0};
-    Vector n_back = {1, 0, 0};
-    Vector n_AB = {0, -0.8660254, -0.5};
-    Vector n_BC = {0, 1, 0};
-    Vector n_CA = {0, -0.8660254, 0.5};
+    ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 1});
+    LightSource sunlight = {(Shape*)&parallelLightShape, sunlightBase};
 
-    DirectedTriangle prismTris[8];
-
-    prismTris[0] = newDirectedTriangle(fA, fB, fC, n_front);
-    prismTris[1] = newDirectedTriangle(bA, bC, bB, n_back);
-
-    prismTris[2] = newDirectedTriangle(fA, bA, bB, n_AB);
-    prismTris[3] = newDirectedTriangle(fA, bB, fB, n_AB);
-
-    prismTris[4] = newDirectedTriangle(fB, bB, bC, n_BC);
-    prismTris[5] = newDirectedTriangle(fB, bC, fC, n_BC);
-
-    prismTris[6] = newDirectedTriangle(fC, bC, bA, n_CA);
-    prismTris[7] = newDirectedTriangle(fC, bA, fA, n_CA);
-
-    Object prismObjs[8];
-
-    for (int i = 0; i < 8; i++) {
-        prismObjs[i] = newObject((Shape *)&prismTris[i], glass);
-        pushBack(&objects, &prismObjs[i], Object *);
-    }
-
-    // ==================== White wall ====================
-
-    Texture whitePlastic =
-        newTexture(pureWhite, getPlasticRefractivity,
-                   getAirRefractivity, false, false, 1);
-
-    double wallZ = 9000;
-
-    Point wall1 = {0, 0, wallZ};
-    Point wall2 = {0, height, wallZ};
-    Point wall3 = {width, height, wallZ};
-    Point wall4 = {width, 0, wallZ};
-
-    Triangle wallTri1 = newTriangle(wall1, wall2, wall3);
-    Triangle wallTri2 = newTriangle(wall3, wall4, wall1);
-
-    Object wallObj1 = newObject((Shape *)&wallTri1, whitePlastic);
-    Object wallObj2 = newObject((Shape *)&wallTri2, whitePlastic);
-
-    pushBack(&objects, &wallObj1, Object *);
-    pushBack(&objects, &wallObj2, Object *);
-
-    // ==================== Slit ====================
-
-    // 非常細的狹縫，只讓一小束光通過
-    double slitWidth = 2.0;
-
-    // 狹縫略高於三稜鏡頂點
-    double slitY = cy - radius - 10.0;
-
-    Point fp1 = {0, slitY, 200};
-    Point fp2 = {0, slitY, cz - slitWidth * 0.5};
-    Point fp3 = {width, slitY, cz - slitWidth * 0.5};
-    Point fp4 = {width, slitY, 200};
-
-    Point bp1 = {0, slitY, cz + slitWidth * 0.5};
-    Point bp2 = {0, slitY, wallZ};
-    Point bp3 = {width, slitY, wallZ};
-    Point bp4 = {width, slitY, cz + slitWidth * 0.5};
-
-    Triangle slitTri[4];
-
-    slitTri[0] = newTriangle(fp1, fp2, fp3);
-    slitTri[1] = newTriangle(fp3, fp4, fp1);
-
-    slitTri[2] = newTriangle(bp1, bp2, bp3);
-    slitTri[3] = newTriangle(bp3, bp4, bp1);
-
-    Object slitObj[4];
-
-    for (int i = 0; i < 4; i++) {
-        slitObj[i] = newObject((Shape *)&slitTri[i], whitePlastic);
-        pushBack(&objects, &slitObj[i], Object *);
-    }
-
-    // ==================== Light ====================
-
-    LightSource **sources = getDynamicArray(0, LightSource *);
-
-    // 光線完全在 YZ 平面，從上往下、往前照
-    ParallelLightShape parallelLightShape =
-        getParallelLightShape((Vector){0.0, 0.98, 0.20});
-
-    LightSource sunlight = {(Shape *)&parallelLightShape, whiteLight};
+    LightSource **sources = getDynamicArray(0, LightSource*);
 
     pushBack(&sources, &sunlight, LightSource *);
-
-    // ==================== Render ====================
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
