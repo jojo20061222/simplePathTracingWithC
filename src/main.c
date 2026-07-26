@@ -8,11 +8,6 @@
 const int width = 1080;
 const int height = 720;
 
-
-double whiteLight(double waveLength) {
-    return 1 * whiteLightBase(waveLength);
-}
-
 int main() {
     initLightIntensity();
     initTexture();
@@ -31,44 +26,66 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    Texture whitePlastic = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    Texture redPlastic = newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
-    
+    Texture whitePlastic =
+        newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    Texture redPlastic =
+        newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
+    Texture glass = getGlass();
 
     Object **objects = getDynamicArray(0, Object *);
 
-    Point p1 = {0, 600, 900};
-    Point p2 = {0, 200, 2100};
-    Point p3 = {(double)width, 200, 2100};
-    Point p4 = {(double)width, 600, 900};
-    Triangle tri1 = newTriangle(p3, p2, p1);
-    Triangle tri2 = newTriangle(p4, p3, p1);
-    Object obj1 = newObject((Shape *)&tri1, whitePlastic);
-    Object obj2 = newObject((Shape *)&tri2, whitePlastic);
-    pushBack(&objects, &obj1, Object *);
-    pushBack(&objects, &obj2, Object *);
+    // 1. 定義三稜鏡中心與尺寸
+    double cx = (double)width / 2;
+    double cy = (double)height / 2;
+    double cz = 1500;
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, getGlass());
-    pushBack(&objects, &obj3, Object *);
+    double prismLength = 300; // 稜鏡長度 (沿 X 軸)
+    double radius = 150;      // 截面外接圓半徑
 
-    Sphere sph2 = newSphere((Point){(double)width / 2, (double)height / 2 - 175, 1800}, 100);
-    Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
-    pushBack(&objects, &obj4, Object *);
+    // 2. 計算 6 個頂點 (Y 軸朝下為 positive 的常見座標系)
+    Point fA = {cx - prismLength / 2, cy - radius, cz};
+    Point fB = {cx - prismLength / 2, cy + radius * 0.5, cz - radius * 0.866};
+    Point fC = {cx - prismLength / 2, cy + radius * 0.5, cz + radius * 0.866};
 
-    Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
-    Object obj5 = newObject((Shape *)&sph3, getGold(0.3));
-    pushBack(&objects, &obj5, Object *);
+    Point bA = {cx + prismLength / 2, cy - radius, cz};
+    Point bB = {cx + prismLength / 2, cy + radius * 0.5, cz - radius * 0.866};
+    Point bC = {cx + prismLength / 2, cy + radius * 0.5, cz + radius * 0.866};
 
-    // Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 300);
-    // LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
+    // 3. 定義 5 個面的外法向量 (Outer Normal Vectors)
+    Vector n_front = {-1, 0, 0};
+    Vector n_back = {1, 0, 0};
+    Vector n_AB = {0, -0.866, -0.5}; // 面 AB 的外法向
+    Vector n_BC = {0, 1, 0};         // 底面 BC 的外法向 (朝下)
+    Vector n_CA = {0, -0.866, 0.5};  // 面 CA 的外法向
 
+    // 4. 建立 8 個自帶法向量的三角形
+    DirectedTriangle prismTris[8];
+
+    // 前後底面
+    prismTris[0] = newDirectedTriangle(fA, fB, fC, n_front);
+    prismTris[1] = newDirectedTriangle(bA, bC, bB, n_back);
+
+    // 側面 1 (AB)
+    prismTris[2] = newDirectedTriangle(fA, bA, bB, n_AB);
+    prismTris[3] = newDirectedTriangle(fA, bB, fB, n_AB);
+
+    // 側面 2 (BC)
+    prismTris[4] = newDirectedTriangle(fB, bB, bC, n_BC);
+    prismTris[5] = newDirectedTriangle(fB, bC, fC, n_BC);
+
+    // 側面 3 (CA)
+    prismTris[6] = newDirectedTriangle(fC, bC, bA, n_CA);
+    prismTris[7] = newDirectedTriangle(fC, bA, fA, n_CA);
+
+    // 5. 將三角形推入 objects 陣列
+    for (int i = 0; i < 8; i++) {
+        Object prismObj = newObject((Shape *)&prismTris[i], glass);
+        pushBack(&objects, &prismObj, Object *);
+    }
     LightSource **sources = getDynamicArray(0, LightSource *);
 
-    // pushBack(&sources, &lightSource, LightSource *);
-
     ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 0});
-    LightSource sunlight = {(Shape*)&parallelLightShape, sunlightBase};
+    LightSource sunlight = {(Shape *)&parallelLightShape, sunlightBase};
     pushBack(&sources, &sunlight, LightSource *);
 
     Multithreads *mul =

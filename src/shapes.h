@@ -28,4 +28,11 @@ typedef struct {
 
 Sphere newSphere(Point center, double radius);
 
+typedef struct {
+    Triangle tri;
+    Vector normalVector;
+} DirectedTriangle;
+
+DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
+
 #endif

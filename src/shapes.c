@@ -98,3 +98,14 @@ Vector normalVectorOfSphere(const struct _Shape *self, Point p) {
 Sphere newSphere(Point center, double radius) {
     return (Sphere){(Shape){detectSphereCollide, normalVectorOfSphere}, center, radius};
 }
+
+Vector normalVectorOfDirectedTriangle(const Shape *self, Point _) {
+    DirectedTriangle *tri = (DirectedTriangle *)self;
+    return tri->normalVector;
+}
+
+DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
+    DirectedTriangle dtri = {newTriangle(p1, p2, p3), normalVector};
+    dtri.tri.shape.normalVector = normalVectorOfDirectedTriangle;
+    return dtri;
+}
