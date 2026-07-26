@@ -35,4 +35,11 @@ typedef struct {
 
 DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 
+typedef struct {
+    Shape shape;
+    Point vertexes;
+    Point center;
+    double sizeFactor;
+} Diamond;
+
 #endif

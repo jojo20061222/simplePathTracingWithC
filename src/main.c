@@ -37,28 +37,20 @@ int main() {
 
     Object **objects = getDynamicArray(0, Object *);
 
-    Point p1 = {0, 0, 2100};
-    Point p2 = {0, (double)height, 2100};
-    Point p3 = {(double)width, (double)height, 2100};
-    Point p4 = {(double)width, 600, 2100};
-    Triangle tri1 = newTriangle(p3, p2, p1);
-    Triangle tri2 = newTriangle(p4, p3, p1);
+    Point p1 = {0, 0, 1800};
+    Point p2 = {0, (double)height, 1800};
+    Point p3 = {(double)width, (double)height, 1800};
+    Point p4 = {(double)width, 0, 1800};
+    Triangle tri1 = newTriangle(p1, p2, p3);
+    Triangle tri2 = newTriangle(p3, p4, p1);
     Object obj1 = newObject((Shape *)&tri1, whitePlastic);
     Object obj2 = newObject((Shape *)&tri2, whitePlastic);
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
     Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, getGlass());
+    Object obj3 = newObject((Shape *)&sph, getDiamond());
     pushBack(&objects, &obj3, Object *);
-
-    Sphere sph2 = newSphere((Point){(double)width / 2, (double)height / 2 - 175, 1800}, 100);
-    Object obj4 = newObject((Shape *)&sph2, getGold(0.1)); 
-    // pushBack(&objects, &obj4, Object *);
-
-    Sphere sph3 = newSphere((Point){(double)width / 2 +300, (double)height / 2 - 75, 1500}, 100);
-    Object obj5 = newObject((Shape *)&sph3, getGold(0.3));
-    // pushBack(&objects, &obj5, Object *);
 
     ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 1});
     LightSource sunlight = {(Shape*)&parallelLightShape, sunlightBase};

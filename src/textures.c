@@ -5,9 +5,10 @@
 #include <stdlib.h>
 
 Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic, double roughness) {
-    return (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent,
-                     metalic, roughness};
+                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
+                   double roughness) {
+    return (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metalic,
+                     roughness};
 }
 
 #define AG_LINE_COUNT 446
@@ -118,6 +119,11 @@ Complex getGlassRefractivity(double lambda) {
     return getRefractivity(lambda, GlassEta, GLASS_LAMBDA_STEP, GLASS_LINE_COUNT);
 }
 
+Complex getDiamondRefractivity(double x) {
+    return (Complex){
+        sqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
+}
+
 Texture getGold(double roughness) {
     return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
 }
@@ -136,6 +142,10 @@ Texture getIron(double roughness) {
 
 Texture getGlass() {
     return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, 0);
+}
+
+Texture getDiamond() {
+    return newTexture(NULL, getDiamondRefractivity, getAirRefractivity, true, false, 0);
 }
 
 #undef AG_LINE_COUNT

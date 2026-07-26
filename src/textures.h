@@ -29,11 +29,13 @@ Complex getSilverRefractivity(double lambda);
 Complex getGoldRefractivity(double lambda);
 Complex getCopperRefractivity(double lambda);
 Complex getIronRefractivity(double lambda);
+Complex getDiamondRefractivity(double lambda);
 
 Texture getGold(double roughness);
 Texture getSilver(double roughness);
 Texture getCopper(double roughness);
 Texture getIron(double roughness);
 Texture getGlass();
+Texture getDiamond();
 
 #endif
