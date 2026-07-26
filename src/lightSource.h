@@ -43,4 +43,12 @@ double tungstenLampBase(double waveLength);
 double sunlightBase(double waveLength);
 
 double whiteLightBase(double wavelength);
+
+typedef struct {
+    Shape shape;
+    Vector direction;
+} ParallelLightShape;
+
+ParallelLightShape getParallelLightShape(Vector direction);
+
 #endif

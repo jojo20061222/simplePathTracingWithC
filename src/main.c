@@ -60,12 +60,14 @@ int main() {
     Object obj5 = newObject((Shape *)&sph3, getGold(0.3));
     pushBack(&objects, &obj5, Object *);
 
-    Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 300);
-    LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
+    // Sphere lightSourceSph = newSphere((Point){(double)width / 2, -400, 1200}, 300);
+    // LightSource lightSource = {(Shape *)&lightSourceSph, whiteLight};
 
     LightSource **sources = getDynamicArray(0, LightSource *);
 
-    pushBack(&sources, &lightSource, LightSource *);
+    // pushBack(&sources, &lightSource, LightSource *);
+
+    LightSource parallelLight = {getParallelLightShape({0, }), sunlightBase};
 
     Multithreads *mul =
         initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
