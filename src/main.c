@@ -71,8 +71,7 @@ int main() {
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
-    Multithreads *mul = initMultithreads(vs, 11, objects, getSize(objects), sources,
-                                         getSize(sources), &camera, 100);
+    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

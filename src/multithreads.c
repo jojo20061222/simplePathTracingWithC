@@ -9,9 +9,7 @@ typedef struct {
     int id;
     VirtualScreen *vs;
     Object **objects;
-    int objectsCount;
     LightSource **sources;
-    int sourcesCount;
     Point *camera;
     int workerCount;
     int maxDepth;
@@ -22,9 +20,7 @@ static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
     Object **objects = workerPara->objects;
-    int objectsCount = workerPara->objectsCount;
     LightSource **sources = workerPara->sources;
-    int sourcesCount = workerPara->sourcesCount;
     Point *camera = workerPara->camera;
     int workerCount = workerPara->workerCount;
     int maxDepth = workerPara->maxDepth;
@@ -40,7 +36,7 @@ static void *worker(void *para) {
     while (*workerPara->exit == 0) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = i % s->width, y = i / s->width;
-            renderPixel(camera, s, x, y, objects, objectsCount, sources, sourcesCount, mt,
+            renderPixel(camera, s, x, y, objects, sources, mt,
                         maxDepth);
         }
     }
@@ -51,8 +47,7 @@ static void *worker(void *para) {
     return NULL;
 }
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               int objectsCount, LightSource **sources, int sourcesCount,
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects, LightSource **sources,
                                Point *camera, int maxDepth) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
@@ -71,9 +66,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
         WorkerPara *parai = malloc(sizeof(WorkerPara));
         parai->id = i;
         parai->objects = objects;
-        parai->objectsCount = objectsCount;
         parai->sources = sources;
-        parai->sourcesCount = sourcesCount;
         parai->vs = vs;
         parai->workerCount = threadCount;
         parai->camera = camera;

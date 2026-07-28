@@ -60,8 +60,7 @@ int main() {
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
-    Multithreads *mul = initMultithreads(vs, threadCount, objects, getSize(objects), sources,
-                                         getSize(sources), &camera, 10);
+    Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 10);
 
     while (isRunning) {
         char input[1000];

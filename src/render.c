@@ -62,10 +62,12 @@ static inline Vector toWorld(Vector local, Vector N) {
     return nxtDirection;
 }
 
-static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int objectsCount,
-                                 LightSource **sources, int sourcesCount, MT19937 *mt,
-                                 int maxDepth) {
+static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
+                                        MT19937 *mt, int maxDepth) {
     if (maxDepth == 0) return 0;
+
+    int objectsCount = getSize(objects);
+    int sourcesCount = getSize(sources);
 
     // first we see if this light first touches a light source
     // to attain that, we need to simulate both collide with sources and objects to decide which is
@@ -156,8 +158,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int o
         Vector nxtDirection = l;
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
-        double result = finalFactor * simulateSingleRay(nxtRay, objects, objectsCount, sources,
-                                                        sourcesCount, mt, maxDepth - 1);
+        double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
 
@@ -182,8 +183,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int o
             Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
             ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                         nxtDirection, ray.waveLength);
-            return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                                     maxDepth - 1);
+            return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         }
         /*
          * We simply assume that
@@ -218,8 +218,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int o
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
-        return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
-                                 maxDepth - 1);
+        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
     }
 
     else {
@@ -242,7 +241,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int o
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
 
-        return simulateSingleRay(nxtRay, objects, objectsCount, sources, sourcesCount, mt,
+        return simulateSingleRay(nxtRay, objects, sources, mt,
                                  maxDepth - 1) *
                firstCollideObject->texture.baseColor(ray.waveLength);
     }
@@ -251,8 +250,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int o
 }
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects,
-                 int objectsCount, LightSource **sources, int sourcesCount, MT19937 *mt,
-                 int maxDepth) {
+                 LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
     double fixedY = (double)y + randomReal(mt);
@@ -269,7 +267,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects
     initRay = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength);
 
     intensityResult =
-        simulateSingleRay(initRay, objects, objectsCount, sources, sourcesCount, mt, maxDepth);
+        simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
     if (!isfinite(intensityResult)) return;
 

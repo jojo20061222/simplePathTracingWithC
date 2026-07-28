@@ -131,14 +131,23 @@ Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
     return (Shape*)dtri;
 }
 
+static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
+    ConvexPolygon *cp = (ConvexPolygon*)self;
+    assert(cp->vertexesCount >= 3);
+    Point p1 = cp->vertexes[0];
+    Point p2 = cp->vertexes[1];
+    Point p3 = cp->vertexes[2];
+    Vector e1 = vecMinus(p2, p1);
+    Vector e2 = vecMinus(p3, p1);
+    return vecCross(e1, e2);
+}
+
 static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     ConvexPolygon *cp = (ConvexPolygon *)self;
     // First we get the plane of the polygon
     // get the normal vector
     assert(cp->vertexesCount >= 3);
-    Vector edge1 = vecMinus(cp->vertexes[1], cp->vertexes[0]);
-    Vector edge2 = vecMinus(cp->vertexes[2], cp->vertexes[0]);
-    Vector N = vecCross(edge1, edge2);
+    Vector N = normalVectorOfConvexPolygon(self, (Point){0, 0, 0});
     // we want to solve the intersection of the plane and the ray
     // the plane can be written as
     // N = <a, b, c>
@@ -180,4 +189,8 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
         }
     }
     return (CollideResult){true, t};
+}
+
+static void destroyConvexPolygon(Shape *self) {
+    free(self);
 }
