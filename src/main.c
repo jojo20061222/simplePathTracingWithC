@@ -41,15 +41,15 @@ int main() {
     Point p2 = {0, (double)height, 1800};
     Point p3 = {(double)width, (double)height, 1800};
     Point p4 = {(double)width, 0, 1800};
-    Triangle tri1 = newTriangle(p1, p2, p3);
-    Triangle tri2 = newTriangle(p3, p4, p1);
-    Object obj1 = newObject((Shape *)&tri1, whitePlastic);
-    Object obj2 = newObject((Shape *)&tri2, whitePlastic);
+    Shape *tri1 = newTriangle(p1, p2, p3);
+    Shape *tri2 = newTriangle(p3, p4, p1);
+    Object obj1 = newObject(tri1, whitePlastic);
+    Object obj2 = newObject(tri2, whitePlastic);
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Sphere sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject((Shape *)&sph, getDiamond());
+    Shape *sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
+    Object obj3 = newObject(sph, getDiamond());
     pushBack(&objects, &obj3, Object *);
 
     ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 1});

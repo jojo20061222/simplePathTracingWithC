@@ -62,7 +62,7 @@ static inline Vector toWorld(Vector local, Vector N) {
     return nxtDirection;
 }
 
-LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
+static LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
                                  const LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
     if (maxDepth == 0) return 0;

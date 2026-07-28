@@ -4,7 +4,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay *ray) {
+static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray) {
     CollideResult result = {false, INFINITY};
     /*
      * Möller-Trumbore intersection algorithm
@@ -15,7 +15,7 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
      * and three equations t, u, v can thus be solved.
      */
 
-    const Triangle *tri = (const Triangle *)self;
+    Triangle *tri = (Triangle *)self;
     Vector A = vecMinus(tri->p2, tri->p1);
     Vector B = vecMinus(tri->p3, tri->p1);
     Vector W = vecMinus(ray->start, tri->p1); // let W = O - P
@@ -55,16 +55,23 @@ CollideResult detectTriangleCollide(const struct _Shape *self, const ReversedRay
 
 // Looks down from the top, (p1, p2, p3) in counter-clockwise order
 // Then, the result of this function should return upward vector
-Vector normalVectorOfTriangle(const struct _Shape *self, Point _) {
+static  Vector normalVectorOfTriangle(struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
     return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
 }
 
-Triangle newTriangle(Point p1, Point p2, Point p3) {
-    return (Triangle){(Shape){detectTriangleCollide, normalVectorOfTriangle}, p1, p2, p3};
+static void destroyTriangle(Shape *self) { free(self); }
+
+Shape *newTriangle(Point p1, Point p2, Point p3) {
+    Triangle *tri = malloc(sizeof(*tri));
+    tri->shape = (Shape){detectTriangleCollide, normalVectorOfTriangle, destroyTriangle};
+    tri->p1 = p1;
+    tri->p2 = p2;
+    tri->p3 = p3;
+    return (Shape *)tri;
 }
 
-CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *ray) {
+static CollideResult detectSphereCollide(struct _Shape *self, ReversedRay *ray) {
     /*
      * Some math.
      * Let R(t) = O + tD = <a + tx, b + ty, c + tz>, center of sphere C = <e, f, g>
@@ -91,27 +98,40 @@ CollideResult detectSphereCollide(const struct _Shape *self, const ReversedRay *
 }
 
 // Returns outward normal vector
-Vector normalVectorOfSphere(const struct _Shape *self, Point p) {
+static Vector normalVectorOfSphere(struct _Shape *self, Point p) {
     const Sphere *sph = (const Sphere *)self;
     return vecMinus(p, sph->center);
 }
 
-Sphere newSphere(Point center, double radius) {
-    return (Sphere){(Shape){detectSphereCollide, normalVectorOfSphere}, center, radius};
+static void destroySphere(Shape *self) {
+    free(self);
 }
 
-Vector normalVectorOfDirectedTriangle(const Shape *self, Point _) {
+Shape *newSphere(Point center, double radius) {
+    Sphere *sph = malloc(sizeof(*sph));
+    sph->shape = (Shape){detectSphereCollide, normalVectorOfSphere, destroySphere};
+    sph->center = center;
+    sph->radius = radius;
+    return (Shape *)sph;
+}
+
+static Vector normalVectorOfDirectedTriangle(Shape *self, Point _) {
     DirectedTriangle *tri = (DirectedTriangle *)self;
     return tri->normalVector;
 }
 
-DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
-    DirectedTriangle dtri = {newTriangle(p1, p2, p3), normalVector};
-    dtri.tri.shape.normalVector = normalVectorOfDirectedTriangle;
-    return dtri;
+static void destroyDirectedTriangle(Shape *self) {
+    free(self);
 }
 
-CollideResult collideWithConvexPolygon(const Shape *self, const ReversedRay *ray) {
+Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
+    DirectedTriangle *dtri = malloc(sizeof(*dtri));
+    dtri->tri.shape = (Shape){detectTriangleCollide, normalVectorOfDirectedTriangle, NULL};
+    dtri->normalVector = normalVector;
+    return (Shape*)dtri;
+}
+
+static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     ConvexPolygon *cp = (ConvexPolygon *)self;
     // First we get the plane of the polygon
     // get the normal vector

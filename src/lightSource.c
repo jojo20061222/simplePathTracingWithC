@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray) {
+CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
     CollideResult result = source->shape->detectCollide(source->shape, ray);
     return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->waveLength)};
 }
@@ -81,7 +81,7 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     return (ScreenColor){R, G, B, 0};
 }
 
-double getBlackbodyIntensity(double wavelength, double T) {
+ double getBlackbodyIntensity(double wavelength, double T) {
     double lambda = wavelength * 1e-9;
 
     static const double h = 6.62607015e-34;
@@ -110,19 +110,4 @@ double sunlightBase(double wavelength) {
 
 double whiteLightBase(double wavelength) {
     return getBlackbodyIntensity(wavelength, 6500) / getBlackbodyIntensity(555, 6500);
-}
-
-CollideResult collideWithParallelLight(const Shape *self, const ReversedRay *ray) {
-    CollideResult result;
-    ParallelLightShape *shape = (ParallelLightShape *)self;
-    result.collide = (vecDot(unitVector(ray->direction), unitVector(shape->direction)) < -0.99);
-    result.t = INFINITY;
-    return result;
-}
-
-ParallelLightShape getParallelLightShape(Vector direction) {
-    return (ParallelLightShape){
-        (Shape){collideWithParallelLight,
-                NULL}, // This should not be treat as an object so it has no normal vector
-        direction};
 }

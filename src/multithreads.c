@@ -18,7 +18,7 @@ typedef struct {
     int *exit;
 } WorkerPara;
 
-void *worker(void *para) {
+static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
     const Object **objects = workerPara->objects;

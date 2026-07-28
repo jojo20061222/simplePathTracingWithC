@@ -34,7 +34,7 @@ static inline ColorXYZ colorComponent(double c, ColorXYZ color) {
     return (ColorXYZ){c * color.X, c * color.Y, c * color.Z};
 }
 
-CollideLightSourceResult collideLightSource(const LightSource *source, const ReversedRay *ray);
+CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray);
 
 double getBlackbodyIntensity(double T, double waveLength);
 

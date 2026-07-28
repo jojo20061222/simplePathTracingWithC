@@ -9,9 +9,9 @@ typedef struct {
 } CollideResult;
 
 typedef struct _Shape {
-    CollideResult (*detectCollide)(const struct _Shape *, const ReversedRay *);
-    Vector (*normalVector)(const struct _Shape *, Point);
-    void (*destroySelf) (const struct _Shape *, Point);
+    CollideResult (*detectCollide)(struct _Shape *, ReversedRay *);
+    Vector (*normalVector)(struct _Shape *, Point);
+    void (*destroySelf) (struct _Shape *);
 } Shape;
 
 typedef struct {
@@ -19,7 +19,7 @@ typedef struct {
     Point p1, p2, p3;
 } Triangle;
 
-const Shape *newTriangle(Point p1, Point p2, Point p3);
+Shape *newTriangle(Point p1, Point p2, Point p3);
 
 typedef struct {
     Shape shape;
@@ -27,14 +27,14 @@ typedef struct {
     double radius;
 } Sphere;
 
-const Shape *newSphere(Point center, double radius);
+Shape *newSphere(Point center, double radius);
 
 typedef struct {
     Triangle tri;
     Vector normalVector;
 } DirectedTriangle;
 
-const Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
+Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 
 typedef struct {
     Shape shape;
@@ -42,6 +42,6 @@ typedef struct {
     int vertexesCount;
 } ConvexPolygon;
 
-const Shape *newConvexPolygon(Point *points, int vertexesCount);
+Shape *newConvexPolygon(Point *points, int vertexesCount);
 
 #endif
