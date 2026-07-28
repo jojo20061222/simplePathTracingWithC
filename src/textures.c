@@ -120,6 +120,7 @@ Complex getGlassRefractivity(double lambda) {
 }
 
 Complex getDiamondRefractivity(double x) {
+    x /= 1000;
     return (Complex){
         sqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
 }
