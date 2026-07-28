@@ -1,3 +1,4 @@
+#include "dynamicArray.h"
 #include "shapes.h"
 #include "base.h"
 #include <assert.h>
@@ -133,7 +134,8 @@ Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
 
 static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
     ConvexPolygon *cp = (ConvexPolygon*)self;
-    assert(cp->vertexesCount >= 3);
+    int vertexesCount = getSize(cp->vertexes);
+    assert(vertexesCount >= 3);
     Point p1 = cp->vertexes[0];
     Point p2 = cp->vertexes[1];
     Point p3 = cp->vertexes[2];
@@ -144,9 +146,10 @@ static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
 
 static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     ConvexPolygon *cp = (ConvexPolygon *)self;
+    int vertexesCount = getSize(cp->vertexes);
     // First we get the plane of the polygon
     // get the normal vector
-    assert(cp->vertexesCount >= 3);
+    assert(vertexesCount >= 3);
     Vector N = normalVectorOfConvexPolygon(self, (Point){0, 0, 0});
     // we want to solve the intersection of the plane and the ray
     // the plane can be written as
@@ -170,12 +173,12 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     double t = (C - vecDot(N, O)) / NdotD;
     Point P = vecAdd(O, vecMultiply(t, D));
     // Now we have converted this problem into if a point is in the convex polygon
-    Point lastPoint = cp->vertexes[cp->vertexesCount - 1];
+    Point lastPoint = cp->vertexes[vertexesCount - 1];
     Vector lastE = vecMinus(P, lastPoint);
     Vector lastE1 = vecMinus(cp->vertexes[0], lastPoint);
     Vector firstResult = vecCross(lastE, lastE1);
 
-    for (int i = 0; i < cp->vertexesCount - 1; i++) {
+    for (int i = 0; i < vertexesCount - 1; i++) {
         // Since it's an convex polygon, we see if the point is on the left side of every edge
         Point P1 = cp->vertexes[i];
         Point P2 = cp->vertexes[i + 1];
@@ -192,5 +195,12 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
 }
 
 static void destroyConvexPolygon(Shape *self) {
+    ConvexPolygon *cp = (ConvexPolygon*)self;
+    freeDynamicArray(cp->vertexes);
     free(self);
+}
+
+Shape *newConvexPolygon(Point *vertexes) {
+    ConvexPolygon *cp = malloc(sizeof(*cp));
+    cp->shape = (Shape){collideWithConvexPolygon, normal}
 }

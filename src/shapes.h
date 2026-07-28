@@ -39,9 +39,8 @@ Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 typedef struct {
     Shape shape;
     Point *vertexes;
-    int vertexesCount;
 } ConvexPolygon;
 
-Shape *newConvexPolygon(Point *points, int vertexesCount);
+Shape *newConvexPolygon(Point *vertexes);
 
 #endif

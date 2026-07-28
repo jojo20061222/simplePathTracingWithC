@@ -13,8 +13,8 @@ int main() {
 
     bool isRunning = true;
 
-    static const int width = 1080;
-    static const int height = 720;
+    static const int width = 3024;
+    static const int height = 1964;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
@@ -28,7 +28,7 @@ int main() {
 
     double startx = 0, endx = width;
     double starty = 0, endy = height;
-    double pz = 1800;
+    double pz = (double)2 / (double)3 * width;
     Point p1 = {startx, starty, pz};
     Point p2 = {startx, endy, pz};
     Point p3 = {endx, endy, pz};
@@ -40,7 +40,7 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    double bz = 600;
+    double bz = (double)1 / (double)3 * width;
     Point p5 = {startx, endy, bz};
     Point p6 = {startx, endy, pz};
     Point p7 = {endx, endy, pz};
@@ -52,15 +52,17 @@ int main() {
     pushBack(&objects, &obj3, Object *);
     pushBack(&objects, &obj4, Object *);
 
-    Shape *sph = newSphere((Point){(double)width / 2, (double)endy - 100, 1500}, 100);
+    double radius = (double)width / 10;
+    Shape *sph = newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
     Object obj = newObject(sph, getDiamond());
     pushBack(&objects, &obj, Object *);
 
-    Shape *lightSph = newSphere((Point){(double)-width, (double)-height, 1000}, 150);
+
+    Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
-    Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 10);
+    Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 100);
 
     while (isRunning) {
         char input[1000];
