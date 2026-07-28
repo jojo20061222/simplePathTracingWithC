@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 1080;
-const int height = 720;
+const int width = 720;
+const int height = 540;
 
 double whiteLight(double waveLength) { return 3 * whiteLightBase(waveLength); }
 
@@ -45,23 +45,26 @@ int main() {
     wallPoints[2] = (Point){endx, endy, pz};
     wallPoints[3] = (Point){endx, starty, pz};
     Shape *wallShape = newConvexPolygon(wallPoints);
+    freeDynamicArray(wallPoints);
     Object wall = newObject(wallShape, whitePlastic);
     pushBack(&objects, &wall, Object *);
 
     double bz = (double)1 / (double)3 * width;
-    wallPoints[0] = (Point){startx, endy, bz};
-    wallPoints[1] = (Point){startx, endy, pz};
-    wallPoints[2] = (Point){endx, endy, pz};
-    wallPoints[3] = (Point){endx, endy, bz};
-    Shape *groundShape = newConvexPolygon(wallPoints);
-    Object ground = newObject(wallShape, whitePlastic);
+    Point *groundPoints = getDynamicArray(4, Point);
+    groundPoints[0] = (Point){startx, endy, bz};
+    groundPoints[1] = (Point){startx, endy, pz};
+    groundPoints[2] = (Point){endx, endy, pz};
+    groundPoints[3] = (Point){endx, endy, bz};
+    Shape *groundShape = newConvexPolygon(groundPoints);
+    freeDynamicArray(groundPoints);
+    Object ground = newObject(groundShape, whitePlastic);
     pushBack(&objects, &ground, Object *);
 
     double radius = (double)width / 10;
     Shape *sph =
         newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
     Object obj = newObject(sph, getDiamond());
-    // pushBack(&objects, &obj, Object *);
+    pushBack(&objects, &obj, Object *);
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);

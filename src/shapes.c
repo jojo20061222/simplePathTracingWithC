@@ -187,7 +187,7 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
         Vector E = vecMinus(P, P1);
         // E1 is the polygon's ith edge
         Vector E1 = vecMinus(P2, P1);
-        Vector crossResult = vecCross(E, E1);
+        Vector crossResult = vecCross(E1, E);
         if (vecDot(crossResult, N) < 0) {
             return (CollideResult){false, INFINITY};
         }
