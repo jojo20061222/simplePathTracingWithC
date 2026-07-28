@@ -1,9 +1,10 @@
-#include "dynamicArray.h"
 #include "shapes.h"
 #include "base.h"
+#include "dynamicArray.h"
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray) {
     CollideResult result = {false, INFINITY};
@@ -56,7 +57,7 @@ static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray
 
 // Looks down from the top, (p1, p2, p3) in counter-clockwise order
 // Then, the result of this function should return upward vector
-static  Vector normalVectorOfTriangle(struct _Shape *self, Point _) {
+static Vector normalVectorOfTriangle(struct _Shape *self, Point _) {
     const Triangle *tri = (const Triangle *)self;
     return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
 }
@@ -104,9 +105,7 @@ static Vector normalVectorOfSphere(struct _Shape *self, Point p) {
     return vecMinus(p, sph->center);
 }
 
-static void destroySphere(Shape *self) {
-    free(self);
-}
+static void destroySphere(Shape *self) { free(self); }
 
 Shape *newSphere(Point center, double radius) {
     Sphere *sph = malloc(sizeof(*sph));
@@ -121,19 +120,17 @@ static Vector normalVectorOfDirectedTriangle(Shape *self, Point _) {
     return tri->normalVector;
 }
 
-static void destroyDirectedTriangle(Shape *self) {
-    free(self);
-}
+static void destroyDirectedTriangle(Shape *self) { free(self); }
 
 Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
     DirectedTriangle *dtri = malloc(sizeof(*dtri));
     dtri->tri.shape = (Shape){detectTriangleCollide, normalVectorOfDirectedTriangle, NULL};
     dtri->normalVector = normalVector;
-    return (Shape*)dtri;
+    return (Shape *)dtri;
 }
 
 static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
-    ConvexPolygon *cp = (ConvexPolygon*)self;
+    ConvexPolygon *cp = (ConvexPolygon *)self;
     int vertexesCount = getSize(cp->vertexes);
     assert(vertexesCount >= 3);
     Point p1 = cp->vertexes[0];
@@ -171,6 +168,9 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
         return (CollideResult){false, INFINITY};
     }
     double t = (C - vecDot(N, O)) / NdotD;
+    if (t < 0) {
+        return (CollideResult){false, INFINITY};
+    }
     Point P = vecAdd(O, vecMultiply(t, D));
     // Now we have converted this problem into if a point is in the convex polygon
     Point lastPoint = cp->vertexes[vertexesCount - 1];
@@ -191,16 +191,21 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
             return (CollideResult){false, INFINITY};
         }
     }
+
     return (CollideResult){true, t};
 }
 
 static void destroyConvexPolygon(Shape *self) {
-    ConvexPolygon *cp = (ConvexPolygon*)self;
+    ConvexPolygon *cp = (ConvexPolygon *)self;
     freeDynamicArray(cp->vertexes);
     free(self);
 }
 
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
-    cp->shape = (Shape){collideWithConvexPolygon, normal}
+    cp->shape =
+        (Shape){collideWithConvexPolygon, normalVectorOfConvexPolygon, destroyConvexPolygon};
+    cp->vertexes = getDynamicArray(getSize(vertexes), Point);
+    memcpy(cp->vertexes, vertexes, sizeof(Point) * getSize(vertexes));
+    return (Shape *)cp;
 }

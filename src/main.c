@@ -5,8 +5,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 3024;
-const int height = 1964;
+const int width = 720;
+const int height = 540;
 
 double whiteLight(double waveLength) { return 3 * whiteLightBase(waveLength); }
 
@@ -39,16 +39,15 @@ int main() {
     double startx = 0, endx = width;
     double starty = 0, endy = height;
     double pz = (double)2 / (double)3 * width;
-    Point p1 = {startx, starty, pz};
-    Point p2 = {startx, endy, pz};
-    Point p3 = {endx, endy, pz};
-    Point p4 = {endx, starty, pz};
-    Shape *tri1 = newTriangle(p1, p2, p3);
-    Shape *tri2 = newTriangle(p3, p4, p1);
-    Object obj1 = newObject(tri1, whitePlastic);
-    Object obj2 = newObject(tri2, whitePlastic);
-    pushBack(&objects, &obj1, Object *);
-    pushBack(&objects, &obj2, Object *);
+    Point *wallPoints = getDynamicArray(4, Point);
+    wallPoints[0] = (Point){startx, starty, pz};
+    wallPoints[1] = (Point){startx, endy, pz};
+    wallPoints[2] = (Point){endx, endy, pz};
+    wallPoints[3]= (Point){endx, starty, pz};
+    Shape *wallShape = newConvexPolygon(wallPoints);
+    freeDynamicArray(wallPoints);
+    Object wall = newObject(wallShape, whitePlastic);
+    pushBack(&objects, &wall, Object*);
 
     double bz = (double)1 / (double)3 * width;
     Point p5 = {startx, endy, bz};
