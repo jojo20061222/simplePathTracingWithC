@@ -4,6 +4,6 @@ Object newObject(Shape *shape, Texture texture) {
     return (Object){shape, texture};
 }
 
-CollideResult collideObject(const Object *obj, const ReversedRay *ray) {
+CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return obj->shape->detectCollide(obj->shape, ray);
 }

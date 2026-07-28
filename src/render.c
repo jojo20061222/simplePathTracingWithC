@@ -62,8 +62,8 @@ static inline Vector toWorld(Vector local, Vector N) {
     return nxtDirection;
 }
 
-static LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects, int objectsCount,
-                                 const LightSource **sources, int sourcesCount, MT19937 *mt,
+static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, int objectsCount,
+                                 LightSource **sources, int sourcesCount, MT19937 *mt,
                                  int maxDepth) {
     if (maxDepth == 0) return 0;
 
@@ -73,7 +73,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects,
 
     // test the first object to touch, ignore light source
     CollideResult firstCollideObjectResult = {false, INFINITY};
-    const Object *firstCollideObject = NULL;
+    Object *firstCollideObject = NULL;
     for (int i = 0; i < objectsCount; i++) {
         CollideResult collideResult = collideObject(objects[i], &ray);
         if (!collideResult.collide) continue;
@@ -85,7 +85,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects,
 
     // then we do the same on light source
     CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, 0};
-    const LightSource *firstCollideSource = NULL;
+    LightSource *firstCollideSource = NULL;
     for (int i = 0; i < sourcesCount; i++) {
         CollideLightSourceResult collideResult = collideLightSource(sources[i], &ray);
         if (!collideResult.collide) continue;
@@ -250,8 +250,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, const Object **objects,
     return 0;
 }
 
-void renderPixel(Point *camera, VirtualScreen *s, int x, int y, const Object **objects,
-                 int objectsCount, const LightSource **sources, int sourcesCount, MT19937 *mt,
+void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects,
+                 int objectsCount, LightSource **sources, int sourcesCount, MT19937 *mt,
                  int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);

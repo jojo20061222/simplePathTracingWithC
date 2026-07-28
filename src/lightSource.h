@@ -10,6 +10,8 @@ typedef struct {
     LightIntensity (*intensity)(double waveLength);
 } LightSource;
 
+LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(double));
+
 typedef struct {
     bool collide;
     double t;
@@ -43,12 +45,5 @@ double tungstenLampBase(double waveLength);
 double sunlightBase(double waveLength);
 
 double whiteLightBase(double wavelength);
-
-typedef struct {
-    Shape shape;
-    Vector direction;
-} ParallelLightShape;
-
-ParallelLightShape getParallelLightShape(Vector direction);
 
 #endif

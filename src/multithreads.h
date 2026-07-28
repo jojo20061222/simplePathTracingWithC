@@ -9,8 +9,9 @@ typedef struct {
     int *exit;
 } Multithreads;
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               int objectsCount, const LightSource **sources, int sourcesCount, Point *camera, int maxDepth);
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
+                               int objectsCount, LightSource **sources, int sourcesCount,
+                               Point *camera, int maxDepth);
 
 void destroyMultithreads(Multithreads *mul);
 

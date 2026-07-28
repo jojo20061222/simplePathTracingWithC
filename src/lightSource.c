@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(double)) {
+    return (LightSource){shape, intensity};
+}
+
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
     CollideResult result = source->shape->detectCollide(source->shape, ray);
     return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->waveLength)};

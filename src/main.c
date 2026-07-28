@@ -8,10 +8,7 @@
 const int width = 1080;
 const int height = 720;
 
-
-double whiteLight(double waveLength) {
-    return 1 * whiteLightBase(waveLength);
-}
+double whiteLight(double waveLength) { return 2 * whiteLightBase(waveLength); }
 
 int main() {
     initLightIntensity();
@@ -31,16 +28,21 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    Texture whitePlastic = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    Texture redPlastic = newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
-    
+    Texture whitePlastic =
+        newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    Texture redPlastic =
+        newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 1);
 
     Object **objects = getDynamicArray(0, Object *);
+    LightSource **sources = getDynamicArray(0, LightSource *);
 
-    Point p1 = {0, 0, 1800};
-    Point p2 = {0, (double)height, 1800};
-    Point p3 = {(double)width, (double)height, 1800};
-    Point p4 = {(double)width, 0, 1800};
+    double startx = 0, endx = width;
+    double starty = 0, endy = height; 
+    double pz = 1800;
+    Point p1 = {startx, starty, pz};
+    Point p2 = {startx, endy, pz};
+    Point p3 = {endx, endy, pz};
+    Point p4 = {endx, starty, pz};
     Shape *tri1 = newTriangle(p1, p2, p3);
     Shape *tri2 = newTriangle(p3, p4, p1);
     Object obj1 = newObject(tri1, whitePlastic);
@@ -48,20 +50,29 @@ int main() {
     pushBack(&objects, &obj1, Object *);
     pushBack(&objects, &obj2, Object *);
 
-    Shape *sph = newSphere((Point){(double)width / 2, (double)height / 2 - 75, 1500}, 100);
-    Object obj3 = newObject(sph, getDiamond());
-    pushBack(&objects, &obj3, Object *);
 
-    ParallelLightShape parallelLightShape = getParallelLightShape((Vector){0, 1, 1});
-    LightSource sunlight = {(Shape*)&parallelLightShape, sunlightBase};
+    double bz = 600;
+    Point p5 = {startx, endy, bz};
+    Point p6 = {startx, endy, pz};
+    Point p7 = {endx , endy, pz};
+    Point p8 = {endx , endy, bz};
+    Shape *tri3 = newTriangle(p5, p6, p7);
+    Shape *tri4 = newTriangle(p7, p8, p5);
+    Object obj3 = newObject(tri3, whitePlastic);
+    Object obj4 = newObject(tri4, whitePlastic);
+    pushBack(&objects, &obj3, Object*);
+    pushBack(&objects, &obj4, Object*);
 
-    LightSource **sources = getDynamicArray(0, LightSource*);
+    Shape *sph = newSphere((Point){(double)width / 2, (double)endy - 100, 1500}, 100);
+    Object obj = newObject(sph, getDiamond());
+    pushBack(&objects, &obj, Object *);
 
-    pushBack(&sources, &sunlight, LightSource *);
+    Shape *lightSph = newSphere((Point){(double)-width, (double)-height, 1000}, 150);
+    LightSource light = newLightSource(lightSph, whiteLight);
+    pushBack(&sources, &light, LightSource *);
 
-    Multithreads *mul =
-        initMultithreads(vs, 11, (const Object **)objects, getSize(objects),
-                         (const LightSource **)sources, getSize(sources), &camera, 100);
+    Multithreads *mul = initMultithreads(vs, 11, objects, getSize(objects), sources,
+                                         getSize(sources), &camera, 100);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

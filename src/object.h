@@ -13,6 +13,6 @@ typedef struct _Object {
 
 Object newObject(Shape *shape, Texture texture);
 
-CollideResult collideObject(const Object *, const ReversedRay *);
+CollideResult collideObject(Object *, ReversedRay *);
 
 #endif

@@ -8,9 +8,9 @@
 typedef struct {
     int id;
     VirtualScreen *vs;
-    const Object **objects;
+    Object **objects;
     int objectsCount;
-    const LightSource **sources;
+    LightSource **sources;
     int sourcesCount;
     Point *camera;
     int workerCount;
@@ -21,9 +21,9 @@ typedef struct {
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
-    const Object **objects = workerPara->objects;
+    Object **objects = workerPara->objects;
     int objectsCount = workerPara->objectsCount;
-    const LightSource **sources = workerPara->sources;
+    LightSource **sources = workerPara->sources;
     int sourcesCount = workerPara->sourcesCount;
     Point *camera = workerPara->camera;
     int workerCount = workerPara->workerCount;
@@ -51,8 +51,8 @@ static void *worker(void *para) {
     return NULL;
 }
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, const Object **objects,
-                               int objectsCount, const LightSource **sources, int sourcesCount,
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
+                               int objectsCount, LightSource **sources, int sourcesCount,
                                Point *camera, int maxDepth) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
