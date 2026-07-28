@@ -1,5 +1,6 @@
 #include "shapes.h"
 #include "base.h"
+#include <assert.h>
 #include <math.h>
 #include <stdlib.h>
 
@@ -108,4 +109,55 @@ DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normal
     DirectedTriangle dtri = {newTriangle(p1, p2, p3), normalVector};
     dtri.tri.shape.normalVector = normalVectorOfDirectedTriangle;
     return dtri;
+}
+
+CollideResult collideWithConvexPolygon(const Shape *self, const ReversedRay *ray) {
+    ConvexPolygon *cp = (ConvexPolygon *)self;
+    // First we get the plane of the polygon
+    // get the normal vector
+    assert(cp->vertexesCount >= 3);
+    Vector edge1 = vecMinus(cp->vertexes[1], cp->vertexes[0]);
+    Vector edge2 = vecMinus(cp->vertexes[2], cp->vertexes[0]);
+    Vector N = vecCross(edge1, edge2);
+    // we want to solve the intersection of the plane and the ray
+    // the plane can be written as
+    // N = <a, b, c>
+    // ray.direction = D = <d, e, f>
+    // ray.start = O = <p, q, r>
+    // N dot <x, y, z> = (ax_0 + by_0 + b_z0) = C
+    // => N dot (O + tD) = C
+    // N dot O + t (N dot D) = C
+    // (C - N dot O) / (N dot D) = t
+    // The question is, if N dot D nears 0
+    // That the ray just lies on the plane
+    // we simply count this situation as no collision
+    Vector D = ray->direction;
+    Vector O = ray->start;
+    double C = vecDot(N, cp->vertexes[0]);
+    double NdotD = vecDot(N, D);
+    if (fabs(NdotD) < error) {
+        return (CollideResult){false, INFINITY};
+    }
+    double t = (C - vecDot(N, O)) / NdotD;
+    Point P = vecAdd(O, vecMultiply(t, D));
+    // Now we have converted this problem into if a point is in the convex polygon
+    Point lastPoint = cp->vertexes[cp->vertexesCount - 1];
+    Vector lastE = vecMinus(P, lastPoint);
+    Vector lastE1 = vecMinus(cp->vertexes[0], lastPoint);
+    Vector firstResult = vecCross(lastE, lastE1);
+
+    for (int i = 0; i < cp->vertexesCount - 1; i++) {
+        // Since it's an convex polygon, we see if the point is on the left side of every edge
+        Point P1 = cp->vertexes[i];
+        Point P2 = cp->vertexes[i + 1];
+        // E is the vector from start point to intersection P
+        Vector E = vecMinus(P, P1);
+        // E1 is the polygon's ith edge
+        Vector E1 = vecMinus(P2, P1);
+        Vector crossResult = vecCross(E, E1);
+        if (vecDot(crossResult, firstResult) < 0) {
+            return (CollideResult){false, INFINITY};
+        }
+    }
+    return (CollideResult){true, t};
 }

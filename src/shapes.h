@@ -37,9 +37,10 @@ DirectedTriangle newDirectedTriangle(Point p1, Point p2, Point p3, Vector normal
 
 typedef struct {
     Shape shape;
-    Point vertexes;
-    Point center;
-    double sizeFactor;
-} Diamond;
+    Point *vertexes;
+    int vertexesCount;
+} ConvexPolygon;
+
+ConvexPolygon newPolygon(Point *points, int vertexesCount);
 
 #endif
