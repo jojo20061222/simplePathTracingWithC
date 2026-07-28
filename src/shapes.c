@@ -133,12 +133,17 @@ static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
     ConvexPolygon *cp = (ConvexPolygon *)self;
     int vertexesCount = getSize(cp->vertexes);
     assert(vertexesCount >= 3);
-    Point p1 = cp->vertexes[0];
-    Point p2 = cp->vertexes[1];
-    Point p3 = cp->vertexes[2];
-    Vector e1 = vecMinus(p2, p1);
-    Vector e2 = vecMinus(p3, p1);
-    return vecCross(e1, e2);
+    Vector N = {0, 0, 0}; // theoretically N should not be zero vector after the loop
+    for (int i = 0; i < vertexesCount; i++) {
+        Point p1 = cp->vertexes[i];
+        Point p2 = cp->vertexes[(i + 1) % vertexesCount];
+        Point p3 = cp->vertexes[(i + 2) % vertexesCount];
+        Vector e1 = vecMinus(p2, p1);
+        Vector e2 = vecMinus(p3, p1);
+        N = vecCross(e1, e2);
+        if (lengthOf(N) > 1e-5) break;
+    }
+    return N;
 }
 
 static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
@@ -147,7 +152,8 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     // First we get the plane of the polygon
     // get the normal vector
     assert(vertexesCount >= 3);
-    Vector N = normalVectorOfConvexPolygon(self, (Point){0, 0, 0});
+    Vector N = unitVector(normalVectorOfConvexPolygon(self, (Point){0, 0, 0}));
+    
     // we want to solve the intersection of the plane and the ray
     // the plane can be written as
     // N = <a, b, c>
@@ -168,30 +174,24 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
         return (CollideResult){false, INFINITY};
     }
     double t = (C - vecDot(N, O)) / NdotD;
-    if (t < 0) {
+    if (t <= 0) {
         return (CollideResult){false, INFINITY};
     }
     Point P = vecAdd(O, vecMultiply(t, D));
     // Now we have converted this problem into if a point is in the convex polygon
-    Point lastPoint = cp->vertexes[vertexesCount - 1];
-    Vector lastE = vecMinus(P, lastPoint);
-    Vector lastE1 = vecMinus(cp->vertexes[0], lastPoint);
-    Vector firstResult = vecCross(lastE, lastE1);
-
-    for (int i = 0; i < vertexesCount - 1; i++) {
+    for (int i = 0; i < vertexesCount; i++) {
         // Since it's an convex polygon, we see if the point is on the left side of every edge
         Point P1 = cp->vertexes[i];
-        Point P2 = cp->vertexes[i + 1];
+        Point P2 = cp->vertexes[(i + 1) % vertexesCount];
         // E is the vector from start point to intersection P
         Vector E = vecMinus(P, P1);
         // E1 is the polygon's ith edge
         Vector E1 = vecMinus(P2, P1);
         Vector crossResult = vecCross(E, E1);
-        if (vecDot(crossResult, firstResult) < 0) {
+        if (vecDot(crossResult, N) < 0) {
             return (CollideResult){false, INFINITY};
         }
     }
-
     return (CollideResult){true, t};
 }
 

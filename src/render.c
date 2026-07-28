@@ -79,9 +79,10 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     for (int i = 0; i < objectsCount; i++) {
         CollideResult collideResult = collideObject(objects[i], &ray);
         if (!collideResult.collide) continue;
-        if (collideResult.t < firstCollideObjectResult.t) {
+        if (collideResult.t <= firstCollideObjectResult.t) {
             firstCollideObjectResult = collideResult;
             firstCollideObject = objects[i];
+            printf("%lf\n", firstCollideObjectResult.t);
         }
     }
 
