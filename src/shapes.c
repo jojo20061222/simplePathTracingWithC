@@ -6,6 +6,37 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Shape {
+    CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
+    void (*destroySelf) (struct Shape *);
+} Shape;
+
+typedef struct Triangle {
+    Shape shape;
+    Point p1, p2, p3;
+} Triangle;
+
+typedef struct DirectedTriangle {
+    Triangle tri;
+    Vector normalVector;
+} DirectedTriangle;
+
+typedef struct Sphere {
+    Shape shape;
+    Point center;
+    double radius;
+} Sphere;
+
+typedef struct ConvexPolygon {
+    Shape shape;
+    Point *vertexes;
+} ConvexPolygon;
+
+typedef struct Group {
+    Shape shape;
+    Shape **elements;
+} Group;
+
 static inline CollideResult getCollideResult(bool collide, double t, Vector normalVector) {
     return (CollideResult){collide, t, normalVector};
 }
@@ -14,8 +45,8 @@ static inline CollideResult notCollide() {
     return (CollideResult){false, INFINITY, (Vector){0, 0, 0}};
 }
 
-static inline Shape getShape(CollideResult (*detectCollide)(struct _Shape *, ReversedRay *),
-                             void (*destroySelf)(struct _Shape *)) {
+static inline Shape getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *),
+                             void (*destroySelf)(Shape *)) {
     return (Shape){detectCollide, destroySelf};
 }
 
@@ -25,7 +56,7 @@ static inline Vector normalVectorOfTriangle(Triangle *tri) {
     return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
 }
 
-static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray) {
+static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
     CollideResult result = {false, INFINITY};
     /*
      * Möller-Trumbore intersection algorithm
@@ -88,7 +119,7 @@ Shape *newTriangle(Point p1, Point p2, Point p3) {
 // Returns outward normal vector
 static inline Vector normalVectorOfSphere(Sphere *sph, Point p) { return vecMinus(p, sph->center); }
 
-static CollideResult detectSphereCollide(struct _Shape *self, ReversedRay *ray) {
+static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
     /*
      * Some math.
      * Let R(t) = O + tD = <a + tx, b + ty, c + tz>, center of sphere C = <e, f, g>
@@ -234,6 +265,24 @@ CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {
 }
 
 void destroyGroup(Shape *self) {
-    Group *group = (Group *) self;
-    
+    Group *group = (Group *)self;
+    int shapesCount = getSize(group->elements);
+    for (int i = 0; i < shapesCount; i++) {
+        group->elements[i]->destroySelf(group->elements[i]);
+    }
+    freeDynamicArray(group->elements);
+    free(group);
+}
+
+Shape *newGroup(Shape **elements) { Group *group = malloc(sizeof(*group)); }
+
+
+// provide a uniform api to others to detect collide
+CollideResult detectCollide(Shape *self, ReversedRay *ray) {
+    return self->detectCollide(self, ray);
+}
+
+// provide a uniform apt to others to destroy a shape 
+void destroyShape(Shape *self) {
+    self->destroySelf(self);
 }

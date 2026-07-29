@@ -5,5 +5,5 @@ Object newObject(Shape *shape, Texture texture) {
 }
 
 CollideResult collideObject(Object *obj, ReversedRay *ray) {
-    return obj->shape->detectCollide(obj->shape, ray);
+    return detectCollide(obj->shape, ray);
 }

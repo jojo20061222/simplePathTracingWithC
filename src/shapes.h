@@ -9,45 +9,30 @@ typedef struct {
     Vector normalVector;
 } CollideResult;
 
-typedef struct _Shape {
-    CollideResult (*detectCollide)(struct _Shape *, ReversedRay *);
-    void (*destroySelf) (struct _Shape *);
-} Shape;
+typedef struct Shape Shape;
 
-typedef struct {
-    Shape shape;
-    Point p1, p2, p3;
-} Triangle;
+typedef struct Triangle triangle;
+
+typedef struct Sphere Sphere;
+
+typedef struct DirectedTriangle DirectedTriangle;
+
+typedef struct ConvexPolygon ConvexPolygon;
+
+typedef struct Group Group;
 
 Shape *newTriangle(Point p1, Point p2, Point p3);
 
-typedef struct {
-    Shape shape;
-    Point center;
-    double radius;
-} Sphere;
-
 Shape *newSphere(Point center, double radius);
-
-typedef struct {
-    Triangle tri;
-    Vector normalVector;
-} DirectedTriangle;
 
 Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 
-typedef struct {
-    Shape shape;
-    Point *vertexes;
-} ConvexPolygon;
-
 Shape *newConvexPolygon(Point *vertexes);
 
-typedef struct {
-    Shape shape;
-    Shape **elements;
-} Group;
+Shape *newGroup(Shape **elements);
 
-Shape *newGroup(Shape *elements);
+CollideResult detectCollide(Shape *shape, ReversedRay *ray);
+
+void destroyShape(Shape *shape);
 
 #endif

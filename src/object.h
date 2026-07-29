@@ -6,7 +6,7 @@
 #include "textures.h"
 #include <stdbool.h>
 
-typedef struct _Object {
+typedef struct Object {
     Shape *shape;
     Texture texture;
 } Object;
