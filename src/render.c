@@ -1,6 +1,7 @@
 #include "render.h"
 #include "base.h"
 #include "lightSource.h"
+#include "object.h"
 #include "random.h"
 #include <assert.h>
 #include <limits.h>
@@ -115,16 +116,17 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // N vecDot d < 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
         N = (Vector){-N.x, -N.y, -N.z};
-        n1 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
-        n2 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
+        n1 = getRefractiveIndexInside(firstCollideObject, ray.waveLength);
+        n2 = getRefractiveIndexOutside(firstCollideObject, ray.waveLength);
     }
     else {
-        n1 = firstCollideObject->texture.refractiveIndexOutside(ray.waveLength);
-        n2 = firstCollideObject->texture.refractiveIndexInside(ray.waveLength);
+        n1 = getRefractiveIndexOutside(firstCollideObject, ray.waveLength);
+        n2 = getRefractiveIndexInside(firstCollideObject, ray.waveLength);
     }
 
     Vector v = vecNegative(unitVector(ray.direction)); // from collide point to observer
-    double alpha = firstCollideObject->texture.roughness * firstCollideObject->texture.roughness;
+    double roughness = getRoughness(firstCollideObject);
+    double alpha = roughness * roughness;
 
     Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample through GGX
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
@@ -139,8 +141,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
+    bool metalic = getMetalic(firstCollideObject);
 
-    if (firstCollideObject->texture.metalic || randomReal(mt) <= F) {
+    if (metalic || randomReal(mt) <= F) {
         // BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
@@ -152,7 +155,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
         double finalFactor = V * vDotH / NdotH;
-        if (firstCollideObject->texture.metalic) finalFactor *= F;
+        if (metalic) finalFactor *= F;
 
         Vector nxtDirection = l;
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
@@ -161,9 +164,11 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         return result;
     }
 
-    if (firstCollideObject->texture.metalic) return 0; // metal only has specular
+    if (metalic) return 0; // metal only has specular
 
-    if (firstCollideObject->texture.transparent) {
+    bool transparent = getTransparent(firstCollideObject);
+
+    if (transparent) {
         // First we test the condition that all transparent object have smooth surface (roughness =
         // 0)
         /*
@@ -240,9 +245,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
                                     nxtDirection, ray.waveLength);
 
-        return simulateSingleRay(nxtRay, objects, sources, mt,
-                                 maxDepth - 1) *
-               firstCollideObject->texture.baseColor(ray.waveLength);
+        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) *
+               getBaseColor(firstCollideObject, ray.waveLength);
     }
 
     return 0;
@@ -265,8 +269,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects
 
     initRay = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength);
 
-    intensityResult =
-        simulateSingleRay(initRay, objects, sources, mt, maxDepth);
+    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
     if (!isfinite(intensityResult)) return;
 

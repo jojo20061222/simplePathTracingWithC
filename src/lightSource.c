@@ -9,7 +9,7 @@ LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(double)) {
 }
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
-    CollideResult result = source->shape->detectCollide(source->shape, ray);
+    CollideResult result = detectCollide(source->shape, ray);
     return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->waveLength)};
 }
 
