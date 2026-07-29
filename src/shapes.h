@@ -43,4 +43,11 @@ typedef struct {
 
 Shape *newConvexPolygon(Point *vertexes);
 
+typedef struct {
+    Shape shape;
+    Shape *elements;
+} Group;
+
+Shape *newGroup(Shape *elements);
+
 #endif
