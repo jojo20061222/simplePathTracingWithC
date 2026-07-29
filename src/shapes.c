@@ -86,7 +86,7 @@ Shape *newTriangle(Point p1, Point p2, Point p3) {
 }
 
 // Returns outward normal vector
-static Vector normalVectorOfSphere(Sphere *sph, Point p) { return vecMinus(p, sph->center); }
+static inline Vector normalVectorOfSphere(Sphere *sph, Point p) { return vecMinus(p, sph->center); }
 
 static CollideResult detectSphereCollide(struct _Shape *self, ReversedRay *ray) {
     /*
