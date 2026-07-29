@@ -18,7 +18,7 @@ if [[ ! (-d $sourcePath) ]]; then
 fi
 
 
-optimizationFlags="-O2 -pthread -g"
+optimizationFlags="-O2 -pthread -g -flto"
 
 echo "all: $binaryPath/pathTracing"
 
@@ -36,7 +36,7 @@ for file in src/*.c; do
 done
 
 echo $mainDependency
-echo -e "\t$CC \$^ -o \$@ -lm -lpthread"
+echo -e "\t$CC \$^ -o \$@ -lm -lpthread -flto"
 echo
 echo ".PHONY: clean"
 echo "clean: "

@@ -18,7 +18,7 @@ if [[ ! (-d $sourcePath) ]]; then
 fi
 
 
-optimizationFlags="-O2 -pthread -g -DDEBUG"
+optimizationFlags="-O2 -pthread -g -DDEBUG -flto"
 
 echo "all: $binaryPath/main"
 
@@ -44,7 +44,7 @@ for file in src/*.c; do
 done
 
 echo $mainDependency
-echo -e "\t$CC \$^ -o \$@ \`sdl2-config --libs\` -lm -lpthread"
+echo -e "\t$CC \$^ -o \$@ \`sdl2-config --libs\` -lm -lpthread -flto"
 echo
 echo ".PHONY: clean"
 echo "clean: "
