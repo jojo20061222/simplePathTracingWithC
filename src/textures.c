@@ -4,11 +4,22 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
+typedef struct Texture {
+    double (*baseColor)(double lambda);
+    Complex (*refractiveIndexInside)(double lambda);
+    Complex (*refractiveIndexOutside)(double lambda);
+    bool transparent;
+    bool metalic;
+    double roughness;
+} Texture;
+
+Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
                    double roughness) {
-    return (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metalic,
+    Texture *tex = malloc(sizeof(*tex));
+    *tex = (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metalic,
                      roughness};
+    return tex;
 }
 
 #define AG_LINE_COUNT 446
@@ -125,28 +136,48 @@ Complex getDiamondRefractivity(double x) {
         sqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
 }
 
-Texture getGold(double roughness) {
+Texture *getGold(double roughness) {
     return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getSilver(double roughness) {
+Texture *getSilver(double roughness) {
     return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getCopper(double roughness) {
+Texture *getCopper(double roughness) {
     return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getIron(double roughness) {
+Texture *getIron(double roughness) {
     return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture getGlass() {
+Texture *getGlass() {
     return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, 0);
 }
 
-Texture getDiamond() {
+Texture *getDiamond() {
     return newTexture(NULL, getDiamondRefractivity, getAirRefractivity, true, false, 0);
+}
+
+// Wrappers
+double getTextureBaseColor(Texture *texture, double lambda) {
+    return texture->baseColor(lambda);
+}
+Complex getTextureRefractiveIndexInside(Texture *texture, double lambda) {
+    return texture->refractiveIndexInside(lambda);
+}
+Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda) {
+    return texture->refractiveIndexOutside(lambda);
+}
+bool getTextureMetalic(Texture *texture) {
+    return texture->metalic;
+}
+bool getTextureTransparent(Texture *texture) {
+    return texture->transparent;
+}
+double getTextureRoughness(Texture *texture) {
+    return texture->roughness;
 }
 
 #undef AG_LINE_COUNT

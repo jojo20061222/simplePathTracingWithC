@@ -18,9 +18,9 @@ int main() {
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
-    Texture whitePlastic =
+    Texture *whitePlastic =
         newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    Texture redPlastic =
+    Texture *redPlastic =
         newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
 
     Object **objects = newDynamicArray(0, Object *);

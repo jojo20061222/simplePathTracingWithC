@@ -3,16 +3,17 @@
 #include "base.h"
 #include <stdbool.h>
 
-typedef struct {
-    double (*baseColor)(double lambda);
-    Complex (*refractiveIndexInside)(double lambda);
-    Complex (*refractiveIndexOutside)(double lambda);
-    bool transparent;
-    bool metalic;
-    double roughness;
-} Texture;
+typedef struct Texture Texture;
 
-Texture newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
+double getTextureBaseColor(Texture *texture, double lambda);
+Complex getTextureRefractiveIndexInside(Texture *texture, double lambda);
+Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda);
+bool getTextureMetalic(Texture *texture);
+bool getTextureTransparent(Texture *texture);
+double getTextureRoughness(Texture *texture);
+
+
+Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
                    double roughness);
 
@@ -31,11 +32,11 @@ Complex getCopperRefractivity(double lambda);
 Complex getIronRefractivity(double lambda);
 Complex getDiamondRefractivity(double lambda);
 
-Texture getGold(double roughness);
-Texture getSilver(double roughness);
-Texture getCopper(double roughness);
-Texture getIron(double roughness);
-Texture getGlass();
-Texture getDiamond();
+Texture *getGold(double roughness);
+Texture *getSilver(double roughness);
+Texture *getCopper(double roughness);
+Texture *getIron(double roughness);
+Texture *getGlass();
+Texture *getDiamond();
 
 #endif

@@ -3,10 +3,10 @@
 
 typedef struct Object {
     Shape *shape;
-    Texture texture;
+    Texture *texture;
 } Object;
 
-Object *newObject(Shape *shape, Texture texture) {
+Object *newObject(Shape *shape, Texture *texture) {
     Object *obj = malloc(sizeof(*obj));
     obj->shape = shape;
     obj->texture = texture;
@@ -18,25 +18,25 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
 }
 
 Complex getRefractiveIndexOutside(Object *self, double lambda) {
-    return self->texture.refractiveIndexOutside(lambda);
+    return getTextureRefractiveIndexOutside(self->texture, lambda);
 }
 
 Complex getRefractiveIndexInside(Object *self, double lambda) {
-    return self->texture.refractiveIndexInside(lambda);
+    return getTextureRefractiveIndexInside(self->texture, lambda);
 }
 
 double getRoughness(Object *self) {
-    return self->texture.roughness;
+    return getTextureRoughness(self->texture);
 }
 
 bool getMetalic(Object *self) {
-    return self->texture.metalic;
+    return getTextureMetalic(self->texture);
 }
 
 bool getTransparent(Object *self) {
-    return self->texture.transparent;
+    return getTextureTransparent(self->texture);
 }
 
 double getBaseColor(Object *self, double lambda) {
-    return self->texture.baseColor(lambda);
+    return getTextureBaseColor(self->texture, lambda);
 }

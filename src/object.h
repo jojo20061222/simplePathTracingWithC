@@ -8,7 +8,7 @@
 
 typedef struct Object Object;
 
-Object *newObject(Shape *shape, Texture texture);
+Object *newObject(Shape *shape, Texture *texture);
 
 CollideResult collideObject(Object *, ReversedRay *);
 
