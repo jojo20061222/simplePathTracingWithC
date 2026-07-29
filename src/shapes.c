@@ -6,6 +6,25 @@
 #include <stdlib.h>
 #include <string.h>
 
+static inline CollideResult getCollideResult(bool collide, double t, Vector normalVector) {
+    return (CollideResult){collide, t, normalVector};
+}
+
+static inline CollideResult notCollide() {
+    return (CollideResult){false, INFINITY, (Vector){0, 0, 0}};
+}
+
+static inline Shape getShape(CollideResult (*detectCollide)(struct _Shape *, ReversedRay *),
+                             void (*destroySelf)(struct _Shape *)) {
+    return (Shape){detectCollide, destroySelf};
+}
+
+// Looks down from the top, (p1, p2, p3) in counter-clockwise order
+// Then, the result of this function should return upward vector
+static inline Vector normalVectorOfTriangle(Triangle *tri) {
+    return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
+}
+
 static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray) {
     CollideResult result = {false, INFINITY};
     /*
@@ -50,28 +69,24 @@ static CollideResult detectTriangleCollide(struct _Shape *self, ReversedRay *ray
     double t = deltaT / delta;
     if (t < 0) return result;
 
-    result = (CollideResult){true, t};
+    result = getCollideResult(true, t, normalVectorOfTriangle(tri));
 
     return result;
-}
-
-// Looks down from the top, (p1, p2, p3) in counter-clockwise order
-// Then, the result of this function should return upward vector
-static Vector normalVectorOfTriangle(struct _Shape *self, Point _) {
-    const Triangle *tri = (const Triangle *)self;
-    return vecCross(vecMinus(tri->p2, tri->p1), vecMinus(tri->p3, tri->p1));
 }
 
 static void destroyTriangle(Shape *self) { free(self); }
 
 Shape *newTriangle(Point p1, Point p2, Point p3) {
     Triangle *tri = malloc(sizeof(*tri));
-    tri->shape = (Shape){detectTriangleCollide, normalVectorOfTriangle, destroyTriangle};
+    tri->shape = getShape(detectTriangleCollide, destroyTriangle);
     tri->p1 = p1;
     tri->p2 = p2;
     tri->p3 = p3;
     return (Shape *)tri;
 }
+
+// Returns outward normal vector
+static Vector normalVectorOfSphere(Sphere *sph, Point p) { return vecMinus(p, sph->center); }
 
 static CollideResult detectSphereCollide(struct _Shape *self, ReversedRay *ray) {
     /*
@@ -83,33 +98,30 @@ static CollideResult detectSphereCollide(struct _Shape *self, ReversedRay *ray) 
      * then (x^2 + y^2 + z^2)t^2 + 2(ox + py + qz)t + (o^2 + p^2 + q^2 - r^2) = 0
      */
 
-    const Sphere *sphere = (const Sphere *)self;
+    Sphere *sph = (Sphere *)self;
 
-    Vector W = vecMinus(ray->start, sphere->center);
+    Vector W = vecMinus(ray->start, sph->center);
     double A = vecDot(ray->direction, ray->direction);
     double B = 2 * vecDot(ray->direction, W);
-    double C = vecDot(W, W) - sphere->radius * sphere->radius;
+    double C = vecDot(W, W) - sph->radius * sph->radius;
     double Delta = B * B - 4 * A * C;
-    if (Delta < 0) return (CollideResult){false, INFINITY};
+    if (Delta < 0) {
+        return notCollide();
+    }
     double t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
-    if (t1 < 0 && t2 < 0)
-        return (CollideResult){false, INFINITY};
-    else if (t1 < 0)
-        return (CollideResult){true, t2};
-    return (CollideResult){true, t1};
-}
-
-// Returns outward normal vector
-static Vector normalVectorOfSphere(struct _Shape *self, Point p) {
-    const Sphere *sph = (const Sphere *)self;
-    return vecMinus(p, sph->center);
+    if (t1 < 0 && t2 < 0) {
+        return notCollide();
+    }
+    double t = t1 < 0 ? t2 : t1;
+    Point collidePoint = vecAdd(ray->start, vecMultiply(t, ray->direction));
+    return getCollideResult(true, t, normalVectorOfSphere(sph, collidePoint));
 }
 
 static void destroySphere(Shape *self) { free(self); }
 
 Shape *newSphere(Point center, double radius) {
     Sphere *sph = malloc(sizeof(*sph));
-    sph->shape = (Shape){detectSphereCollide, normalVectorOfSphere, destroySphere};
+    sph->shape = getShape(detectSphereCollide, destroySphere);
     sph->center = center;
     sph->radius = radius;
     return (Shape *)sph;
@@ -124,13 +136,12 @@ static void destroyDirectedTriangle(Shape *self) { free(self); }
 
 Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector) {
     DirectedTriangle *dtri = malloc(sizeof(*dtri));
-    dtri->tri.shape = (Shape){detectTriangleCollide, normalVectorOfDirectedTriangle, NULL};
+    dtri->tri.shape = getShape(detectTriangleCollide, destroyDirectedTriangle);
     dtri->normalVector = normalVector;
     return (Shape *)dtri;
 }
 
-static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
-    ConvexPolygon *cp = (ConvexPolygon *)self;
+static Vector normalVectorOfConvexPolygon(ConvexPolygon *cp) {
     int vertexesCount = getSize(cp->vertexes);
     assert(vertexesCount >= 3);
     Vector N = {0, 0, 0}; // theoretically N should not be zero vector after the loop
@@ -146,14 +157,14 @@ static Vector normalVectorOfConvexPolygon(Shape *self, Point _) {
     return N;
 }
 
-static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
+static CollideResult detectConvexPolygonCollide(Shape *self, ReversedRay *ray) {
     ConvexPolygon *cp = (ConvexPolygon *)self;
     int vertexesCount = getSize(cp->vertexes);
     // First we get the plane of the polygon
     // get the normal vector
     assert(vertexesCount >= 3);
-    Vector N = unitVector(normalVectorOfConvexPolygon(self, (Point){0, 0, 0}));
-    
+    Vector N = unitVector(normalVectorOfConvexPolygon(cp));
+
     // we want to solve the intersection of the plane and the ray
     // the plane can be written as
     // N = <a, b, c>
@@ -171,11 +182,11 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
     double C = vecDot(N, cp->vertexes[0]);
     double NdotD = vecDot(N, D);
     if (fabs(NdotD) < error) {
-        return (CollideResult){false, INFINITY};
+        return notCollide();
     }
     double t = (C - vecDot(N, O)) / NdotD;
     if (t <= 0) {
-        return (CollideResult){false, INFINITY};
+        return notCollide();
     }
     Point P = vecAdd(O, vecMultiply(t, D));
     // Now we have converted this problem into if a point is in the convex polygon
@@ -189,10 +200,10 @@ static CollideResult collideWithConvexPolygon(Shape *self, ReversedRay *ray) {
         Vector E1 = vecMinus(P2, P1);
         Vector crossResult = vecCross(E1, E);
         if (vecDot(crossResult, N) < 0) {
-            return (CollideResult){false, INFINITY};
+            return notCollide();
         }
     }
-    return (CollideResult){true, t};
+    return getCollideResult(true, t, normalVectorOfConvexPolygon(cp));
 }
 
 static void destroyConvexPolygon(Shape *self) {
@@ -203,9 +214,13 @@ static void destroyConvexPolygon(Shape *self) {
 
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
-    cp->shape =
-        (Shape){collideWithConvexPolygon, normalVectorOfConvexPolygon, destroyConvexPolygon};
+    cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
     cp->vertexes = getDynamicArray(getSize(vertexes), Point);
     memcpy(cp->vertexes, vertexes, sizeof(Point) * getSize(vertexes));
     return (Shape *)cp;
+}
+
+CollideResult detectGroupCollide(Shape *self) {
+    Group *group = (Group*)self;
+    for (int i = 0; )
 }

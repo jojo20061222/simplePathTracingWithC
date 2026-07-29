@@ -109,8 +109,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // case 3: we collide with an object first
     Vector d = ray.direction;
     Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
-    Vector N = unitVector(
-        firstCollideObject->shape->normalVector(firstCollideObject->shape, collidePoint));
+    Vector N = unitVector(firstCollideObjectResult.normalVector);
     Complex n1, n2;
     if (vecDot(N, d) > 0) {
         // N vecDot d < 0 implys the ray is now in the object

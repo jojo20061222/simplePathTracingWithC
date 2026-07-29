@@ -6,11 +6,11 @@
 typedef struct {
     bool collide;
     double t;
+    Vector normalVector;
 } CollideResult;
 
 typedef struct _Shape {
     CollideResult (*detectCollide)(struct _Shape *, ReversedRay *);
-    Vector (*normalVector)(struct _Shape *, Point);
     void (*destroySelf) (struct _Shape *);
 } Shape;
 
