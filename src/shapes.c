@@ -220,7 +220,20 @@ Shape *newConvexPolygon(Point *vertexes) {
     return (Shape *)cp;
 }
 
-CollideResult detectGroupCollide(Shape *self) {
-    Group *group = (Group*)self;
-    for (int i = 0; )
+CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {
+    Group *group = (Group *)self;
+    int shapesCount = getSize(group->elements);
+    CollideResult firstCollideObjectResult = notCollide();
+    for (int i = 0; i < shapesCount; i++) {
+        CollideResult curResult = group->elements[i]->detectCollide(group->elements[i], ray);
+        if (curResult.t <= firstCollideObjectResult.t) {
+            firstCollideObjectResult = curResult;
+        }
+    }
+    return firstCollideObjectResult;
+}
+
+void destroyGroup(Shape *self) {
+    Group *group = (Group *) self;
+    
 }
