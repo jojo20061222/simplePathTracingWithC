@@ -8,7 +8,7 @@
 
 typedef struct Shape {
     CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
-    void (*destroySelf) (struct Shape *);
+    void (*destroySelf)(struct Shape *);
 } Shape;
 
 typedef struct Triangle {
@@ -246,7 +246,7 @@ static void destroyConvexPolygon(Shape *self) {
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
     cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
-    cp->vertexes = getDynamicArray(getSize(vertexes), Point);
+    cp->vertexes = newDynamicArray(getSize(vertexes), Point);
     memcpy(cp->vertexes, vertexes, sizeof(Point) * getSize(vertexes));
     return (Shape *)cp;
 }
@@ -274,15 +274,18 @@ void destroyGroup(Shape *self) {
     free(group);
 }
 
-Shape *newGroup(Shape **elements) { Group *group = malloc(sizeof(*group)); }
-
+Shape *newGroup(Shape **elements) {
+    Group *group = malloc(sizeof(*group));
+    group->elements = newDynamicArray(getSize(elements), Shape *);
+    memcpy(group->elements, elements, sizeof(Shape *) * getSize(elements));
+    group->shape = getShape(detectGroupCollide, destroyGroup);
+    return (Shape *)group;
+}
 
 // provide a uniform api to others to detect collide
 CollideResult detectCollide(Shape *self, ReversedRay *ray) {
     return self->detectCollide(self, ray);
 }
 
-// provide a uniform apt to others to destroy a shape 
-void destroyShape(Shape *self) {
-    self->destroySelf(self);
-}
+// provide a uniform apt to others to destroy a shape
+void destroyShape(Shape *self) { self->destroySelf(self); }

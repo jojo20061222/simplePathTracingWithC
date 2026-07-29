@@ -13,7 +13,7 @@ typedef struct {
     int capacity, size;
 } dynamicArrayHeader;
 
-#define getDynamicArray(arraySize, type)                                                           \
+#define newDynamicArray(arraySize, type)                                                           \
     ({                                                                                             \
         assert((arraySize) >= 0);                                                                  \
         dynamicArrayHeader *__header =                                                             \

@@ -33,13 +33,13 @@ int main() {
     Texture redPlastic =
         newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 1);
 
-    Object **objects = getDynamicArray(0, Object *);
-    LightSource **sources = getDynamicArray(0, LightSource *);
+    Object **objects = newDynamicArray(0, Object *);
+    LightSource **sources = newDynamicArray(0, LightSource *);
 
     double startx = 0, endx = width;
     double starty = 0, endy = height;
     double pz = (double)2 / (double)3 * width;
-    Point *wallPoints = getDynamicArray(4, Point);
+    Point *wallPoints = newDynamicArray(4, Point);
     wallPoints[0] = (Point){startx, starty, pz};
     wallPoints[1] = (Point){startx, endy, pz};
     wallPoints[2] = (Point){endx, endy, pz};
@@ -50,7 +50,7 @@ int main() {
     pushBack(&objects, wall, Object *);
 
     double bz = (double)1 / (double)3 * width;
-    Point *groundPoints = getDynamicArray(4, Point);
+    Point *groundPoints = newDynamicArray(4, Point);
     groundPoints[0] = (Point){startx, endy, bz};
     groundPoints[1] = (Point){startx, endy, pz};
     groundPoints[2] = (Point){endx, endy, pz};

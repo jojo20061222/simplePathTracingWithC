@@ -32,9 +32,7 @@ static inline Vector vecMinus(Vector a, Vector b) {
     return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
-static inline Vector vecNegative(Vector v) {
-    return (Vector){-v.x, -v.y, -v.z};
-}
+static inline Vector vecNegative(Vector v) { return (Vector){-v.x, -v.y, -v.z}; }
 
 static inline Vector vecMultiply(double c, Vector a) { return (Vector){c * a.x, c * a.y, c * a.z}; }
 
@@ -56,7 +54,9 @@ typedef struct {
     double waveLength;
 } ReversedRay;
 
-ReversedRay newRay(Point start, Vector direction, double waveLength);
+static inline ReversedRay newRay(Point start, Vector direction, double waveLength) {
+    return (ReversedRay){start, unitVector(direction), waveLength};
+}
 
 typedef struct {
     int capacity;
@@ -90,7 +90,9 @@ static inline Complex cplxMultiply(Complex a, Complex b) {
     return (Complex){a.R * b.R - a.I * b.I, a.R * b.I + a.I * b.R};
 }
 
-static inline Complex cplxMultiplyByReal(double r, Complex z) { return (Complex){r * z.R, r * z.I}; }
+static inline Complex cplxMultiplyByReal(double r, Complex z) {
+    return (Complex){r * z.R, r * z.I};
+}
 
 static inline Complex cplxDivide(Complex a, Complex b) {
     // (a + bi) / (c + di) = (a + bi)(c - di) / (c^2 + d^2)

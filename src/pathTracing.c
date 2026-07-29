@@ -23,8 +23,8 @@ int main() {
     Texture redPlastic =
         newTexture(red, getPlasticRefractivity, getAirRefractivity, false, false, 0);
 
-    Object **objects = getDynamicArray(0, Object *);
-    LightSource **sources = getDynamicArray(0, LightSource *);
+    Object **objects = newDynamicArray(0, Object *);
+    LightSource **sources = newDynamicArray(0, LightSource *);
 
     double startx = 0, endx = width;
     double starty = 0, endy = height;
@@ -53,10 +53,10 @@ int main() {
     pushBack(&objects, obj4, Object *);
 
     double radius = (double)width / 10;
-    Shape *sph = newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
+    Shape *sph =
+        newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
     Object *obj = newObject(sph, getDiamond());
     pushBack(&objects, obj, Object *);
-
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);

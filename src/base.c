@@ -43,7 +43,3 @@ void *pop(Queue *queue) {
 }
 
 int size(Queue *queue) { return queue->size; }
-
-ReversedRay newRay(Point start, Vector direction, double waveLength) {
-    return (ReversedRay){start, unitVector(direction), waveLength};
-}
