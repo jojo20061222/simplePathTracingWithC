@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+#include "frame.h"
 
 static const int threadCount = 30;
 
@@ -29,38 +30,38 @@ int main() {
     double startx = 0, endx = width;
     double starty = 0, endy = height;
     double pz = (double)2 / (double)3 * width;
-    Point p1 = {startx, starty, pz};
-    Point p2 = {startx, endy, pz};
-    Point p3 = {endx, endy, pz};
-    Point p4 = {endx, starty, pz};
-    Shape *tri1 = newTriangle(p1, p2, p3);
-    Shape *tri2 = newTriangle(p3, p4, p1);
-    Object *obj1 = newObject(tri1, whitePlastic);
-    Object *obj2 = newObject(tri2, whitePlastic);
-    pushBack(&objects, obj1, Object *);
-    pushBack(&objects, obj2, Object *);
+    Point *wallPoints = newDynamicArray(4, Point);
+    wallPoints[0] = (Point){startx, starty, pz};
+    wallPoints[1] = (Point){startx, endy, pz};
+    wallPoints[2] = (Point){endx, endy, pz};
+    wallPoints[3] = (Point){endx, starty, pz};
+    Shape *wallShape = newConvexPolygon(wallPoints);
+    freeDynamicArray(wallPoints);
+    Object *wall = newObject(wallShape, whitePlastic);
+    pushBack(&objects, wall, Object *);
 
     double bz = (double)1 / (double)3 * width;
-    Point p5 = {startx, endy, bz};
-    Point p6 = {startx, endy, pz};
-    Point p7 = {endx, endy, pz};
-    Point p8 = {endx, endy, bz};
-    Shape *tri3 = newTriangle(p5, p6, p7);
-    Shape *tri4 = newTriangle(p7, p8, p5);
-    Object *obj3 = newObject(tri3, whitePlastic);
-    Object *obj4 = newObject(tri4, whitePlastic);
-    pushBack(&objects, obj3, Object *);
-    pushBack(&objects, obj4, Object *);
+    Point *groundPoints = newDynamicArray(4, Point);
+    groundPoints[0] = (Point){startx, endy, bz};
+    groundPoints[1] = (Point){startx, endy, pz};
+    groundPoints[2] = (Point){endx, endy, pz};
+    groundPoints[3] = (Point){endx, endy, bz};
+    Shape *groundShape = newConvexPolygon(groundPoints);
+    freeDynamicArray(groundPoints);
+    Object *ground = newObject(groundShape, whitePlastic);
+    pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Shape *sph =
-        newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
-    Object *obj = newObject(sph, getDiamond());
-    pushBack(&objects, obj, Object *);
+    Point showing = {(double)width / 2, (double)endy - radius, pz - radius * 1.5};
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
+
+    Frame *diamondFrame = readFrame("src/static/diamond.obj");
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Object *diamondObj = newObject(diamondShape, getDiamond());
+    pushBack(&objects, diamondObj, Object *);
 
     Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 100);
 

@@ -36,17 +36,12 @@ Frame *readFrame(const char *path) {
         if (!strcmp(firstTok, "v")) { // first case: this line represent a vertex
             Point p;
             sscanf(buffer + 2, "%lf%lf%lf", &p.x, &p.y, &p.z); // skip the "v " at the start
-#ifdef DEBUG
-            printf("read vertex: %lf %lf %lf\n", p.x, p.y, p.z);
-#endif
+            pushBack(&frame->vertexes, p, Point);
         }
 
         else if (!strcmp(firstTok, "f")) { // second case: this line represent a face
             bool lineEnd = false;
             Face f = newDynamicArray(0, int);
-#ifdef DEBUG
-            printf("read face: ");
-#endif
             while (!lineEnd) {
                 char *token = strtok_r(NULL, dim, &saveptr);
                 if (!token) {
@@ -55,16 +50,10 @@ Frame *readFrame(const char *path) {
                 }
                 int vertexNumber, _;
                 sscanf(token, "%d//%d", &vertexNumber, &_);
-#ifdef DEBUG
-                printf("%d ", vertexNumber);
-#endif
                 pushBack(&f,
                          vertexNumber - 1, // in obj files they are 1-based but we need 0-based here
                          int);
             }
-#ifdef DEBUG
-            printf("\n");
-#endif
             pushBack(&frame->faces, f, Face);
         }
     }
@@ -78,23 +67,14 @@ Shape *newGroupFromFrame(Frame *m, double scalingFactor, Point center) {
     Shape **shapes = newDynamicArray(0, Shape *);
     int faceCount = getSize(m->faces);
     for (int i = 0; i < faceCount; i++) {
-#ifdef DEBUG
-        printf("f: ");
-#endif 
         int vertexesCount = getSize(m->faces[i]);
         Point *vertexes = newDynamicArray(0, Point);
         for (int j = 0; j < vertexesCount; j++) {
             int vertexNumber = m->faces[i][j];
             Point p = m->vertexes[vertexNumber];
             p = vecAdd(vecMultiply(scalingFactor, p), center);
-#ifdef DEBUG
-            printf("(%lf, %lf, %lf) ", p.x, p.y, p.z);
-#endif
             pushBack(&vertexes, p, Point);
         }
-#ifdef DEBUG
-        printf("\n");
-#endif
         Shape *cp = newConvexPolygon(vertexes);
         pushBack(&shapes, cp, Shape *);
         freeDynamicArray(vertexes);
