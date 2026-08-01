@@ -1,6 +1,9 @@
 all: bin/main
 build/base.o: src/base.c src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
+build/frame.o: src/frame.c src/frame.h src/shapes.h src/base.h \
+  src/dynamicArray.h
+	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
 build/lightSource.o: src/lightSource.c src/lightSource.h src/base.h \
   src/object.h src/shapes.h src/textures.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
@@ -75,7 +78,7 @@ build/shapes.o: src/shapes.c src/shapes.h src/base.h src/dynamicArray.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
 build/textures.o: src/textures.c src/textures.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
-bin/main: build/base.o build/lightSource.o build/main.o build/multithreads.o build/object.o build/random.o build/render.o build/shapes.o build/textures.o 
+bin/main: build/base.o build/frame.o build/lightSource.o build/main.o build/multithreads.o build/object.o build/random.o build/render.o build/shapes.o build/textures.o 
 	clang $^ -o $@ `sdl2-config --libs` -lm -lpthread -flto
 
 .PHONY: clean

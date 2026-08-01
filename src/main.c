@@ -1,4 +1,5 @@
 #include "dynamicArray.h"
+#include "frame.h"
 #include "multithreads.h"
 #include "render.h"
 #include <SDL.h>
@@ -61,14 +62,20 @@ int main() {
     pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Shape *sph =
-        newSphere((Point){(double)width / 2, (double)endy - radius, pz - radius * 1.5}, radius);
-    Object *obj = newObject(sph, getDiamond());
-    pushBack(&objects, obj, Object *);
+    Point showing = {(double)width / 2, (double)endy - radius, pz - radius * 1.5};
+    Shape *sph = newSphere(showing, radius);
+    // Object *obj = newObject(sph, getDiamond());
+    // pushBack(&objects, obj, Object *);
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
+
+    // diamond
+    Frame *diamondFrame = readFrame("src/static/diamond.obj");
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Object *diamondObj = newObject(diamondShape, getDiamond());
+    pushBack(&objects, diamondObj, Object *);
 
     Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100);
 
