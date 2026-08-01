@@ -158,8 +158,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         if (metalic) finalFactor *= F;
 
         Vector nxtDirection = l;
-        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
-                                    nxtDirection, ray.waveLength);
+        // to avoid collide with the same object again, we move a little from the collide point
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
+        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
@@ -185,8 +186,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
         if (n1R * n1R * sin2Theta1 >= n2R * n2R) {
             Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
-            ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
-                                        nxtDirection, ray.waveLength);
+            Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
+            ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
             return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         }
         /*
@@ -220,8 +221,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double coefficientOfSecondPart =
             eta * cosTheta1 - sqrt(1 - eta * eta * (1 - cosTheta1 * cosTheta1));
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
-        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
-                                    nxtDirection, ray.waveLength);
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
+        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
     }
 
