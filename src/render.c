@@ -110,7 +110,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // case 3: we collide with an object first
     Vector d = ray.direction;
     Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
+    // Now the normal vector is still point toward outside
     Vector N = unitVector(firstCollideObjectResult.normalVector);
+
     Complex n1, n2;
     if (vecDot(N, d) > 0) {
         // N vecDot d < 0 implys the ray is now in the object
@@ -123,18 +125,22 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         n1 = getRefractiveIndexOutside(firstCollideObject, ray.waveLength);
         n2 = getRefractiveIndexInside(firstCollideObject, ray.waveLength);
     }
+    // after the operations above, the normal vector should point on the side where reversed rays
+    // come from
 
-    Vector v = vecNegative(unitVector(ray.direction)); // from collide point to observer
+    Vector v = vecNegative(unitVector(ray.direction)); // direction from collide point to observer
     double roughness = getRoughness(firstCollideObject);
+    // By Disney's guidelines we square the roughness here to get alpha
     double alpha = roughness * roughness;
 
-    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample through GGX
+    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample normal vector through GGX
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double vDotH = vecDot(v, h);
     if (vDotH <= 0) return 0;
     double cosTheta = vDotH;
 
+    // Schlick's approximation
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x;
     double y = 1 - cosTheta;
@@ -150,7 +156,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
-        if (NdotV <= 0 || NdotL <= 0 || NdotH <= 0) return 0;
+        if (NdotV <= error || NdotL <= error || NdotH <= error) {
+            return 0;
+        }
 
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
@@ -273,6 +281,7 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects
     intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
     if (!isfinite(intensityResult)) return;
+    if (intensityResult > 100000) printf("%lf", intensityResult);
 
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
