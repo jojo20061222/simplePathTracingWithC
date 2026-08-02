@@ -141,6 +141,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double cosTheta = vDotH;
 
     // Schlick's approximation
+    // F = F0 + (1 - F0) * y^5
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x;
     double y = 1 - cosTheta;
