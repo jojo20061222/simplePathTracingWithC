@@ -62,15 +62,15 @@ int main() {
     pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)starty + radius, bz + radius * 1.5};
+    Point showing = {(double)width / 2, (double)starty + radius * 1.5, bz + radius * 1.5};
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)height * 1.5, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    Shape *diamondShape = newSphere(showing, radius);
-    Object *diamondObj = newObject(diamondShape, getGold(0.1));
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
 
     Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100);

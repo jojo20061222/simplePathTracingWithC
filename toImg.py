@@ -1,13 +1,20 @@
 from PIL import Image
 import sys
 
-if len(sys.argv) <= 2:
+if len(sys.argv) <= 1:
     print('Need file name to process')
     print(f'Format: python3 {sys.argv[0]} [raw data] [output png filename]')
     sys.exit(1)
 
+output = True
+if len(sys.argv) == 2:
+    output = False
+    
+
 inputFilename = sys.argv[1]
-outputFilename = sys.argv[2]
+outputFilename = None
+if output:
+    outputFilename = sys.argv[2]
 
 with open(inputFilename) as f:
     sizeInfo = f.readline().split()
@@ -35,4 +42,6 @@ for y in range(height):
 
         pixels[x, y] = (r, g, b)
 
-img.save(outputFilename)
+if output:
+    assert(outputFilename != None)
+    img.save(outputFilename)

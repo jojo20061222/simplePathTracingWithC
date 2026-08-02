@@ -75,9 +75,16 @@ Shape *newGroupFromFrame(Frame *m, double scalingFactor, Point center) {
             p = vecAdd(vecMultiply(scalingFactor, p), center);
             pushBack(&vertexes, p, Point);
         }
-        Shape *cp = newConvexPolygon(vertexes);
-        pushBack(&shapes, cp, Shape *);
-        freeDynamicArray(vertexes);
+        if (getSize(vertexes) > 3) {
+            Shape *cp = newConvexPolygon(vertexes);
+            pushBack(&shapes, cp, Shape *);
+            freeDynamicArray(vertexes);
+        }
+        else {
+            Shape *tri = newTriangle(vertexes[0], vertexes[1], vertexes[2]);
+            pushBack(&shapes, tri, Shape*);
+            freeDynamicArray(vertexes);
+        }
     }
     return newGroup(shapes);
 }
