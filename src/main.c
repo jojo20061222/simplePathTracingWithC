@@ -70,7 +70,7 @@ int main() {
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
-    Object *diamondObj = newObject(diamondShape, getDiamond());
+    Object *diamondObj = newObject(diamondShape, getGold(0.1));
     pushBack(&objects, diamondObj, Object *);
 
     Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100);

@@ -35,4 +35,4 @@ for y in range(height):
 
         pixels[x, y] = (r, g, b)
 
-# img.save(outputFilename)
+img.save(outputFilename)
