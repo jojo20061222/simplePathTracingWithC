@@ -33,7 +33,7 @@ void freeScreen(VirtualScreen *screen) {
 }
 
 static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color) {
-    int i = y * vs->width + x;
+    int i = (vs->height - y - 1) * vs->width + x;
     // use Wellford's Algorithm to calculate variance
     int n = ++vs->renderCount[i];
     vs->mean[i].X += (color.X - vs->mean[i].X) / n;

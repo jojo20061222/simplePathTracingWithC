@@ -52,24 +52,24 @@ int main() {
 
     double bz = (double)1 / (double)3 * width;
     Point *groundPoints = newDynamicArray(4, Point);
-    groundPoints[0] = (Point){startx, endy, bz};
-    groundPoints[1] = (Point){startx, endy, pz};
-    groundPoints[2] = (Point){endx, endy, pz};
-    groundPoints[3] = (Point){endx, endy, bz};
+    groundPoints[0] = (Point){startx, starty, bz};
+    groundPoints[1] = (Point){startx, starty, pz};
+    groundPoints[2] = (Point){endx, starty, pz};
+    groundPoints[3] = (Point){endx, starty, bz};
     Shape *groundShape = newConvexPolygon(groundPoints);
     freeDynamicArray(groundPoints);
     Object *ground = newObject(groundShape, whitePlastic);
     pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)endy - radius, pz - radius * 1.5};
+    Point showing = {(double)width / 2, (double)starty + radius, bz + radius * 1.5};
 
-    Shape *lightSph = newSphere((Point){(double)-width, (double)-height, pz - 3 * radius}, radius);
+    Shape *lightSph = newSphere((Point){(double)-width, (double)height * 1.5, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Shape *diamondShape = newSphere(showing, radius);
     Object *diamondObj = newObject(diamondShape, getGold(0.1));
     pushBack(&objects, diamondObj, Object *);
 
