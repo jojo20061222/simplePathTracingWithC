@@ -30,6 +30,9 @@ for y in range(height):
         g = pixel // 256 % 256
         b = pixel // 256 // 256 % 256
 
+        if r > 250 or g > 250 or b > 250:
+            print(r, g, b)
+
         pixels[x, y] = (r, g, b)
 
-img.save(outputFilename)
+# img.save(outputFilename)
