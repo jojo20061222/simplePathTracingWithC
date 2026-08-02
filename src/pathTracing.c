@@ -14,8 +14,8 @@ int main() {
 
     bool isRunning = true;
 
-    static const int width = 3024;
-    static const int height = 1964;
+    static const int width = 720;
+    static const int height = 540;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, -4000};
 
@@ -59,7 +59,7 @@ int main() {
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
     Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
 

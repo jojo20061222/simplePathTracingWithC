@@ -69,7 +69,7 @@ int main() {
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, 100, showing);
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
     Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
 

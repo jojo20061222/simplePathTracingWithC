@@ -282,7 +282,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects
     intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
     if (!isfinite(intensityResult)) return;
-    if (intensityResult > 100000) printf("%lf", intensityResult);
 
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
