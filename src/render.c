@@ -112,7 +112,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     Vector d = ray.direction;
     Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
     // Now the normal vector is still point toward outside
-    Vector N = unitVector(firstCollideObjectResult.normalVector);
+    Vector N = firstCollideObjectResult.normalVector;
 
     Complex n1, n2;
     if (vecDot(N, d) > 0) {
@@ -158,7 +158,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
-        static const double error = 1e-3;
+        static const double error = 1e-4;
 
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
             return 0;
@@ -174,8 +174,6 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
-        // clamp to avoid exteme value
-        result = fmin(result, 1e4);
         return result;
     }
 
@@ -241,7 +239,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         // this will not cause burst of value so we don't check here
         double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
-        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        return result;
     }
 
     else {

@@ -11,7 +11,7 @@ typedef struct {
 
 typedef struct Shape Shape;
 
-typedef struct Triangle triangle;
+typedef struct Triangle Triangle;
 
 typedef struct Sphere Sphere;
 
