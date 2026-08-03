@@ -8,14 +8,13 @@ typedef struct Texture Texture;
 double getTextureBaseColor(Texture *texture, double lambda);
 Complex getTextureRefractiveIndexInside(Texture *texture, double lambda);
 Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda);
-bool getTextureMetalic(Texture *texture);
+bool getTexturemetallic(Texture *texture);
 bool getTextureTransparent(Texture *texture);
 double getTextureRoughness(Texture *texture);
 
-
 Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
-                   double roughness);
+                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metallic,
+                    double roughness);
 
 void initTexture();
 

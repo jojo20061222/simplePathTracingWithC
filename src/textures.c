@@ -9,16 +9,16 @@ typedef struct Texture {
     Complex (*refractiveIndexInside)(double lambda);
     Complex (*refractiveIndexOutside)(double lambda);
     bool transparent;
-    bool metalic;
+    bool metallic;
     double roughness;
 } Texture;
 
 Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                   Complex (*refractiveIndexOutside)(double), bool transparent, bool metalic,
-                   double roughness) {
+                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metallic,
+                    double roughness) {
     Texture *tex = malloc(sizeof(*tex));
-    *tex = (Texture){baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metalic,
-                     roughness};
+    *tex = (Texture){
+        baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metallic, roughness};
     return tex;
 }
 
@@ -161,24 +161,16 @@ Texture *getDiamond() {
 }
 
 // Wrappers
-double getTextureBaseColor(Texture *texture, double lambda) {
-    return texture->baseColor(lambda);
-}
+double getTextureBaseColor(Texture *texture, double lambda) { return texture->baseColor(lambda); }
 Complex getTextureRefractiveIndexInside(Texture *texture, double lambda) {
     return texture->refractiveIndexInside(lambda);
 }
 Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda) {
     return texture->refractiveIndexOutside(lambda);
 }
-bool getTextureMetalic(Texture *texture) {
-    return texture->metalic;
-}
-bool getTextureTransparent(Texture *texture) {
-    return texture->transparent;
-}
-double getTextureRoughness(Texture *texture) {
-    return texture->roughness;
-}
+bool getTexturemetallic(Texture *texture) { return texture->metallic; }
+bool getTextureTransparent(Texture *texture) { return texture->transparent; }
+double getTextureRoughness(Texture *texture) { return texture->roughness; }
 
 #undef AG_LINE_COUNT
 #undef AU_LINE_COUNT

@@ -34,7 +34,7 @@ void freeScreen(VirtualScreen *screen) {
 
 static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color) {
     int i = (vs->height - y - 1) * vs->width + x;
-    // use Wellford's Algorithm to calculate variance
+    // online mean update
     int n = ++vs->renderCount[i];
     vs->mean[i].X += (color.X - vs->mean[i].X) / n;
     vs->mean[i].Y += (color.Y - vs->mean[i].Y) / n;
@@ -48,7 +48,7 @@ static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
     double theta = 2 * M_PI * u1;
     double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
     double sinPhi = sqrt(1 - cosPhi * cosPhi);
-    // <cos theta sihPhi, sin theta sin phi, cos phi>
+    // <cos theta sinPhi, sin theta sin phi, cos phi>
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
 
@@ -148,29 +148,31 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
-    bool metalic = getMetalic(firstCollideObject);
+    bool metallic = getmetallic(firstCollideObject);
 
-    if (metalic || randomReal(mt) <= F) {
+    if (metallic || randomReal(mt) <= F) {
         // BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
-        static const double error = 1e-4;
+        static const double error = 1e-6;
 
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
             return 0;
         }
 
+        // calculating 4 * F * V * (N dot L) * (V dot H) / (N dot H)
         double alpha2 = alpha * alpha;
         double NdotV2 = NdotV * NdotV;
         double NdotL2 = NdotL * NdotL;
         double denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
                         NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
-        double visibilityTerm = 0.5 / denom;
-        double finalFactor = 4.0 * visibilityTerm * NdotL * VdotH / NdotH;
-        if (metalic) finalFactor *= F;
+        double finalFactor = (2.0 * NdotL * VdotH) / (denom * NdotH);
+
+        // since metallic won't go into the 1 - F branch so we do have to * F
+        if (metallic) finalFactor *= F;
 
         Vector nxtDirection = l;
         // to avoid collide with the same object again, we move a little from the collide point
@@ -180,7 +182,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         return result;
     }
 
-    if (metalic) return 0; // metal only has specular
+    if (metallic) return 0; // metal only has specular
 
     bool transparent = getTransparent(firstCollideObject);
 

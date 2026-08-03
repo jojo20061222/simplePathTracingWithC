@@ -25,17 +25,11 @@ Complex getRefractiveIndexInside(Object *self, double lambda) {
     return getTextureRefractiveIndexInside(self->texture, lambda);
 }
 
-double getRoughness(Object *self) {
-    return getTextureRoughness(self->texture);
-}
+double getRoughness(Object *self) { return getTextureRoughness(self->texture); }
 
-bool getMetalic(Object *self) {
-    return getTextureMetalic(self->texture);
-}
+bool getmetallic(Object *self) { return getTexturemetallic(self->texture); }
 
-bool getTransparent(Object *self) {
-    return getTextureTransparent(self->texture);
-}
+bool getTransparent(Object *self) { return getTextureTransparent(self->texture); }
 
 double getBaseColor(Object *self, double lambda) {
     return getTextureBaseColor(self->texture, lambda);

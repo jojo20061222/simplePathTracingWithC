@@ -18,7 +18,7 @@ Complex getRefractiveIndexOutside(Object *self, double lambda);
 
 double getRoughness(Object *self);
 
-bool getMetalic(Object *self);
+bool getmetallic(Object *self);
 
 bool getTransparent(Object *self);
 
