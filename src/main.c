@@ -62,14 +62,15 @@ int main() {
     pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)starty + radius * 1.5, bz + radius * 1.5};
+    Point showing = {(double)width / 2, (double)starty + radius * 1, bz + radius * 1.5};
 
     Shape *lightSph = newSphere((Point){(double)-width, (double)height * 1.5, pz - 3 * radius}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
+    // Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
+    Shape *diamondShape = newSphere(showing, radius);
     Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
 

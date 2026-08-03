@@ -140,22 +140,24 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     if (VdotH <= 0) return 0;
     double cosTheta = VdotH;
     double cosThetaForF;
+    bool metallic = getmetallic(firstCollideObject);
 
     // check total internal reflection
-    if (n1.R > n2.R) {
+    if (!metallic && n1.R > n2.R) {
         // TIR need n1 sinTheta >= n2
         // or squared n1^2 sin^2Theta >= n2^2
         double n1R2 = n1.R * n1.R;
         double n2R2 = n2.R * n2.R;
-        double sin2Theta = 1 - cosThetaForF * cosTheta;
+        double sin2Theta = 1 - cosTheta * cosTheta;
         if (n1R2 * sin2Theta >= n2R2) {
             cosThetaForF = 0;
         }
         else {
             // use angle of refraction instead
-            // since n1 sinTheta = n2 sinTheta
-            double sinThetaForF = 
-            cosThetaForF = ;
+            // ignore the imaginary part of n since metal does not have refraction
+            // since n1 sinTheta1 = n2 sinTheta2 we have sinTheta2 = n1/n2 sinTheta1
+            double sin2Theta2 = n1R2 / n2R2 * sin2Theta;
+            cosThetaForF = sqrt(fmax(0, 1 - sin2Theta2));
         }
     }
     else {
@@ -170,7 +172,6 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
-    bool metallic = getmetallic(firstCollideObject);
 
     if (metallic || randomReal(mt) <= F) {
         // BRDF
@@ -198,7 +199,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         Vector nxtDirection = l;
         // to avoid collide with the same object again, we move a little from the collide point
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
@@ -248,10 +249,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
          * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
          */
         double eta = n1R / n2R;
+        double eta2 = eta * eta;
+        double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
         double coefficientOfSecondPart =
-            eta * cosTheta1 - sqrt(1 - eta * eta * (1 - cosTheta1 * cosTheta1));
+            eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         // this will not cause burst of value so we don't check here
         double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
@@ -275,7 +278,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
         Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
         Vector nxtDirection = toWorld(local, N);
-        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection)),
+        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)),
                                     nxtDirection, ray.waveLength);
 
         return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) *
