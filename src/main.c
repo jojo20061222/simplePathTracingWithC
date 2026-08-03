@@ -27,7 +27,7 @@ int main() {
     bool isRunning = true;
 
     VirtualScreen *vs = newScreen(width, height);
-    Point camera = {(double)width / 2, (double)height / 2, -width};
+    Point camera = {(double)width / 2, (double)height / 2, width};
 
     Texture *whitePlastic =
         newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
@@ -39,7 +39,7 @@ int main() {
 
     double startx = 0, endx = width;
     double starty = 0, endy = height;
-    double pz = (double)2 / (double)3 * width;
+    double pz = -(double)2 / (double)3 * width;
     Point *wallPoints = newDynamicArray(4, Point);
     wallPoints[0] = (Point){startx, starty, pz};
     wallPoints[1] = (Point){startx, endy, pz};
@@ -50,7 +50,7 @@ int main() {
     Object *wall = newObject(wallShape, whitePlastic);
     pushBack(&objects, wall, Object *);
 
-    double bz = (double)1 / (double)3 * width;
+    double bz = -(double)1 / (double)3 * width;
     Point *groundPoints = newDynamicArray(4, Point);
     groundPoints[0] = (Point){startx, starty, bz};
     groundPoints[1] = (Point){startx, starty, pz};
@@ -62,15 +62,14 @@ int main() {
     pushBack(&objects, ground, Object *);
 
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)starty + radius * 1, bz + radius * 1.5};
+    Point showing = {(double)width / 2, (double)starty + radius * 1, bz - radius * 1.5};
 
-    Shape *lightSph = newSphere((Point){(double)-width, (double)height * 1.5, pz - 3 * radius}, radius);
+    Shape *lightSph = newSphere((Point){(double)-width, (double)height * 1.5, -pz + radius * 3}, radius);
     LightSource light = newLightSource(lightSph, whiteLight);
     pushBack(&sources, &light, LightSource *);
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
-    // Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
-    Shape *diamondShape = newSphere(showing, radius);
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, radius, showing);
     Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
 
