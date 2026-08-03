@@ -150,6 +150,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         if (n1R2 * sin2Theta >= n2R2) {
             cosTheta = 0;
         }
+        else {
+            cosTheta = 
+        }
     }
 
     // Schlick's approximation
