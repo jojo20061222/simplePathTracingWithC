@@ -20,6 +20,7 @@ void initTexture();
 
 // base colors
 double pureWhite(double lambda);
+double pureBlack(double lambda);
 double red(double lambda);
 
 // refractivities

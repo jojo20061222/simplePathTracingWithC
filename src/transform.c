@@ -53,7 +53,8 @@ Vector regularTransform(Vector v, void *para) {
     v = scaling(v, rtpara->scalingFactor);
     v = rotateAboutXAxis(v, rtpara->rotateXAngle);
     v = rotateAboutYAxis(v, rtpara->rotateYAngle);
-    v = rotateAboutXAxis(v, rtpara->rotateZAngle);
+    v = rotateAboutZAxis(v, rtpara->rotateZAngle);
+    v = moveBy(v, rtpara->destination);
     return v;
 }
 
