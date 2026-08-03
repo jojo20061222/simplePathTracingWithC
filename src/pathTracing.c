@@ -17,7 +17,7 @@ int main() {
     static const int width = 720;
     static const int height = 540;
     VirtualScreen *vs = newScreen(width, height);
-    Point camera = {(double)width / 2, (double)height / 2, -4000};
+    Point camera = {(double)width / 2, (double)height / 2, width};
 
     // 材質設定：準備白色反光板與黑色擋板
     // 假設系統有 pureBlack 變數，若無請替換為 RGB(0,0,0) 的對應常數
