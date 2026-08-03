@@ -9,7 +9,9 @@
 const int width = 720;
 const int height = 540;
 
+
 double whiteLight(double waveLength) { return 3 * whiteLightBase(waveLength); }
+
 
 int main() {
     initLightIntensity();

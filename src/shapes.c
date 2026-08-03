@@ -211,10 +211,13 @@ Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
     cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
     cp->vertexes = newDynamicArray(getSize(vertexes), Point);
+
     int vertexesCount = getSize(cp->vertexes);
     assert(vertexesCount >= 3);
     memcpy(cp->vertexes, vertexes, sizeof(Point) * vertexesCount);
+
     Vector N = {NAN, NAN, NAN}; // theoretically N should not be this after the loop
+    // we iterate the vertexes and find the vertexes that are not in a single line
     for (int i = 0; i < vertexesCount; i++) {
         Point p1 = cp->vertexes[i];
         Point p2 = cp->vertexes[(i + 1) % vertexesCount];
@@ -225,6 +228,7 @@ Shape *newConvexPolygon(Point *vertexes) {
         if (lengthOf(N) > 1e-5) break;
     }
     cp->normal = unitVector(N);
+
     return (Shape *)cp;
 }
 

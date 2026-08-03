@@ -1,5 +1,12 @@
 #include "transform.h"
 #include "math.h"
+#include <stdlib.h>
+
+typedef struct RegularTransformPara {
+    double scalingFactor;
+    double rotateXAngle, rotateYAngle, rotateZAngle;
+    Vector destination;
+} RegularTransformPara;
 
 Vector scaling(Vector v, double scaleFactor) { return vecMultiply(scaleFactor, v); }
 
@@ -39,6 +46,26 @@ Vector rotateAboutZAxis(Vector v, double degree) {
     return (Vector){x, y, z};
 }
 
-Vector moveBy(Vector v, Vector displacement) {
-    return vecAdd(v, displacement);
+Vector moveBy(Vector v, Vector displacement) { return vecAdd(v, displacement); }
+
+Vector regularTransform(Vector v, void *para) {
+    RegularTransformPara *rtpara = para;
+    v = scaling(v, rtpara->scalingFactor);
+    v = rotateAboutXAxis(v, rtpara->rotateXAngle);
+    v = rotateAboutYAxis(v, rtpara->rotateYAngle);
+    v = rotateAboutXAxis(v, rtpara->rotateZAngle);
+    return v;
+}
+
+RegularTransformPara *newRegularTransformPara(double scalingFactor, double rotateXAngle,
+                                              double rotateYAngle, double rotateZAngle,
+                                              Vector destination) {
+    RegularTransformPara *result = malloc(sizeof(*result));
+    *result = (RegularTransformPara){scalingFactor, rotateXAngle, rotateYAngle, rotateZAngle,
+                                     destination};
+    return result;
+}
+
+void destroyRegulartransformPara(RegularTransformPara *para) {
+    free(para);
 }

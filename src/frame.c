@@ -1,5 +1,6 @@
 #include "frame.h"
 #include "base.h"
+#include "transform.h"
 #include "dynamicArray.h"
 #include <stdbool.h>
 #include <stdio.h>
@@ -63,7 +64,7 @@ Frame *readFrame(const char *path) {
     return frame;
 }
 
-Shape *newGroupFromFrame(Frame *m, double scalingFactor, Point center) {
+Shape *newGroupFromFrame(Frame *m, Transform t, void *para) {
     Shape **shapes = newDynamicArray(0, Shape *);
     int faceCount = getSize(m->faces);
     for (int i = 0; i < faceCount; i++) {
@@ -72,7 +73,7 @@ Shape *newGroupFromFrame(Frame *m, double scalingFactor, Point center) {
         for (int j = 0; j < vertexesCount; j++) {
             int vertexNumber = m->faces[i][j];
             Point p = m->vertexes[vertexNumber];
-            p = vecAdd(vecMultiply(scalingFactor, p), center);
+            p = t(p, para);
             pushBack(&vertexes, p, Point);
         }
         if (getSize(vertexes) > 3) {
