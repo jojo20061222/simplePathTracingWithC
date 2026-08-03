@@ -92,7 +92,7 @@ void initTexture() {
 
 double pureWhite(double _) { return 0.8; }
 
-double pureBlack(double) { return 0; }
+double pureBlack(double _) { return 0; }
 
 double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 

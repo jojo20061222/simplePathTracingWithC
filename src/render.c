@@ -281,8 +281,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)),
                                     nxtDirection, ray.waveLength);
 
-        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) *
-               getBaseColor(firstCollideObject, ray.waveLength);
+        double baseColor = getBaseColor(firstCollideObject, ray.waveLength);
+
+        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) * baseColor;
     }
 
     return 0;

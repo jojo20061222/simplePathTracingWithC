@@ -43,45 +43,45 @@ int main() {
     double pz = -(double)2 / (double)3 * width;
     double bz = -(double)1 / (double)3 * width;
 
-    // 1. 底部白色反光板 (Bounce Card)：將光線反射進鑽石底部
+    // 1. 底部白色反光板 (Bounce Card)
     Point *groundPoints = newDynamicArray(4, Point);
-    groundPoints[0] = (Point){startx, starty, bz};
-    groundPoints[1] = (Point){startx, starty, pz};
-    groundPoints[2] = (Point){endx, starty, pz};
-    groundPoints[3] = (Point){endx, starty, bz};
+    groundPoints[0] = (Point){endx, starty, bz};
+    groundPoints[1] = (Point){endx, starty, pz};
+    groundPoints[2] = (Point){startx, starty, pz};
+    groundPoints[3] = (Point){startx, starty, bz};
     Shape *groundShape = newConvexPolygon(groundPoints);
     freeDynamicArray(groundPoints);
     Object *ground = newObject(groundShape, whiteReflector);
     pushBack(&objects, ground, Object *);
 
-    // 2. 左側黑色擋板 (Left Black Flag)：製造鑽石左側切面的深色對比
+    // 2. 左側黑色擋板 (Left Black Flag)
     Point *leftFlagPoints = newDynamicArray(4, Point);
-    leftFlagPoints[0] = (Point){startx, starty, bz};
-    leftFlagPoints[1] = (Point){startx, endy, bz};
-    leftFlagPoints[2] = (Point){startx, endy, pz};
-    leftFlagPoints[3] = (Point){startx, starty, pz};
+    leftFlagPoints[0] = (Point){startx, starty, pz};
+    leftFlagPoints[1] = (Point){startx, endy, pz};
+    leftFlagPoints[2] = (Point){startx, endy, bz};
+    leftFlagPoints[3] = (Point){startx, starty, bz};
     Shape *leftFlagShape = newConvexPolygon(leftFlagPoints);
     freeDynamicArray(leftFlagPoints);
     Object *leftFlag = newObject(leftFlagShape, blackBlocker);
     pushBack(&objects, leftFlag, Object *);
 
-    // 3. 右側黑色擋板 (Right Black Flag)：製造鑽石右側切面的深色對比
+    // 3. 右側黑色擋板 (Right Black Flag)
     Point *rightFlagPoints = newDynamicArray(4, Point);
-    rightFlagPoints[0] = (Point){endx, starty, pz};
-    rightFlagPoints[1] = (Point){endx, endy, pz};
-    rightFlagPoints[2] = (Point){endx, endy, bz};
-    rightFlagPoints[3] = (Point){endx, starty, bz};
+    rightFlagPoints[0] = (Point){endx, starty, bz};
+    rightFlagPoints[1] = (Point){endx, endy, bz};
+    rightFlagPoints[2] = (Point){endx, endy, pz};
+    rightFlagPoints[3] = (Point){endx, starty, pz};
     Shape *rightFlagShape = newConvexPolygon(rightFlagPoints);
     freeDynamicArray(rightFlagPoints);
     Object *rightFlag = newObject(rightFlagShape, blackBlocker);
     pushBack(&objects, rightFlag, Object *);
 
-    // 4. 背景黑色擋板 (Background)：讓鑽石成為絕對視覺焦點
+    // 4. 背景黑色擋板 (Background)
     Point *backPoints = newDynamicArray(4, Point);
-    backPoints[0] = (Point){startx, starty, pz};
-    backPoints[1] = (Point){startx, endy, pz};
-    backPoints[2] = (Point){endx, endy, pz};
-    backPoints[3] = (Point){endx, starty, pz};
+    backPoints[0] = (Point){endx, starty, pz};
+    backPoints[1] = (Point){endx, endy, pz};
+    backPoints[2] = (Point){startx, endy, pz};
+    backPoints[3] = (Point){startx, starty, pz};
     Shape *backShape = newConvexPolygon(backPoints);
     freeDynamicArray(backPoints);
     Object *backWall = newObject(backShape, blackBlocker);
