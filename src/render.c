@@ -139,6 +139,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double VdotH = vecDot(v, h);
     if (VdotH <= 0) return 0;
     double cosTheta = VdotH;
+    double cosThetaForF;
 
     // check total internal reflection
     if (n1.R > n2.R) {
@@ -146,20 +147,26 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // or squared n1^2 sin^2Theta >= n2^2
         double n1R2 = n1.R * n1.R;
         double n2R2 = n2.R * n2.R;
-        double sin2Theta = 1 - cosTheta * cosTheta;
+        double sin2Theta = 1 - cosThetaForF * cosTheta;
         if (n1R2 * sin2Theta >= n2R2) {
-            cosTheta = 0;
+            cosThetaForF = 0;
         }
         else {
-            cosTheta = 
+            // use angle of refraction instead
+            // since n1 sinTheta = n2 sinTheta
+            double sinThetaForF = 
+            cosThetaForF = ;
         }
+    }
+    else {
+        cosThetaForF = cosTheta;
     }
 
     // Schlick's approximation
     // F = F0 + (1 - F0) * y^5
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
     double F0 = x * x;
-    double y = 1 - cosTheta;
+    double y = 1 - cosThetaForF;
     double y2 = y * y;
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
