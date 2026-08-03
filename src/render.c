@@ -43,7 +43,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
-static inline Vector GGXVectorSamle(MT19937 *mt, double alpha) {
+static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
     double u1 = randomReal(mt), u2 = randomReal(mt);
     double theta = 2 * M_PI * u1;
     double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
@@ -62,7 +62,6 @@ static inline Vector toWorld(Vector local, Vector N) {
                                    local.x * T.z + local.y * B.z + local.z * N.z};
     return nxtDirection;
 }
-
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth) {
@@ -129,12 +128,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // after the operations above, the normal vector should point on the side where reversed rays
     // come from
 
-    Vector v = vecNegative(unitVector(ray.direction)); // direction from collide point to observer
+    Vector v = vecNegative(ray.direction); // direction from collide point to observer
     double roughness = getRoughness(firstCollideObject);
     // By Disney's guidelines we square the roughness here to get alpha
     double alpha = roughness * roughness;
 
-    Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample normal vector through GGX
+    Vector h = toWorld(GGXVectorSample(mt, alpha), N);        // sample normal vector through GGX
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
     double VdotH = vecDot(v, h);
@@ -164,9 +163,13 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
             return 0;
         }
 
-        double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
-                          NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
-        double finalFactor = V * VdotH / NdotH;
+        double alpha2 = alpha * alpha;
+        double NdotV2 = NdotV * NdotV;
+        double NdotL2 = NdotL * NdotL;
+        double denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
+                        NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
+        double visibilityTerm = 0.5 / denom;
+        double finalFactor = 4.0 * visibilityTerm * NdotL * VdotH / NdotH;
         if (metalic) finalFactor *= F;
 
         Vector nxtDirection = l;
@@ -190,7 +193,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
          * The condition is n1 sin(theta1) >= n2
          * Take square both side we have n1^2 (1 - cos^2(theta1)) >= n2^2
          */
-        Vector I = unitVector(d);
+        Vector I = d;
         double cosTheta1 = -vecDot(N, I);
         assert(cosTheta1 >= 0);
         double n1R = n1.R;
@@ -254,7 +257,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
 
         // then we shall project it onto an sphere, then we get the cosine distribution
-        // normally suppose the normal vector point towards z-axis, then base on sphirical
+        // normally suppose the normal vector point towards z-axis, then base on spherical
         // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
         // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
         Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
