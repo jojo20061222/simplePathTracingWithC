@@ -90,7 +90,7 @@ void initTexture() {
     readFile(GLASS_PATH_N, GLASS_PATH_K, GlassEta, GLASS_LINE_COUNT);
 }
 
-double pureWhite(double _) { return 0.5; }
+double pureWhite(double _) { return 0.8; }
 
 double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 

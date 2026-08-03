@@ -63,6 +63,7 @@ static inline Vector toWorld(Vector local, Vector N) {
     return nxtDirection;
 }
 
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth) {
     if (maxDepth == 0) return 0;
@@ -136,9 +137,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     Vector h = toWorld(GGXVectorSamle(mt, alpha), N);         // sample normal vector through GGX
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
-    double vDotH = vecDot(v, h);
-    if (vDotH <= 0) return 0;
-    double cosTheta = vDotH;
+    double VdotH = vecDot(v, h);
+    if (VdotH <= 0) return 0;
+    double cosTheta = VdotH;
 
     // Schlick's approximation
     // F = F0 + (1 - F0) * y^5
@@ -157,13 +158,15 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double NdotL = vecDot(N, l);
         double NdotH = vecDot(N, h);
 
+        static const double error = 1e-3;
+
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
             return 0;
         }
 
         double V = 0.5 / (NdotL * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotV * NdotV) +
                           NdotV * sqrt(alpha * alpha + (1 - alpha * alpha) * NdotL * NdotL));
-        double finalFactor = V * vDotH / NdotH;
+        double finalFactor = V * VdotH / NdotH;
         if (metalic) finalFactor *= F;
 
         Vector nxtDirection = l;
@@ -171,6 +174,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
         double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        // clamp to avoid exteme value
+        result = fmin(result, 1e4);
         return result;
     }
 
@@ -197,7 +202,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
             Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
             Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
             ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-            return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+            // this will not cause burst of value so no check here
+            double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+            return result;
         }
         /*
          * We simply assume that
@@ -232,6 +239,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
+        // this will not cause burst of value so we don't check here
+        double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
     }
 
