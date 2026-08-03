@@ -58,23 +58,6 @@ static inline ReversedRay newRay(Point start, Vector direction, double waveLengt
     return (ReversedRay){start, unitVector(direction), waveLength};
 }
 
-typedef struct {
-    int capacity;
-    int size;
-    int head, rear;
-    void **array;
-} Queue;
-
-Queue newQueue();
-
-void freeQueue(Queue);
-
-void push(Queue *, void *);
-
-void *pop(Queue *);
-
-int size(Queue *);
-
 typedef double LightIntensity;
 
 typedef struct {

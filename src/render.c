@@ -47,7 +47,7 @@ static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
     double u1 = randomReal(mt), u2 = randomReal(mt);
     double theta = 2 * M_PI * u1;
     double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
-    double sinPhi = sqrt(1 - cosPhi * cosPhi);
+    double sinPhi = sqrt(fmax(0, 1 - cosPhi * cosPhi));
     // <cos theta sinPhi, sin theta sin phi, cos phi>
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
@@ -140,6 +140,18 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     if (VdotH <= 0) return 0;
     double cosTheta = VdotH;
 
+    // check total internal reflection
+    if (n1.R > n2.R) {
+        // TIR need n1 sinTheta >= n2
+        // or squared n1^2 sin^2Theta >= n2^2
+        double n1R2 = n1.R * n1.R;
+        double n2R2 = n2.R * n2.R;
+        double sin2Theta = 1 - cosTheta * cosTheta;
+        if (n1R2 * sin2Theta >= n2R2) {
+            cosTheta = 0;
+        }
+    }
+
     // Schlick's approximation
     // F = F0 + (1 - F0) * y^5
     double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
@@ -187,28 +199,17 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     bool transparent = getTransparent(firstCollideObject);
 
     if (transparent) {
-        // First we test the condition that all transparent object have smooth surface (roughness =
-        // 0)
-        /*
-         * Directly by Snell's law
-         * First we check out the total internal reflection
-         * The condition is n1 sin(theta1) >= n2
-         * Take square both side we have n1^2 (1 - cos^2(theta1)) >= n2^2
-         */
+        // Note that we have returned a value in reflection branch so the proabability of this
+        // branch is 1 - F
+        // There is no need to * (1 - F) in the result
+
+        // First we test the condition that all transparent object have smooth
+        // surface (roughness = 0)
         Vector I = d;
         double cosTheta1 = -vecDot(N, I);
         assert(cosTheta1 >= 0);
         double n1R = n1.R;
         double n2R = n2.R;
-        double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
-        if (n1R * n1R * sin2Theta1 >= n2R * n2R) {
-            Vector nxtDirection = vecMinus(I, vecMultiply(2 * vecDot(I, N), N));
-            Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, nxtDirection));
-            ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-            // this will not cause burst of value so no check here
-            double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
-            return result;
-        }
         /*
          * We simply assume that
          * >> I = <sin(Theta1), -cos(Theta1)>
