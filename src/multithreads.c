@@ -16,16 +16,6 @@ typedef struct {
     int *exit;
 } WorkerPara;
 
-/*
-    from render.c:
-    static inline int getIndex(VirtualScreen *vs, int x, int y) {
-        return (vs->height - y - 1) * vs->width + x;
-    }
-*/
-
-static inline int getX(int i, int width, int height) { return i % width; }
-
-static inline int getY(int i, int width, int height) { return height - (i / width) - 1; }
 
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;

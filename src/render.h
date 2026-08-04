@@ -27,6 +27,10 @@ uint32_t *getBuffer(VirtualScreen *vs);
 
 unsigned int *accessThreshold(VirtualScreen *vs, int x, int y);
 
+int getX(VirtualScreen *vs, int i);
+
+int getY(VirtualScreen *vs, int i);
+
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects,

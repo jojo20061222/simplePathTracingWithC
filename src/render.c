@@ -40,7 +40,6 @@ VirtualScreen *newScreen(int width, int height) {
     // Adaptive sampling
     result->convergent = calloc(width * height, sizeof(*result->convergent));
     result->threshold = calloc(width * height, sizeof(*result->threshold));
-
     return result;
 }
 
@@ -64,6 +63,10 @@ static inline int getIndex(VirtualScreen *vs, int x, int y) {
     return (vs->height - y - 1) * vs->width + x;
 }
 
+int getX(VirtualScreen *vs, int i) { return i % vs->width; }
+
+int getY(VirtualScreen *vs, int i) { return vs->height - (i / vs->width) - 1; }
+
 // update the color of screen and update the error of such pixel
 static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color) {
     // online mean update
@@ -82,8 +85,9 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
     vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
 
-    if (color.X != 0 || color.Y != 0 || color.Z != 0) {
-        vs->threshold[i]--;
+    if (color.X == 0 || color.Y == 0 || color.Z == 0) {
+        // won't stop until it really samples somthing
+        vs->threshold[i]++;
     }
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
@@ -141,18 +145,19 @@ static inline Vector toWorld(Vector local, Vector N) {
     return nxtDirection;
 }
 
-static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth) {
-    if (maxDepth == 0) return 0;
+typedef struct {
+    CollideResult firstCollideObjectResult;
+    Object *firstCollideObject;
+    CollideLightSourceResult firstCollideSourceResult;
+    LightSource *firstCollideSource;
+} SingleRayCollideResult;
 
+static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSource **sources,
+                                                      ReversedRay ray) {
+    // test the first object to touch, ignore light source
     int objectsCount = getSize(objects);
     int sourcesCount = getSize(sources);
 
-    // first we see if this light first touches a light source
-    // to attain that, we need to simulate both collide with sources and objects to decide which is
-    // touched first.
-
-    // test the first object to touch, ignore light source
     CollideResult firstCollideObjectResult = {false, INFINITY};
     Object *firstCollideObject = NULL;
     for (int i = 0; i < objectsCount; i++) {
@@ -175,6 +180,25 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
             firstCollideSource = sources[i];
         }
     }
+
+    return (SingleRayCollideResult){firstCollideObjectResult, firstCollideObject,
+                                    firstCollideSourceResult, firstCollideSource};
+}
+
+static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
+                                        MT19937 *mt, int maxDepth) {
+    if (maxDepth == 0) return 0;
+
+    // first we see if this light first touches a light source
+    // to attain that, we need to simulate both collide with sources and objects to decide which is
+    // touched first.
+
+    SingleRayCollideResult result = singleRayCollide(objects, sources, ray);
+    CollideResult firstCollideObjectResult = result.firstCollideObjectResult;
+    Object *firstCollideObject = result.firstCollideObject;
+    CollideLightSourceResult firstCollideSourceResult = result.firstCollideSourceResult;
+    LightSource *firstCollideSource = result.firstCollideSource;
+
     // case 1: collide with nothing.
     if (firstCollideObject == NULL && firstCollideSource == NULL) {
         return 0.0;
@@ -366,7 +390,19 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     return 0;
 }
 
-void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects,
+void setThreshold(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources) {
+    for (int i = 0; i < vs->width * vs->height; i++) {
+        int x = getX(vs, i), y = getY(vs, i);
+        ReversedRay initRay =
+            newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
+        SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
+        if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
+            vs->threshold[i] = 128;
+        }
+    }
+}
+
+void renderPixel(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     double fixedX = (double)x + randomReal(mt);
@@ -390,6 +426,6 @@ void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
 
-    updateScreen(s, x, y, colorResult);
+    updateScreen(vs, x, y, colorResult);
     return;
 }
