@@ -9,14 +9,13 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef struct {
-    ScreenColor *buffer;
-    unsigned int *renderCount;
-    ColorXYZ *mean;
-    int width, height;
-} VirtualScreen;
+typedef struct VirtualScreen VirtualScreen;
 
 VirtualScreen *newScreen(int width, int height);
+
+double getRelativeError(VirtualScreen *vs, int x, int y);
+
+bool *accessConvergent(VirtualScreen *vs, int x, int y);
 
 void freeScreen(VirtualScreen *screen);
 

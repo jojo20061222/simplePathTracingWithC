@@ -14,6 +14,17 @@
 static const double startWavelength = 390;
 static const double endWavelength = 790;
 
+typedef struct VirtualScreen {
+    ScreenColor *buffer;
+    unsigned int *renderCount;
+    ColorXYZ *mean;
+    struct {
+        double X2, Y2, Z2;
+    } *m2;
+    bool *convergent;
+    int width, height;
+} VirtualScreen;
+
 VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(*result));
     result->width = width;
@@ -21,6 +32,13 @@ VirtualScreen *newScreen(int width, int height) {
     result->buffer = calloc(width * height, sizeof(*result->buffer));
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
     result->mean = calloc(width * height, sizeof(*result->mean));
+
+    // Welford's algorithm needs m2 to calculate variance
+    // we calculate variance of x, y, z so that colors will be considered
+    result->m2 = calloc(width * height, sizeof(*result->m2));
+    // Adaptive sampling
+    result->convergent = calloc(width * height, sizeof(*result->convergent));
+
     return result;
 }
 
@@ -32,15 +50,74 @@ void freeScreen(VirtualScreen *screen) {
     return;
 }
 
+static inline int getIndex(VirtualScreen *vs, int x, int y) {
+    return (vs->height - y - 1) * vs->width + x;
+}
+
+// update the color of screen and update the error of such pixel
 static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color) {
-    int i = (vs->height - y - 1) * vs->width + x;
     // online mean update
+    // Welford's algorithm
+    int i = getIndex(vs, x, y);
     int n = ++vs->renderCount[i];
-    vs->mean[i].X += (color.X - vs->mean[i].X) / n;
-    vs->mean[i].Y += (color.Y - vs->mean[i].Y) / n;
-    vs->mean[i].Z += (color.Z - vs->mean[i].Z) / n;
+
+    double dX = color.X - vs->mean[i].X;
+    double dY = color.Y - vs->mean[i].Y;
+    double dZ = color.Z - vs->mean[i].Z;
+    vs->mean[i].X += dX / n;
+    vs->mean[i].Y += dY / n;
+    vs->mean[i].Z += dZ / n;
+
+    vs->m2[i].X2 += dX * (color.X - vs->mean[i].X);
+    vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
+    vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
 
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
+}
+
+double getRelativeError(VirtualScreen *vs, int x, int y) {
+    // calculate sample standard deviation
+    int i = getIndex(vs, x, y);
+    int n = vs->renderCount[i];
+    double m2X = vs->m2[i].X2;
+    double mX = vs->mean[i].X;
+    double stdDevX, relativeErrorX;
+    if (n <= 1) {
+        stdDevX = INFINITY;
+        relativeErrorX = INFINITY;
+    }
+    else {
+        stdDevX = sqrt(m2X / (double)(n - 1));
+        relativeErrorX = stdDevX / mX;
+    }
+    double m2Y = vs->m2[i].Y2;
+    double mY = vs->mean[i].Y;
+    double stdDevY, relativeErrorY;
+    if (n <= 1) {
+        stdDevY = INFINITY;
+        relativeErrorY = INFINITY;
+    }
+    else {
+        stdDevY = sqrt(m2Y / (double)(n - 1));
+        relativeErrorY = stdDevY / mY;
+    }
+    double m2Z = vs->m2[i].Z2;
+    double mZ = vs->mean[i].Z;
+    double stdDevZ, relativeErrorZ;
+    if (n <= 1) {
+        stdDevZ = INFINITY;
+        relativeErrorZ = INFINITY;
+    }
+    else {
+        stdDevZ = sqrt(m2Z / (double)(n - 1));
+        relativeErrorZ = stdDevZ / mZ;
+    }
+    return fmin(relativeErrorX, fmin(relativeErrorY, relativeErrorZ));
+}
+
+bool *accessConvergent(VirtualScreen *vs, int x, int y) {
+    int i = getIndex(vs, x, y);
+    return &vs->convergent[i];
 }
 
 static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
@@ -251,8 +328,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         double eta = n1R / n2R;
         double eta2 = eta * eta;
         double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
-        double coefficientOfSecondPart =
-            eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
+        double coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
         Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
@@ -278,8 +354,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
         Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
         Vector nxtDirection = toWorld(local, N);
-        ReversedRay nxtRay = newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)),
-                                    nxtDirection, ray.waveLength);
+        ReversedRay nxtRay =
+            newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
 
         double baseColor = getBaseColor(firstCollideObject, ray.waveLength);
 
