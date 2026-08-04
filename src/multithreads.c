@@ -31,9 +31,12 @@ static void *worker(void *para) {
     int width = getScreenWidth(vs);
     int height = getScreenHeight(vs);
     int rangeLength = width * height;
+    // given id of worker, we devide the range [0, width * height - 1] into (id) pieces
+    // so that every worker is dispe
     int leftBoundary = (rangeLength / workerCount) * id;
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
+    if (rightBoundary == width * height - 1) printf("hello, suka\n");
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
@@ -71,8 +74,7 @@ static void *worker(void *para) {
                 }
             }
             
-            if (RE < 1e-3) {
-                if (x == width - 1 && y == height - 1) printf("hello\n");
+            if (RE < 1e-2) {
                 *accessConvergent(vs, x, y) = true;
             }
         }
