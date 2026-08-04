@@ -28,36 +28,37 @@ typedef struct VirtualScreen {
 
 VirtualScreen *newScreen(int width, int height) {
     VirtualScreen *result = malloc(sizeof(*result));
-    if (result == NULL) goto MALLOC_FAILED;
+    if (result == NULL) goto MALLOC_FAILED_EXIT;
 
     result->width = width;
     result->height = height;
 
     result->buffer = calloc(width * height, sizeof(*result->buffer));
-    if (result->buffer == NULL) goto MALLOC_FAILED;
+    if (result->buffer == NULL) goto MALLOC_FAILED_EXIT;
 
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
-    if (result->renderCount == NULL) goto MALLOC_FAILED;
+    if (result->renderCount == NULL) goto MALLOC_FAILED_EXIT;
 
     result->mean = calloc(width * height, sizeof(*result->mean));
-    if (result->mean == NULL) goto MALLOC_FAILED;
+    if (result->mean == NULL) goto MALLOC_FAILED_EXIT;
 
     // Welford's algorithm needs m2 to calculate variance
     // we calculate variance of x, y, z so that colors will be considered
     result->m2 = calloc(width * height, sizeof(*result->m2));
-    if (result->m2 == NULL) goto MALLOC_FAILED;
+    if (result->m2 == NULL) goto MALLOC_FAILED_EXIT;
 
     // Adaptive sampling
     result->convergent = calloc(width * height, sizeof(*result->convergent));
-    if (result->convergent == NULL) goto MALLOC_FAILED;
+    if (result->convergent == NULL) goto MALLOC_FAILED_EXIT;
 
     result->threshold = calloc(width * height, sizeof(*result->threshold));
-    if (result->threshold == NULL) goto MALLOC_FAILED;
+    if (result->threshold == NULL) goto MALLOC_FAILED_EXIT;
 
     return result;
 
-MALLOC_FAILED:
+MALLOC_FAILED_EXIT:
     fprintf(stderr, "malloc screen failed\n");
+    return NULL;
 }
 
 void freeScreen(VirtualScreen *screen) {

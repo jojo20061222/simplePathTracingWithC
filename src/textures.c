@@ -17,6 +17,11 @@ Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside
                     Complex (*refractiveIndexOutside)(double), bool transparent, bool metallic,
                     double roughness) {
     Texture *tex = malloc(sizeof(*tex));
+    if (tex == NULL) {
+        fprintf(stderr, "malloc tex failed\n");
+        exit(1);
+    }
+
     *tex = (Texture){
         baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metallic, roughness};
     return tex;

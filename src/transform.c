@@ -62,6 +62,10 @@ RegularTransformPara *newRegularTransformPara(double scalingFactor, double rotat
                                               double rotateYAngle, double rotateZAngle,
                                               Vector destination) {
     RegularTransformPara *result = malloc(sizeof(*result));
+    if (result == NULL) {
+        fprintf(stderr, "malloc regular transform data failed\n");
+        exit(1);
+    }
     *result = (RegularTransformPara){scalingFactor, rotateXAngle, rotateYAngle, rotateZAngle,
                                      destination};
     return result;

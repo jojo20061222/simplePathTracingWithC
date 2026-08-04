@@ -269,6 +269,10 @@ void destroyGroup(Shape *self) {
 
 Shape *newGroup(Shape **elements) {
     Group *group = malloc(sizeof(*group));
+    if (group == NULL) {
+        fprintf(stderr, "malloc group failed\n");
+        exit(1);
+    }
     group->elements = newDynamicArray(getSize(elements), Shape *);
     memcpy(group->elements, elements, sizeof(Shape *) * getSize(elements));
     group->shape = getShape(detectGroupCollide, destroyGroup);
