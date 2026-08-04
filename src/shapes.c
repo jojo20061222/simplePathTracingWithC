@@ -100,6 +100,10 @@ static void destroyTriangle(Shape *self) { free(self); }
 
 Shape *newTriangle(Point p1, Point p2, Point p3) {
     Triangle *tri = malloc(sizeof(*tri));
+    if (tri == NULL) {
+        fprintf(stderr, "malloc tri failed\n");
+        exit(1);
+    }
     tri->shape = getShape(detectTriangleCollide, destroyTriangle);
     tri->p1 = p1;
     tri->p2 = p2;
@@ -146,6 +150,10 @@ static void destroySphere(Shape *self) { free(self); }
 
 Shape *newSphere(Point center, double radius) {
     Sphere *sph = malloc(sizeof(*sph));
+    if (sph == NULL) {
+        fprintf(stderr, "malloc sph failed\n");
+        exit(1);
+    }
     sph->shape = getShape(detectSphereCollide, destroySphere);
     sph->center = center;
     sph->radius = radius;
@@ -209,6 +217,10 @@ static void destroyConvexPolygon(Shape *self) {
 
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
+    if (cp == NULL) {
+        fprintf(stderr, "malloc cp failed\n");
+        exit(1);   
+    }
     cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
     cp->vertexes = newDynamicArray(getSize(vertexes), Point);
 

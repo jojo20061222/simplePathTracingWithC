@@ -35,7 +35,44 @@ typedef struct {
 
 ThreadSafeQueue *newTSQueue() {
     ThreadSafeQueue *tsq = malloc(sizeof(*tsq));
-    tsq->cond = 
+    if (tsq == NULL) {
+        fprintf(stderr, "malloc thread safe queue failed\n");
+        exit(1);
+    }
+
+    tsq->head = tsq->rear = NULL;
+
+    // init mutex
+    if (pthread_mutex_init(&tsq->mutex, NULL) != 0) {
+        fprintf(stderr, "init mutex failed\n");
+        exit(1);
+    }
+
+    // init condition variable
+    if (pthread_cond_init(&tsq->cond, NULL) != 0) {
+        fprintf(stderr, "init condition variable failed\n");
+        exit(1);
+    }
+
+    return tsq;
+}
+
+void destroyTSQueue(ThreadSafeQueue *tsq) {
+    // destroy condition variable
+    pthread_cond_destroy(&tsq->cond);
+    // destroy mutex
+    pthread_mutex_destroy(&tsq->mutex);
+    // free all the element in the queue
+    while (tsq->head) {
+        free(tsq->head);
+        tsq->head = tsq->head->next;
+    }
+    
+    free(tsq);
+}
+
+void TSQPush(ThreadSafeQueue *tsq, void *data) {
+    
 }
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
@@ -109,21 +146,24 @@ static void *worker(void *para) {
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
                                LightSource **sources, Point *camera, int maxDepth) {
-    Multithreads *result = malloc(sizeof(Multithreads));
+    Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 
-    // for the reason that I want to see the whole process of rendering this is deprecated
-    // Barrier *start = malloc(sizeof(Barrier));
-    // Barrier *end = malloc(sizeof(Barrier));
-
-    // initBarrier(start, threadCount + 1);
-    // initBarrier(end, threadCount + 1);
-
-    result->exit = malloc(sizeof(int));
-    *result->exit = 0;
+    mul->exit = malloc(sizeof(int));
+    if (mul->exit == NULL) {
+        fprintf(stderr, "malloc result->exit failed\n");
+        exit(1);
+    }
+    *mul->exit = 0;
 
     for (int i = 0; i < threadCount; i++) {
         WorkerPara *parai = malloc(sizeof(WorkerPara));
+        if (parai == NULL) {
+            *mul->exit = true;
+            for (int j = 0; j < i - 1; j++) pthread_join(mul->threadPool[j], NULL);
+            fprintf(stderr, "malloc para%d failed\n", i);
+            exit(1);
+        }
         parai->id = i;
         parai->objects = objects;
         parai->sources = sources;
@@ -131,13 +171,13 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
         parai->workerCount = threadCount;
         parai->camera = camera;
         parai->maxDepth = maxDepth;
-        parai->exit = result->exit;
+        parai->exit = mul->exit;
         pthread_create(&threadPool[i], NULL, worker, parai);
     }
 
-    result->threadPool = threadPool;
-    result->threadCount = threadCount;
-    return result;
+    mul->threadPool = threadPool;
+    mul->threadCount = threadCount;
+    return mul;
 }
 
 void destroyMultithreads(Multithreads *mul) {

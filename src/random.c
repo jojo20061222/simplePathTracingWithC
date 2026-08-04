@@ -1,10 +1,19 @@
 #include "random.h"
 #include <limits.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 MT19937 *initMT19937(uint32_t seed) {
     MT19937 *mt = malloc(sizeof(MT19937));
+    if (mt == NULL) {
+        fprintf(stderr, "malloc mt failed\n");
+        exit(1);
+    }
     mt->mt = malloc(sizeof(uint32_t) * 624);
+    if (mt->mt == NULL) {
+        fprintf(stderr, "malloc mt failed\n");
+        exit(1);
+    }
     mt->mt[0] = seed;
     mt->mti = 0;
 

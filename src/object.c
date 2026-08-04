@@ -8,6 +8,10 @@ typedef struct Object {
 
 Object *newObject(Shape *shape, Texture *texture) {
     Object *obj = malloc(sizeof(*obj));
+    if (obj == NULL) {
+        fprintf(stderr, "malloc obj failed\n");
+        exit(1);
+    }
     obj->shape = shape;
     obj->texture = texture;
     return obj;

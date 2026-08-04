@@ -18,6 +18,7 @@ typedef struct {
         assert((arraySize) >= 0);                                                                  \
         dynamicArrayHeader *__header =                                                             \
             malloc(((arraySize) + 1) * sizeof(type) + sizeof(*__header));                          \
+        assert(__header != NULL);                                                                  \
         __header->capacity = (arraySize) + 1;                                                      \
         __header->size = (arraySize);                                                              \
         (type *)(__header + 1);                                                                    \
@@ -31,9 +32,9 @@ typedef struct {
         if (__header->size > __header->capacity) {                                                 \
             __header->capacity *= 2;                                                               \
             __header = realloc(__header, __header->capacity * sizeof(type) + sizeof(*__header));   \
+            assert(__header != NULL);                                                              \
             *(pointerToArray) = (type *)(__header + 1);                                            \
             (__array) = (type *)(__header + 1);                                                    \
-            assert(__header != NULL);                                                              \
         }                                                                                          \
         (__array)[__header->size - 1] = (x);                                                       \
     } while (0)
