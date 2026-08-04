@@ -25,7 +25,10 @@ uint32_t getPixel(VirtualScreen *vs, int i);
 
 uint32_t *getBuffer(VirtualScreen *vs);
 
-unsigned int *accessThreshold(VirtualScreen *vs, int x, int y);
+void setThreshold(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
+                  LightSource **sources);
+
+bool isThresholdAchived(VirtualScreen *vs, int x, int y);
 
 int getX(VirtualScreen *vs, int i);
 

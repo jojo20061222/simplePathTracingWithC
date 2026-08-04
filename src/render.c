@@ -85,7 +85,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
     vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
 
-    if (color.X == 0 || color.Y == 0 || color.Z == 0) {
+    if (color.X == 0 && color.Y == 0 && color.Z == 0) {
         // won't stop until it really samples somthing
         vs->threshold[i]++;
     }
@@ -390,16 +390,20 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     return 0;
 }
 
-void setThreshold(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources) {
-    for (int i = 0; i < vs->width * vs->height; i++) {
-        int x = getX(vs, i), y = getY(vs, i);
-        ReversedRay initRay =
-            newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
-        SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
-        if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
-            vs->threshold[i] = 128;
-        }
+void setThreshold(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
+                  LightSource **sources) {
+    int i = getIndex(vs, x, y);
+    ReversedRay initRay = newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
+    SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
+    if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
+        vs->threshold[i] = 128;
     }
+    // else the threshold is 0
+}
+
+bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
+    int i = getIndex(vs, x, y);
+    return vs->renderCount[i] >= vs->threshold[i];
 }
 
 void renderPixel(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,

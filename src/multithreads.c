@@ -16,7 +16,6 @@ typedef struct {
     int *exit;
 } WorkerPara;
 
-
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
@@ -37,22 +36,27 @@ static void *worker(void *para) {
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
     int blockSize = 200;
-    int threshold = 10; // at least render for blockSize * threshold times
+
+    for (int i = leftBoundary; i <= rightBoundary; i++) {
+        int x = getX(vs, i), y = getY(vs, i);
+        setThreshold(camera, vs, x, y, objects, sources);
+    }
+
     while (*workerPara->exit == 0) {
-        for (int b = 0; b < blockSize; b++) {
+        for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 // in order to reduce cache miss rate we have but to do this :(
-                int x = getX(i, width, height), y = getY(i, width, height);
-                if (!*accessConvergent(vs, x, y) || threshold > 0) { // adaptive sampling
+                int x = getX(vs, i), y = getY(vs, i);
+                if (!*accessConvergent(vs, x, y)) { // adaptive sampling
                     renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);
                 }
             }
         }
-        threshold--;
-        if (threshold > 0) continue;
+
+        // update the the convergent state of pixels
         for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = getX(i, width, height), y = getY(i, width, height);
-            if (*accessConvergent(vs, x, y)) continue;
+            int x = getX(vs, i), y = getY(vs, i);
+            if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
             // to ensure the pixel won't convergent too early, we consider its neighbors to decide
             // if it's gonna converge
             double RE = 0;

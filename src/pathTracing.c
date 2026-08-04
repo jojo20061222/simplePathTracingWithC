@@ -8,9 +8,6 @@ static const int threadCount = 11;
 
 double strongWhiteLight(double waveLength) { return 6 * whiteLightBase(waveLength); }
 
-static inline int getX(int i, int width, int height) { return i % width; }
-
-static inline int getY(int i, int width, int height) { return height - (i / width) - 1; }
 
 int main() {
     initLightIntensity();
@@ -139,7 +136,7 @@ int main() {
             fprintf(f, "%d %d\n", width, height);
             for (int i = 0; i < width * height; i++) {
                 fprintf(f, "%d\n",
-                        (int)*accessConvergent(vs, getX(i, width, height), getY(i, width, height)));
+                        (int)*accessConvergent(vs, getX(vs, i), getY(vs, i)));
             }
             fclose(f);
         }
