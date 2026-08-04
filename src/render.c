@@ -50,6 +50,14 @@ void freeScreen(VirtualScreen *screen) {
     return;
 }
 
+int getScreenWidth(VirtualScreen *vs) { return vs->width; }
+
+int getScreenHeight(VirtualScreen *vs) { return vs->height; }
+
+uint8_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
+
+uint8_t *getBuffer(VirtualScreen *vs) { return (uint8_t *)vs->buffer; }
+
 static inline int getIndex(VirtualScreen *vs, int x, int y) {
     return (vs->height - y - 1) * vs->width + x;
 }

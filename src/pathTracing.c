@@ -119,7 +119,7 @@ int main() {
             }
             fprintf(f, "%d %d\n", width, height);
             for (int i = 0; i < width * height; i++) {
-                fprintf(f, "%u\n", vs->buffer[i].pixel);
+                fprintf(f, "%u\n", getPixel(vs, i));
             }
             fclose(f);
         }

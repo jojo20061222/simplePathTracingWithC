@@ -87,7 +87,7 @@ int main() {
             if (event.type == SDL_QUIT) isRunning = false;
         }
 
-        SDL_UpdateTexture(texture, NULL, vs->buffer, width * sizeof(ScreenColor));
+        SDL_UpdateTexture(texture, NULL, getBuffer(vs), width * sizeof(ScreenColor));
         SDL_RenderCopy(renderer, texture, NULL, NULL);
         SDL_RenderPresent(renderer);
 

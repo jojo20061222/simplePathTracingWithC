@@ -16,6 +16,17 @@ typedef struct {
     int *exit;
 } WorkerPara;
 
+/*
+    from render.c:
+    static inline int getIndex(VirtualScreen *vs, int x, int y) {
+        return (vs->height - y - 1) * vs->width + x;
+    }
+*/
+
+static inline int getX(int i, int width, int height) { return i % width; }
+
+static inline int getY(int i, int width, int height) { return height - (i / width) - 1; }
+
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
@@ -24,20 +35,35 @@ static void *worker(void *para) {
     Point *camera = workerPara->camera;
     int workerCount = workerPara->workerCount;
     int maxDepth = workerPara->maxDepth;
-    VirtualScreen *s = workerPara->vs;
+    VirtualScreen *vs = workerPara->vs;
 
-    int rangeLength = s->width * s->height;
+    int width = getScreenWidth(vs);
+    int height = getScreenHeight(vs);
+    int rangeLength = width * height;
     int leftBoundary = (rangeLength / workerCount) * id;
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
     rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
+    int blockSize = 32;
+    int threshold = 5; // at least render for blockSize * threshold times
     while (*workerPara->exit == 0) {
+        for (int b = 0; b < blockSize; b++) {
+            for (int i = leftBoundary; i <= rightBoundary; i++) {
+                // in order to reduce cache miss rate we have but to do this :(
+                int x = getX(i, width, height), y = getY(i, width, height);
+                if (!*accessConvergent(vs, x, y) || threshold > 0) { // adaptive sampling
+                    renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);
+                }
+            }
+        }
+        threshold--;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = i % s->width, y = i / s->width;
-            renderPixel(camera, s, x, y, objects, sources, mt,
-                        maxDepth);
+            int x = getX(i, width, height), y = getY(i, width, height);
+            if (*accessConvergent(vs, x, y)) continue;
+            double RE = getRelativeError(vs, x, y);
+            if (RE < 1e-3) *accessConvergent(vs, x, y) = true;
         }
     }
 
@@ -47,8 +73,8 @@ static void *worker(void *para) {
     return NULL;
 }
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects, LightSource **sources,
-                               Point *camera, int maxDepth) {
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
+                               LightSource **sources, Point *camera, int maxDepth) {
     Multithreads *result = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 
