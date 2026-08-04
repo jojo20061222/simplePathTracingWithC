@@ -33,5 +33,5 @@ bin/pathTracing: build/frame.o build/lightSource.o build/multithreads.o build/ob
 
 .PHONY: clean
 clean: 
-	- rm bin/pathTracing
+	- rm bin/*
 	- rm build/*.o

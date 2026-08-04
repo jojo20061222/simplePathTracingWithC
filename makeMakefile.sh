@@ -48,5 +48,5 @@ echo -e "\t$CC \$^ -o \$@ \`sdl2-config --libs\` -lm -lpthread -flto"
 echo
 echo ".PHONY: clean"
 echo "clean: "
-echo -e "\t- rm $binaryPath/main"
+echo -e "\t- rm $binaryPath/*"
 echo -e "\t- rm $buildPath/*.o"

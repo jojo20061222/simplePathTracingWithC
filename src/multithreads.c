@@ -46,8 +46,8 @@ static void *worker(void *para) {
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
-    int blockSize = 32;
-    int threshold = 5; // at least render for blockSize * threshold times
+    int blockSize = 320;
+    int threshold = 50; // at least render for blockSize * threshold times
     while (*workerPara->exit == 0) {
         for (int b = 0; b < blockSize; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
@@ -59,6 +59,7 @@ static void *worker(void *para) {
             }
         }
         threshold--;
+        if (threshold > 0) continue;
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(i, width, height), y = getY(i, width, height);
             if (*accessConvergent(vs, x, y)) continue;

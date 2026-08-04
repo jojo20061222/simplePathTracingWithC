@@ -40,5 +40,5 @@ echo -e "\t$CC \$^ -o \$@ -lm -lpthread -flto"
 echo
 echo ".PHONY: clean"
 echo "clean: "
-echo -e "\t- rm $binaryPath/pathTracing"
+echo -e "\t- rm $binaryPath/*"
 echo -e "\t- rm $buildPath/*.o"
