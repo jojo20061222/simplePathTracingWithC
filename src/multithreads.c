@@ -16,6 +16,8 @@ typedef struct {
     int *exit;
 } WorkerPara;
 
+static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
+
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
@@ -60,12 +62,19 @@ static void *worker(void *para) {
             // to ensure the pixel won't convergent too early, we consider its neighbors to decide
             // if it's gonna converge
             double RE = 0;
+            
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
+                    if (inBoundary(x + dx, width) && inBoundary(y + dy, height)) {
+                        RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
+                    }
                 }
             }
-            if (RE < 1e-4) *accessConvergent(vs, x, y) = true;
+            
+            if (RE < 1e-3) {
+                if (x == width - 1 && y == height - 1) printf("hello\n");
+                *accessConvergent(vs, x, y) = true;
+            }
         }
     }
 

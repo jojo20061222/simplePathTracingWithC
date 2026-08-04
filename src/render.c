@@ -398,6 +398,9 @@ void setThreshold(Point *camera, VirtualScreen *vs, int x, int y, Object **objec
     if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
         vs->threshold[i] = 128;
     }
+    if (x == vs->width - 1 && y == vs->height - 1) {
+        printf("%p %p\n", result.firstCollideObject, result.firstCollideSource);
+    }
     // else the threshold is 0
 }
 
