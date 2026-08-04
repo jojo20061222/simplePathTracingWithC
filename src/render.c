@@ -54,9 +54,9 @@ int getScreenWidth(VirtualScreen *vs) { return vs->width; }
 
 int getScreenHeight(VirtualScreen *vs) { return vs->height; }
 
-uint8_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
+uint32_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
 
-uint8_t *getBuffer(VirtualScreen *vs) { return (uint8_t *)vs->buffer; }
+uint32_t *getBuffer(VirtualScreen *vs) { return (uint32_t *)vs->buffer; }
 
 static inline int getIndex(VirtualScreen *vs, int x, int y) {
     return (vs->height - y - 1) * vs->width + x;
@@ -83,44 +83,26 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
+static inline double getSingleRelativeError(double mean, double m2, double n) {
+    double relativeError;
+    if (n <= 1) {
+        relativeError = INFINITY;
+    }
+    else {
+        double stdDev = sqrt(m2 / (double)(n - 1));
+        relativeError = stdDev / (fabs(mean) + error);
+    }
+    return relativeError;
+}
+
 double getRelativeError(VirtualScreen *vs, int x, int y) {
     // calculate sample standard deviation
     int i = getIndex(vs, x, y);
     int n = vs->renderCount[i];
-    double m2X = vs->m2[i].X2;
-    double mX = vs->mean[i].X;
-    double stdDevX, relativeErrorX;
-    if (n <= 1) {
-        stdDevX = INFINITY;
-        relativeErrorX = INFINITY;
-    }
-    else {
-        stdDevX = sqrt(m2X / (double)(n - 1));
-        relativeErrorX = stdDevX / mX;
-    }
-    double m2Y = vs->m2[i].Y2;
-    double mY = vs->mean[i].Y;
-    double stdDevY, relativeErrorY;
-    if (n <= 1) {
-        stdDevY = INFINITY;
-        relativeErrorY = INFINITY;
-    }
-    else {
-        stdDevY = sqrt(m2Y / (double)(n - 1));
-        relativeErrorY = stdDevY / mY;
-    }
-    double m2Z = vs->m2[i].Z2;
-    double mZ = vs->mean[i].Z;
-    double stdDevZ, relativeErrorZ;
-    if (n <= 1) {
-        stdDevZ = INFINITY;
-        relativeErrorZ = INFINITY;
-    }
-    else {
-        stdDevZ = sqrt(m2Z / (double)(n - 1));
-        relativeErrorZ = stdDevZ / mZ;
-    }
-    return fmin(relativeErrorX, fmin(relativeErrorY, relativeErrorZ));
+    double relativeErrorX = getSingleRelativeError(vs->mean[i].X, vs->m2[i].X2, n);
+    double relativeErrorY = getSingleRelativeError(vs->mean[i].Y, vs->m2[i].Y2, n);
+    double relativeErrorZ = getSingleRelativeError(vs->mean[i].Z, vs->m2[i].Z2, n);
+    return fmax(relativeErrorX, fmax(relativeErrorY, relativeErrorZ));
 }
 
 bool *accessConvergent(VirtualScreen *vs, int x, int y) {

@@ -21,9 +21,9 @@ int getScreenWidth(VirtualScreen *vs);
 
 int getScreenHeight(VirtualScreen *vs);
 
-uint8_t getPixel(VirtualScreen *vs, int i);
+uint32_t getPixel(VirtualScreen *vs, int i);
 
-uint8_t *getBuffer(VirtualScreen *vs);
+uint32_t *getBuffer(VirtualScreen *vs);
 
 void freeScreen(VirtualScreen *screen);
 

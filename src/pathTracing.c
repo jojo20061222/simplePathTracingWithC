@@ -1,12 +1,16 @@
+#include "frame.h"
 #include "multithreads.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include "frame.h"
 
-static const int threadCount = 30;
+static const int threadCount = 11;
 
 double strongWhiteLight(double waveLength) { return 6 * whiteLightBase(waveLength); }
+
+static inline int getX(int i, int width, int height) { return i % width; }
+
+static inline int getY(int i, int width, int height) { return height - (i / width) - 1; }
 
 int main() {
     initLightIntensity();
@@ -21,8 +25,10 @@ int main() {
 
     // 材質設定：準備白色反光板與黑色擋板
     // 假設系統有 pureBlack 變數，若無請替換為 RGB(0,0,0) 的對應常數
-    Texture *whiteReflector = newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    Texture *blackBlocker = newTexture(pureBlack, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    Texture *whiteReflector =
+        newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    Texture *blackBlocker =
+        newTexture(pureBlack, getPlasticRefractivity, getAirRefractivity, false, false, 1);
 
     Object **objects = newDynamicArray(0, Object *);
     LightSource **sources = newDynamicArray(0, LightSource *);
@@ -79,7 +85,7 @@ int main() {
     // 5. 載入並放置鑽石模型
     double radius = (double)width / 10;
     Point showing = {(double)width / 2, (double)starty + radius * 1, bz - radius * 1.5};
-    
+
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 90, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
@@ -89,15 +95,17 @@ int main() {
 
     // 6. 佈置小面積點光源 (Spotlights)
     // 將半徑縮小至 width / 40，產生銳利的高光與火彩
-    double lightRadius = (double)width / 40; 
-    
+    double lightRadius = (double)width / 40;
+
     // 主光：左上方 45 度角打向鑽石
-    Shape *lightSph1 = newSphere((Point){(double)width * 0.25, (double)height * 0.8, pz + radius}, lightRadius);
+    Shape *lightSph1 =
+        newSphere((Point){(double)width * 0.25, (double)height * 0.8, pz + radius}, lightRadius);
     LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
     pushBack(&sources, &light1, LightSource *);
 
     // 輔助光：右上方 45 度角
-    Shape *lightSph2 = newSphere((Point){(double)width * 0.75, (double)height * 0.8, pz + radius}, lightRadius);
+    Shape *lightSph2 =
+        newSphere((Point){(double)width * 0.75, (double)height * 0.8, pz + radius}, lightRadius);
     LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
     pushBack(&sources, &light2, LightSource *);
 
@@ -120,6 +128,18 @@ int main() {
             fprintf(f, "%d %d\n", width, height);
             for (int i = 0; i < width * height; i++) {
                 fprintf(f, "%u\n", getPixel(vs, i));
+            }
+            fclose(f);
+
+            f = fopen("convergentImg", "w");
+            if (f == NULL) {
+                printf("open failed\n");
+                continue;
+            }
+            fprintf(f, "%d %d\n", width, height);
+            for (int i = 0; i < width * height; i++) {
+                fprintf(f, "%d\n",
+                        (int)*accessConvergent(vs, getX(i, width, height), getY(i, width, height)));
             }
             fclose(f);
         }
