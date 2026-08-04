@@ -46,8 +46,8 @@ static void *worker(void *para) {
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
-    int blockSize = 320;
-    int threshold = 50; // at least render for blockSize * threshold times
+    int blockSize = 200;
+    int threshold = 10; // at least render for blockSize * threshold times
     while (*workerPara->exit == 0) {
         for (int b = 0; b < blockSize; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
@@ -63,8 +63,15 @@ static void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(i, width, height), y = getY(i, width, height);
             if (*accessConvergent(vs, x, y)) continue;
-            double RE = getRelativeError(vs, x, y);
-            if (RE < 1e-3) *accessConvergent(vs, x, y) = true;
+            // to ensure the pixel won't convergent too early, we consider its neighbors to decide
+            // if it's gonna converge
+            double RE = 0;
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
+                }
+            }
+            if (RE < 1e-4) *accessConvergent(vs, x, y) = true;
         }
     }
 

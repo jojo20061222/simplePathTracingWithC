@@ -17,6 +17,7 @@ static const double endWavelength = 790;
 typedef struct VirtualScreen {
     ScreenColor *buffer;
     unsigned int *renderCount;
+    unsigned int *threshold;
     ColorXYZ *mean;
     struct {
         double X2, Y2, Z2;
@@ -38,6 +39,7 @@ VirtualScreen *newScreen(int width, int height) {
     result->m2 = calloc(width * height, sizeof(*result->m2));
     // Adaptive sampling
     result->convergent = calloc(width * height, sizeof(*result->convergent));
+    result->threshold = calloc(width * height, sizeof(*result->threshold));
 
     return result;
 }
@@ -80,6 +82,10 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
     vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
 
+    if (color.X != 0 || color.Y != 0 || color.Z != 0) {
+        vs->threshold[i]--;
+    }
+
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
@@ -108,6 +114,11 @@ double getRelativeError(VirtualScreen *vs, int x, int y) {
 bool *accessConvergent(VirtualScreen *vs, int x, int y) {
     int i = getIndex(vs, x, y);
     return &vs->convergent[i];
+}
+
+unsigned int *accessThreshold(VirtualScreen *vs, int x, int y) {
+    int i = getIndex(vs, x, y);
+    return &vs->threshold[i];
 }
 
 static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
