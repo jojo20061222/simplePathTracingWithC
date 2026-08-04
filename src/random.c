@@ -2,7 +2,6 @@
 #include <limits.h>
 #include <stdlib.h>
 
-
 MT19937 *initMT19937(uint32_t seed) {
     MT19937 *mt = malloc(sizeof(MT19937));
     mt->mt = malloc(sizeof(uint32_t) * 624);
@@ -19,7 +18,7 @@ static inline void twist(MT19937 *mt) {
     uint32_t x;
     int i;
 
-    // here I apply the optimized version vibe coded by Gemini
+    // here I apply the optimized version vibe coded by Gemini to eliminate branch prediction
     // the updated version need no MOD624
     for (i = 0; i < 227; i++) {
         x = (mt->mt[i] & 0x80000000U) | (mt->mt[i + 1] & 0x7fffffffU);

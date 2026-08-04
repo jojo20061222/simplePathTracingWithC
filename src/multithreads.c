@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 
 typedef struct {
     int id;
@@ -15,6 +16,27 @@ typedef struct {
     int maxDepth;
     int *exit;
 } WorkerPara;
+
+typedef struct {
+    int leftBoundary, rightBoundary;
+} Pair;
+
+typedef struct Node {
+    void *data;
+    struct Node *next;
+} Node;
+
+typedef struct {
+    Node *head;
+    Node *rear;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+} ThreadSafeQueue;
+
+ThreadSafeQueue *newTSQueue() {
+    ThreadSafeQueue *tsq = malloc(sizeof(*tsq));
+    tsq->cond = 
+}
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
 
@@ -32,11 +54,10 @@ static void *worker(void *para) {
     int height = getScreenHeight(vs);
     int rangeLength = width * height;
     // given id of worker, we devide the range [0, width * height - 1] into (id) pieces
-    // so that every worker is dispe
+    // so that every worker is allocated a piece
     int leftBoundary = (rangeLength / workerCount) * id;
     int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
-    rightBoundary = rightBoundary >= rangeLength ? rangeLength - 1 : rightBoundary;
-    if (rightBoundary == width * height - 1) printf("hello, suka\n");
+    if (id == workerCount - 1) rightBoundary = width * height - 1;
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
@@ -65,7 +86,7 @@ static void *worker(void *para) {
             // to ensure the pixel won't convergent too early, we consider its neighbors to decide
             // if it's gonna converge
             double RE = 0;
-            
+
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
                     if (inBoundary(x + dx, width) && inBoundary(y + dy, height)) {
@@ -73,7 +94,7 @@ static void *worker(void *para) {
                     }
                 }
             }
-            
+
             if (RE < 1e-2) {
                 *accessConvergent(vs, x, y) = true;
             }
