@@ -89,7 +89,7 @@ int main() {
 
     // 5. 載入並放置鑽石模型
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)starty + radius * 1, bz - radius * 1.5};
+    Point showing = {(double)width / 2, (double)height / 2, pz + 3 * radius};
     
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 90, 0, 0, showing);
@@ -112,8 +112,8 @@ int main() {
     LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
     pushBack(&sources, &light2, LightSource *);
 
-    // 頂/背光 (勾邊光)：放置於鑽石正後上方，強化冠部輪廓
-    Shape *lightSph3 = newSphere((Point){(double)width / 2, (double)height * 1.2, pz}, lightRadius);
+    // 頂/背光 (勾邊光)：放置於鑽石正後方，強化冠部輪廓
+    Shape *lightSph3 = newSphere((Point){(double)width / 2, (double)height / 2, pz + radius}, radius);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 

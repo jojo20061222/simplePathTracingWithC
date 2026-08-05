@@ -6,19 +6,8 @@
 #include <stdlib.h>
 
 typedef struct {
-    int id;
-    VirtualScreen *vs;
-    Object **objects;
-    LightSource **sources;
-    Point *camera;
-    int workerCount;
-    int maxDepth;
-    int *exit;
-} WorkerPara;
-
-typedef struct {
     int leftBoundary, rightBoundary;
-} Pair;
+} Range;
 
 typedef struct Node {
     void *data;
@@ -59,6 +48,8 @@ static ThreadSafeQueue *newTSQueue() {
     return tsq;
 }
 
+// after using the TSQueue we destroy the queue
+// Note that this function will also free the data in the queue
 static void destroyTSQueue(ThreadSafeQueue *tsq) {
     // destroy condition variable
     pthread_cond_destroy(&tsq->cond);
@@ -68,6 +59,7 @@ static void destroyTSQueue(ThreadSafeQueue *tsq) {
     for (int i = 0; i < tsq->length; i++) {
         Node *temp = tsq->head;
         tsq->head = tsq->head->next;
+        free(temp->data);
         free(temp);
     }
     free(tsq);
@@ -121,8 +113,7 @@ static void *TSQPop(ThreadSafeQueue *tsq) {
     --tsq->length;
     void *resultData = temp->data;
     free(temp);
-    // data should be freed by the owner
-
+    // data should be freed by the owner after poping out
     pthread_mutex_unlock(&tsq->mutex);
 
     return resultData;
@@ -130,35 +121,45 @@ static void *TSQPop(ThreadSafeQueue *tsq) {
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
 
+typedef struct {
+    int id;
+    VirtualScreen *vs;
+    Object **objects;
+    LightSource **sources;
+    Point *camera;
+    int workerCount;
+    int maxDepth;
+    int *exit;
+    ThreadSafeQueue *taskQueue;
+} WorkerPara;
+
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
     Object **objects = workerPara->objects;
     LightSource **sources = workerPara->sources;
     Point *camera = workerPara->camera;
-    int workerCount = workerPara->workerCount;
     int maxDepth = workerPara->maxDepth;
     VirtualScreen *vs = workerPara->vs;
+    ThreadSafeQueue *taskQueue = workerPara->taskQueue;
 
     int width = getScreenWidth(vs);
     int height = getScreenHeight(vs);
     int rangeLength = width * height;
-    // given id of worker, we devide the range [0, width * height - 1] into (id) pieces
-    // so that every worker is allocated a piece
-    int leftBoundary = (rangeLength / workerCount) * id;
-    int rightBoundary = (rangeLength / workerCount) * (id + 1) - 1;
-    if (id == workerCount - 1) rightBoundary = width * height - 1;
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
-    int blockSize = 200;
-
-    for (int i = leftBoundary; i <= rightBoundary; i++) {
-        int x = getX(vs, i), y = getY(vs, i);
-        setThreshold(camera, vs, x, y, objects, sources);
-    }
+    // the worker will update the status of pixels every (blockSize) times of loop
+    int blockSize = 64;
 
     while (*workerPara->exit == 0) {
+        // here we get the data from the task queue
+        // don't forget to recycle it later :)
+        Range *range = TSQPop(taskQueue);
+        int leftBoundary = range->leftBoundary;
+        int rightBoundary = range->rightBoundary;
+
+
         for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 // in order to reduce cache miss rate we have but to do this :(
@@ -189,6 +190,8 @@ static void *worker(void *para) {
                 *accessConvergent(vs, x, y) = true;
             }
         }
+
+        TSQPush(taskQueue, range);
     }
 
     destroyMT19937(mt);
@@ -209,6 +212,30 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
     }
     *mul->exit = 0;
 
+    int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
+    // set render threshold for every pixel
+    for (int i = 0; i < rangeLength; i++) {
+        int x = getX(vs, i), y = getY(vs, i);
+        setThreshold(camera, vs, x, y, objects, sources);
+    }
+
+    // here, we divide the screen into (blockCount) blocks
+    // and push them into task queue for workers to work
+    int blockCount = threadCount * 2;
+    ThreadSafeQueue *taskQueue = newTSQueue();
+    for (int id = 0; id < blockCount; id++) {
+        // given id of the block, we devide the range [0, width * height - 1] into (blockCount)
+        // pieces
+        // so that every block is allocated a piece
+        int leftBoundary = (rangeLength / blockCount) * id;
+        int rightBoundary = (rangeLength / blockCount) * (id + 1) - 1;
+        if (id == blockCount - 1) rightBoundary = rangeLength - 1;
+        Range *range = malloc(sizeof(*range));
+        *range = (Range){leftBoundary, rightBoundary};
+        TSQPush(taskQueue, range);
+    }
+
+    // create threads
     for (int i = 0; i < threadCount; i++) {
         WorkerPara *parai = malloc(sizeof(WorkerPara));
         if (parai == NULL) {
@@ -218,6 +245,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
             fprintf(stderr, "malloc para%d failed\n", i);
             exit(1);
         }
+        // set parameters for every threads
         parai->id = i;
         parai->objects = objects;
         parai->sources = sources;
@@ -226,6 +254,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
         parai->camera = camera;
         parai->maxDepth = maxDepth;
         parai->exit = mul->exit;
+        parai->taskQueue = taskQueue;
         pthread_create(&threadPool[i], NULL, worker, parai);
     }
 

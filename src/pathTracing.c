@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 11;
+static const int threadCount = 30;
 
 double strongWhiteLight(double waveLength) { return 6 * whiteLightBase(waveLength); }
 
@@ -81,7 +81,7 @@ int main() {
 
     // 5. 載入並放置鑽石模型
     double radius = (double)width / 10;
-    Point showing = {(double)width / 2, (double)starty + radius * 1, bz - radius * 1.5};
+    Point showing = {(double)width / 2, (double)height / 2, bz - radius * 1.5};
 
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 90, 0, 0, showing);
