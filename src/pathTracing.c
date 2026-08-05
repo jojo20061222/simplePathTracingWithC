@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 30;
+static const int threadCount = 11;
 
 double strongWhiteLight(double waveLength) { return 3 * whiteLightBase(waveLength); }
 
@@ -15,8 +15,8 @@ int main() {
 
     bool isRunning = true;
 
-    static const int width = 3000;
-    static const int height = 2000;
+    static const int width = 720;
+    static const int height = 540;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(double)width / 2, (double)height / 2, width};
 
@@ -79,7 +79,7 @@ int main() {
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 100);
+    Multithreads *mul = initMultithreads(vs, threadCount, objects, sources, &camera, 100, 64);
 
     while (isRunning) {
         char input[1000];

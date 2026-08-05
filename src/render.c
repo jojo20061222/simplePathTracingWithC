@@ -45,12 +45,12 @@ VirtualScreen *newScreen(int width, int height) {
     if (result->renderCount == NULL) mallocFailedExit();
 
     result->mean = calloc(width * height, sizeof(*result->mean));
-    if (result->mean == NULL) mallocFailedExit(); 
+    if (result->mean == NULL) mallocFailedExit();
 
     // Welford's algorithm needs m2 to calculate variance
     // we calculate variance of x, y, z so that colors will be considered
     result->m2 = calloc(width * height, sizeof(*result->m2));
-    if (result->m2 == NULL) mallocFailedExit() ;
+    if (result->m2 == NULL) mallocFailedExit();
 
     // Adaptive sampling
     result->convergent = calloc(width * height, sizeof(*result->convergent));
@@ -409,15 +409,47 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     return 0;
 }
 
-void setThreshold(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
-                  LightSource **sources) {
-    int i = getIndex(vs, x, y);
-    ReversedRay initRay = newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
-    SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
-    if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
-        vs->threshold[i] = 128;
+bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources) {
+    int width = vs->width;
+    int height = vs->height;
+    bool *touch = calloc(width * height, sizeof(*touch));
+
+    for (int i = 0; i < width * height; i++) {
+        int x = getX(vs, i), y = getY(vs, i);
+        ReversedRay initRay =
+            newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
+        SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
+        if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
+            touch[i] = true;
+        }
     }
-    // else the threshold is 0
+
+    return touch;
+}
+
+static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
+
+void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold) {
+    int width = vs->width;
+    int height = vs->height;
+    for (int i = 0; i < width * height; i++) {
+        // to make antialiasing work, we cannot block the pixels around the pixels that touches
+        // object
+        // consider 3 * 3 pixels around a pixel, if one of them touches object then we set a normal
+        // threshold for them
+        int x = getX(vs, i), y = getY(vs, i);
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                // neighbor x, y
+                int nx = x + dx;
+                int ny = y + dy;
+                if (!inBoundary(nx, width) || !inBoundary(ny, height)) continue;
+                // if neighbor touches objects then set threshold to default value
+                if (touchMap[i]) vs->threshold[i] = sampleThreshold;
+            }
+        }
+    }
 }
 
 bool isThresholdAchived(VirtualScreen *vs, int x, int y) {

@@ -89,7 +89,7 @@ int main() {
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100);
+    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100, 64);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {

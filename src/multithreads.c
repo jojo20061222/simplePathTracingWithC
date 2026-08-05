@@ -158,7 +158,7 @@ static void *worker(void *para) {
 
     // the worker will update the status of pixels every (blockSize) times of loop
     int blockSize = 64;
-    int leastSampleBlockCount = 20;
+    int leastSampleBlockCount = 5;
     // at least sample (blockSize * leastSampleBlockCount) times and start updating the status of
     // pixels
 
@@ -215,7 +215,7 @@ static void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               LightSource **sources, Point *camera, int maxDepth) {
+                               LightSource **sources, Point *camera, int maxDepth, int sampleThreshold) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 
@@ -228,10 +228,8 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
 
     int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
     // set render threshold for every pixel
-    for (int i = 0; i < rangeLength; i++) {
-        int x = getX(vs, i), y = getY(vs, i);
-        setThreshold(camera, vs, x, y, objects, sources);
-    }
+    bool *touchMap = getTouchMap(camera, vs, objects, sources);
+    setThreshold(vs, touchMap, sampleThreshold);
 
     // here, we divide the screen into (blockCount) blocks
     // and push them into task queue for workers to work
