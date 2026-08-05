@@ -294,6 +294,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
 
+    // here we implement Cook-Torrance's BSDF Model
     if (metallic || randomReal(mt) <= F) {
         // BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
@@ -303,6 +304,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         static const double error = 1e-6;
 
+        // if the light goes below the surface then this sample 
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
             return 0;
         }
@@ -326,8 +328,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         return result;
     }
 
-    if (metallic) return 0; // metal only has specular
-
+    // note that we have returned in the if branch above
+    // so the left
     bool transparent = getTransparent(firstCollideObject);
 
     if (transparent) {
