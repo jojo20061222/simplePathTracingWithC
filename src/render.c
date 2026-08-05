@@ -153,6 +153,24 @@ static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
 
+static inline Vector cosineVectorSample(MT19937 *mt) {
+    // first we generate a random point within a circle (uniformly)
+    // To convert this into distribution of probabilty, we find the probability near
+    // center of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2) we want to use a
+    // uniform distributed variable u1 to decide if the point is in such area, so u =
+    // (r/R)^2, r = Rsqrt(u)
+    // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
+    double u1 = randomReal(mt), u2 = randomReal(mt);
+    double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
+
+    // then we shall project it onto an sphere, then we get the cosine distribution
+    // normally suppose the normal vector point towards z-axis, then base on spherical
+    // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
+    // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
+    Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+    return local;
+}
+
 static inline Vector toWorld(Vector local, Vector N) {
     Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
     Vector T = unitVector(vecCross(helper, N));
@@ -294,9 +312,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     double y5 = y2 * y2 * y;
     double F = F0 + (1 - F0) * y5;
 
-    // here we implement Cook-Torrance's BSDF Model
+    // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
-        // BRDF
+        // Cook-Torrance's BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         double NdotV = vecDot(N, v);
         double NdotL = vecDot(N, l);
@@ -304,7 +322,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         static const double error = 1e-6;
 
-        // if the light goes below the surface then this sample 
+        // light goes below the surface is invalid
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
             return 0;
         }
@@ -329,7 +347,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     }
 
     // note that we have returned in the if branch above
-    // so the left
+    // so the left branch is 1 - F
     bool transparent = getTransparent(firstCollideObject);
 
     if (transparent) {
@@ -378,27 +396,13 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
         Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-        // this will not cause burst of value so we don't check here
         double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
 
     else {
         // Branch Diffusion, only non-transparent materials need to do this
-        // first we generate a random point within a circle (uniformly)
-        // To convert this into distribution of probabilty, we find the probability near
-        // center of the circle (within 0 <= d <= r): (pi*r^2) / (piR^2) we want to use a
-        // uniform distributed variable u1 to decide if the point is in such area, so u =
-        // (r/R)^2, r = Rsqrt(u)
-        // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-        double u1 = randomReal(mt), u2 = randomReal(mt);
-        double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
-
-        // then we shall project it onto an sphere, then we get the cosine distribution
-        // normally suppose the normal vector point towards z-axis, then base on spherical
-        // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
-        // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
-        Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+        Vector local = cosineVectorSample(mt);
         Vector nxtDirection = toWorld(local, N);
         ReversedRay nxtRay =
             newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
