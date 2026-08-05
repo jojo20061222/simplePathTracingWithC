@@ -133,6 +133,13 @@ typedef struct {
     ThreadSafeQueue *taskQueue;
 } WorkerPara;
 
+typedef struct Multithreads {
+    pthread_t *threadPool;
+    ThreadSafeQueue *taskQueue;
+    int threadCount;
+    int *exit;
+} Multithreads;
+
 static void *worker(void *para) {
     WorkerPara *workerPara = (WorkerPara *)para;
     int id = workerPara->id;
@@ -230,6 +237,8 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
     // and push them into task queue for workers to work
     int blockCount = threadCount * 2;
     ThreadSafeQueue *taskQueue = newTSQueue();
+    mul->taskQueue = taskQueue;
+
     for (int id = 0; id < blockCount; id++) {
         // given id of the block, we devide the range [0, width * height - 1] into (blockCount)
         // pieces
@@ -276,5 +285,6 @@ void destroyMultithreads(Multithreads *mul) {
         pthread_join(mul->threadPool[i], NULL);
     free(mul->threadPool);
     free(mul->exit);
+    destroyTSQueue(mul->taskQueue);
     free(mul);
 }

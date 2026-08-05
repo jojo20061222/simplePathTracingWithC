@@ -3,11 +3,7 @@
 #include "render.h"
 #include <pthread.h>
 
-typedef struct {
-    pthread_t *threadPool;
-    int threadCount;
-    int *exit;
-} Multithreads;
+typedef struct Multithreads Multithreads;
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
                                LightSource **sources, Point *camera, int maxDepth);
