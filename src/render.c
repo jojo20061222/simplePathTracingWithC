@@ -328,6 +328,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
 
         // calculating 4 * F * V * (N dot L) * (V dot H) / (N dot H)
+        // Using highly-correlated Smith's model
         double alpha2 = alpha * alpha;
         double NdotV2 = NdotV * NdotV;
         double NdotL2 = NdotL * NdotL;
