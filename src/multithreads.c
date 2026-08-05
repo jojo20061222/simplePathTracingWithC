@@ -151,6 +151,9 @@ static void *worker(void *para) {
 
     // the worker will update the status of pixels every (blockSize) times of loop
     int blockSize = 64;
+    int leastSampleBlockCount = 20;
+    // at least sample (blockSize * leastSampleBlockCount) times and start updating the status of
+    // pixels
 
     while (*workerPara->exit == 0) {
         // here we get the data from the task queue
@@ -158,7 +161,6 @@ static void *worker(void *para) {
         Range *range = TSQPop(taskQueue);
         int leftBoundary = range->leftBoundary;
         int rightBoundary = range->rightBoundary;
-
 
         for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
@@ -170,12 +172,17 @@ static void *worker(void *para) {
             }
         }
 
+        if (--blockSize >= 0) {
+            TSQPush(taskQueue, range);
+            continue;
+        }
+
         // update the the convergent state of pixels
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
             if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
-            // to ensure the pixel won't convergent too early, we consider its neighbors to decide
-            // if it's gonna converge
+            // to ensure the pixel won't convergent too early, we consider its neighbors to
+            // decide if it's gonna converge
             double RE = 0;
 
             for (int dx = -1; dx <= 1; dx++) {
