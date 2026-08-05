@@ -4,7 +4,6 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <pthread.h>
 
 typedef struct {
     int id;
@@ -31,9 +30,10 @@ typedef struct {
     Node *rear;
     pthread_cond_t cond;
     pthread_mutex_t mutex;
+    unsigned int length;
 } ThreadSafeQueue;
 
-ThreadSafeQueue *newTSQueue() {
+static ThreadSafeQueue *newTSQueue() {
     ThreadSafeQueue *tsq = malloc(sizeof(*tsq));
     if (tsq == NULL) {
         fprintf(stderr, "malloc thread safe queue failed\n");
@@ -54,10 +54,12 @@ ThreadSafeQueue *newTSQueue() {
         exit(1);
     }
 
+    tsq->length = 0;
+
     return tsq;
 }
 
-void destroyTSQueue(ThreadSafeQueue *tsq) {
+static void destroyTSQueue(ThreadSafeQueue *tsq) {
     // destroy condition variable
     pthread_cond_destroy(&tsq->cond);
     // destroy mutex
@@ -67,12 +69,19 @@ void destroyTSQueue(ThreadSafeQueue *tsq) {
         free(tsq->head);
         tsq->head = tsq->head->next;
     }
-    
+
     free(tsq);
 }
 
-void TSQPush(ThreadSafeQueue *tsq, void *data) {
+static void TSQPush(ThreadSafeQueue *tsq, void *data) {
+    // lock the mutex to avoid others perform the same operation at the same time
+    pthread_mutex_lock(&tsq->mutex);
     
+    // add an element to the rear of the linked list
+    if (tsq->length == 0) tsq->
+    
+    
+    pthread_mutex_unlock(&tsq->mutex);
 }
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
@@ -160,7 +169,8 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
         WorkerPara *parai = malloc(sizeof(WorkerPara));
         if (parai == NULL) {
             *mul->exit = true;
-            for (int j = 0; j < i - 1; j++) pthread_join(mul->threadPool[j], NULL);
+            for (int j = 0; j < i - 1; j++)
+                pthread_join(mul->threadPool[j], NULL);
             fprintf(stderr, "malloc para%d failed\n", i);
             exit(1);
         }
