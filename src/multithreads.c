@@ -30,7 +30,7 @@ typedef struct {
     Node *rear;
     pthread_cond_t cond;
     pthread_mutex_t mutex;
-    unsigned int length;
+    unsigned int length; // avoid a lot of confising situation
 } ThreadSafeQueue;
 
 static ThreadSafeQueue *newTSQueue() {
@@ -65,23 +65,67 @@ static void destroyTSQueue(ThreadSafeQueue *tsq) {
     // destroy mutex
     pthread_mutex_destroy(&tsq->mutex);
     // free all the element in the queue
-    while (tsq->head) {
-        free(tsq->head);
+    for (int i = 0; i < tsq->length; i++) {
+        Node *temp = tsq->head;
         tsq->head = tsq->head->next;
+        free(temp);
     }
-
     free(tsq);
 }
 
+static inline bool TSQIsEmpty(ThreadSafeQueue *tsq) { return tsq->length == 0; }
+
+// push the data into the queue
 static void TSQPush(ThreadSafeQueue *tsq, void *data) {
-    // lock the mutex to avoid others perform the same operation at the same time
+    // lock the mutex to avoid race condition
     pthread_mutex_lock(&tsq->mutex);
-    
+
     // add an element to the rear of the linked list
-    if (tsq->length == 0) tsq->
-    
-    
+    Node *temp = malloc(sizeof(*temp));
+    temp->data = data;
+    temp->next = NULL;
+
+    if (tsq->length == 0) {
+        // the queue is originally empty
+        tsq->head = temp;
+        tsq->rear = temp;
+    }
+    else {
+        tsq->rear->next = temp;
+        tsq->rear = temp;
+    }
+
+    ++tsq->length;
+
     pthread_mutex_unlock(&tsq->mutex);
+
+    // after push an element into the queue, the queue is no longer empty
+    // so, we need to notify a thread to work
+    pthread_cond_signal(&tsq->cond);
+}
+
+// pop out data from queue and return the poped out data
+static void *TSQPop(ThreadSafeQueue *tsq) {
+    // lock the mutex to avoid race condition
+    pthread_mutex_lock(&tsq->mutex);
+
+    // wait until there is an element to be poped
+    while (TSQIsEmpty(tsq)) {
+        pthread_cond_wait(&tsq->cond, &tsq->mutex);
+    }
+
+    // now we should have locked up the mutex so do the following operations
+    // pop out the head node from the linked list
+    Node *temp = tsq->head;
+    tsq->head = tsq->head->next;
+    --tsq->length;
+    void *resultData = temp->data;
+    free(temp);
+    // data should be freed by the owner
+
+    pthread_mutex_unlock(&tsq->mutex);
+
+    return resultData;
 }
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
