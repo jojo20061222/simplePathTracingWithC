@@ -158,9 +158,6 @@ static void *worker(void *para) {
 
     // the worker will update the status of pixels every (blockSize) times of loop
     int blockSize = 64;
-    int leastSampleBlockCount = 5;
-    // at least sample (blockSize * leastSampleBlockCount) times and start updating the status of
-    // pixels
 
     while (*workerPara->exit == 0) {
         // here we get the data from the task queue
@@ -179,11 +176,6 @@ static void *worker(void *para) {
             }
         }
 
-        if (--blockSize >= 0) {
-            TSQPush(taskQueue, range);
-            continue;
-        }
-
         // update the the convergent state of pixels
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
@@ -194,9 +186,10 @@ static void *worker(void *para) {
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {
-                    if (inBoundary(x + dx, width) && inBoundary(y + dy, height)) {
-                        RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
-                    }
+                    if (!inBoundary(x + dx, width) || !inBoundary(y + dy, height)) continue;
+                    int index = getIndex(vs, x + dx, x + dy);
+                    if (!(index <= ))
+                    RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
                 }
             }
 
@@ -215,7 +208,8 @@ static void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               LightSource **sources, Point *camera, int maxDepth, int sampleThreshold) {
+                               LightSource **sources, Point *camera, int maxDepth,
+                               int sampleThreshold) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 

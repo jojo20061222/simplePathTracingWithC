@@ -78,7 +78,7 @@ uint32_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
 
 uint32_t *getBuffer(VirtualScreen *vs) { return (uint32_t *)vs->buffer; }
 
-static inline int getIndex(VirtualScreen *vs, int x, int y) {
+int getIndex(VirtualScreen *vs, int x, int y) {
     return (vs->height - y - 1) * vs->width + x;
 }
 

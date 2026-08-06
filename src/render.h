@@ -36,6 +36,8 @@ int getX(VirtualScreen *vs, int i);
 
 int getY(VirtualScreen *vs, int i);
 
+int getIndex(VirtualScreen *vs, int x, int y);
+
 void freeScreen(VirtualScreen *screen);
 
 void renderPixel(Point *camera, VirtualScreen *s, int x, int y, Object **objects,
