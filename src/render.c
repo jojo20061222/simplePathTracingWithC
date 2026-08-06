@@ -16,8 +16,8 @@ static const double endWavelength = 790;
 
 typedef struct VirtualScreen {
     ScreenColor *buffer;
-    unsigned int *renderCount;
-    unsigned int *threshold;
+    unsigned long long *renderCount;
+    unsigned long long *threshold;
     ColorXYZ *mean;
     struct {
         double X2, Y2, Z2;
@@ -137,11 +137,6 @@ double getRelativeError(VirtualScreen *vs, int x, int y) {
 bool *accessConvergent(VirtualScreen *vs, int x, int y) {
     int i = getIndex(vs, x, y);
     return &vs->convergent[i];
-}
-
-unsigned int *accessThreshold(VirtualScreen *vs, int x, int y) {
-    int i = getIndex(vs, x, y);
-    return &vs->threshold[i];
 }
 
 static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {

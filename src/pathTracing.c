@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 11;
+static const int threadCount = 30;
 
 double strongWhiteLight(double waveLength) { return 3 * whiteLightBase(waveLength); }
 
