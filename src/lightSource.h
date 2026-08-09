@@ -7,24 +7,24 @@
 
 typedef struct {
     Shape *shape;
-    LightIntensity (*intensity)(double waveLength);
+    LightIntensity (*intensity)(Real waveLength);
 } LightSource;
 
-LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(double));
+LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real));
 
 typedef struct {
     bool collide;
-    double t;
+    Real t;
     LightIntensity intensity;
 } CollideLightSourceResult;
 
 typedef struct {
-    double X, Y, Z;
+    Real X, Y, Z;
 } ColorXYZ;
 
 void initLightIntensity();
 
-ColorXYZ wavelengthToXYZ(double waveLength);
+ColorXYZ wavelengthToXYZ(Real waveLength);
 
 ScreenColor XYZtoRGB(ColorXYZ xyz);
 
@@ -32,18 +32,18 @@ static inline ColorXYZ colorAdd(ColorXYZ a, ColorXYZ b) {
     return (ColorXYZ){a.X + b.X, a.Y + b.Y, a.Z + b.Z};
 }
 
-static inline ColorXYZ colorComponent(double c, ColorXYZ color) {
+static inline ColorXYZ colorComponent(Real c, ColorXYZ color) {
     return (ColorXYZ){c * color.X, c * color.Y, c * color.Z};
 }
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray);
 
-double getBlackbodyIntensity(double T, double waveLength);
+Real getBlackbodyIntensity(Real T, Real waveLength);
 
-double tungstenLampBase(double waveLength);
+Real tungstenLampBase(Real waveLength);
 
-double sunlightBase(double waveLength);
+Real sunlightBase(Real waveLength);
 
-double whiteLightBase(double wavelength);
+Real whiteLightBase(Real wavelength);
 
 #endif

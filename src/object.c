@@ -21,20 +21,18 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
 
-Complex getRefractiveIndexOutside(Object *self, double lambda) {
+Complex getRefractiveIndexOutside(Object *self, Real lambda) {
     return getTextureRefractiveIndexOutside(self->texture, lambda);
 }
 
-Complex getRefractiveIndexInside(Object *self, double lambda) {
+Complex getRefractiveIndexInside(Object *self, Real lambda) {
     return getTextureRefractiveIndexInside(self->texture, lambda);
 }
 
-double getRoughness(Object *self) { return getTextureRoughness(self->texture); }
+Real getRoughness(Object *self) { return getTextureRoughness(self->texture); }
 
 bool getmetallic(Object *self) { return getTexturemetallic(self->texture); }
 
 bool getTransparent(Object *self) { return getTextureTransparent(self->texture); }
 
-double getBaseColor(Object *self, double lambda) {
-    return getTextureBaseColor(self->texture, lambda);
-}
+Real getBaseColor(Object *self, Real lambda) { return getTextureBaseColor(self->texture, lambda); }

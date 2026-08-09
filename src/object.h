@@ -12,16 +12,16 @@ Object *newObject(Shape *shape, Texture *texture);
 
 CollideResult collideObject(Object *, ReversedRay *);
 
-Complex getRefractiveIndexInside(Object *self, double lambda);
+Complex getRefractiveIndexInside(Object *self, Real lambda);
 
-Complex getRefractiveIndexOutside(Object *self, double lambda);
+Complex getRefractiveIndexOutside(Object *self, Real lambda);
 
-double getRoughness(Object *self);
+Real getRoughness(Object *self);
 
 bool getmetallic(Object *self);
 
 bool getTransparent(Object *self);
 
-double getBaseColor(Object *self, double lambda);
+Real getBaseColor(Object *self, Real lambda);
 
 #endif

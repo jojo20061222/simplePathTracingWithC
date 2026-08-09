@@ -7,8 +7,8 @@ typedef Vector (*Transform)(Vector, void *);
 
 typedef struct RegularTransformPara RegularTransformPara;
 
-RegularTransformPara *newRegularTransformPara(double scalingFactor, double rotateXAngle,
-                                              double rotateYAngle, double rotateZAngle,
+RegularTransformPara *newRegularTransformPara(Real scalingFactor, Real rotateXAngle,
+                                              Real rotateYAngle, Real rotateZAngle,
                                               Vector destination);
 void destroyRegulartransformPara(RegularTransformPara *);
 
@@ -21,10 +21,10 @@ void destroyRegulartransformPara(RegularTransformPara *);
 Vector regularTransform(Vector v, void *);
 
 // Provide some base transformation
-Vector scaling(Vector v, double scaleFactor); // scaling about the origin
-Vector rotateAboutXAxis(Vector v, double degree);
-Vector rotateAboutYAxis(Vector v, double degree);
-Vector rotateAboutZAxis(Vector v, double degree);
+Vector scaling(Vector v, Real scaleFactor); // scaling about the origin
+Vector rotateAboutXAxis(Vector v, Real degree);
+Vector rotateAboutYAxis(Vector v, Real degree);
+Vector rotateAboutZAxis(Vector v, Real degree);
 
 // after doing transformation above than move it to the right place
 Vector moveBy(Vector v, Vector displacement);

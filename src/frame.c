@@ -1,7 +1,7 @@
 #include "frame.h"
 #include "base.h"
-#include "transform.h"
 #include "dynamicArray.h"
+#include "transform.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +36,8 @@ Frame *readFrame(const char *path) {
 
         if (!strcmp(firstTok, "v")) { // first case: this line represent a vertex
             Point p;
-            sscanf(buffer + 2, "%lf%lf%lf", &p.x, &p.y, &p.z); // skip the "v " at the start
+            sscanf(buffer + 2, REAL_FMT REAL_FMT REAL_FMT, &p.x, &p.y,
+                   &p.z); // skip the "v " at the start
             pushBack(&frame->vertexes, p, Point);
         }
 
@@ -83,7 +84,7 @@ Shape *newGroupFromFrame(Frame *m, Transform t, void *para) {
         }
         else {
             Shape *tri = newTriangle(vertexes[0], vertexes[1], vertexes[2]);
-            pushBack(&shapes, tri, Shape*);
+            pushBack(&shapes, tri, Shape *);
             freeDynamicArray(vertexes);
         }
     }

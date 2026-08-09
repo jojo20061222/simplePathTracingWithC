@@ -20,7 +20,7 @@ typedef struct Triangle {
 typedef struct Sphere {
     Shape shape;
     Point center;
-    double radius;
+    Real radius;
 } Sphere;
 
 typedef struct ConvexPolygon {
@@ -34,7 +34,7 @@ typedef struct Group {
     Shape **elements;
 } Group;
 
-static inline CollideResult getCollideResult(bool collide, double t, Vector normalVector) {
+static inline CollideResult getCollideResult(bool collide, Real t, Vector normalVector) {
     return (CollideResult){collide, t, normalVector};
 }
 
@@ -72,23 +72,23 @@ static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
      *     | A.z B.z -D.z |       | W.z B.z -D.z |
      */
 
-    double delta = A.x * B.y * (-D.z) + A.z * B.x * (-D.y) + A.y * B.z * (-D.x) -
-                   A.z * B.y * (-D.x) - A.x * B.z * (-D.y) - A.y * B.x * (-D.z);
+    Real delta = A.x * B.y * (-D.z) + A.z * B.x * (-D.y) + A.y * B.z * (-D.x) - A.z * B.y * (-D.x) -
+                 A.x * B.z * (-D.y) - A.y * B.x * (-D.z);
     if (fabs(delta) < error) return result;
 
-    double deltaU = W.x * B.y * (-D.z) + W.z * B.x * (-D.y) + W.y * B.z * (-D.x) -
-                    W.z * B.y * (-D.x) - W.x * B.z * (-D.y) - W.y * B.x * (-D.z);
-    double u = deltaU / delta;
+    Real deltaU = W.x * B.y * (-D.z) + W.z * B.x * (-D.y) + W.y * B.z * (-D.x) -
+                  W.z * B.y * (-D.x) - W.x * B.z * (-D.y) - W.y * B.x * (-D.z);
+    Real u = deltaU / delta;
     if (u < 0 || u > 1) return result;
 
-    double deltaV = A.x * W.y * (-D.z) + A.z * W.x * (-D.y) + A.y * W.z * (-D.x) -
-                    A.z * W.y * (-D.x) - A.x * W.z * (-D.y) - A.y * W.x * (-D.z);
-    double v = deltaV / delta;
+    Real deltaV = A.x * W.y * (-D.z) + A.z * W.x * (-D.y) + A.y * W.z * (-D.x) -
+                  A.z * W.y * (-D.x) - A.x * W.z * (-D.y) - A.y * W.x * (-D.z);
+    Real v = deltaV / delta;
     if (v < 0 || u > 1 || u + v > 1) return result;
 
-    double deltaT = A.x * B.y * W.z + A.z * B.x * W.y + A.y * B.z * W.x - A.z * B.y * W.x -
-                    A.x * B.z * W.y - A.y * B.x * W.z;
-    double t = deltaT / delta;
+    Real deltaT = A.x * B.y * W.z + A.z * B.x * W.y + A.y * B.z * W.x - A.z * B.y * W.x -
+                  A.x * B.z * W.y - A.y * B.x * W.z;
+    Real t = deltaT / delta;
     if (t < 0) return result;
 
     result = getCollideResult(true, t, tri->normal);
@@ -130,25 +130,25 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
     Sphere *sph = (Sphere *)self;
 
     Vector W = vecMinus(ray->start, sph->center);
-    double A = vecDot(ray->direction, ray->direction);
-    double B = 2 * vecDot(ray->direction, W);
-    double C = vecDot(W, W) - sph->radius * sph->radius;
-    double Delta = B * B - 4 * A * C;
+    Real A = vecDot(ray->direction, ray->direction);
+    Real B = 2 * vecDot(ray->direction, W);
+    Real C = vecDot(W, W) - sph->radius * sph->radius;
+    Real Delta = B * B - 4 * A * C;
     if (Delta < 0) {
         return notCollide();
     }
-    double t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
+    Real t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
     if (t1 < 0 && t2 < 0) {
         return notCollide();
     }
-    double t = t1 < 0 ? t2 : t1;
+    Real t = t1 < 0 ? t2 : t1;
     Point collidePoint = vecAdd(ray->start, vecMultiply(t, ray->direction));
     return getCollideResult(true, t, normalVectorOfSphere(sph, collidePoint));
 }
 
 static void destroySphere(Shape *self) { free(self); }
 
-Shape *newSphere(Point center, double radius) {
+Shape *newSphere(Point center, Real radius) {
     Sphere *sph = malloc(sizeof(*sph));
     if (sph == NULL) {
         fprintf(stderr, "malloc sph failed\n");
@@ -182,12 +182,12 @@ static CollideResult detectConvexPolygonCollide(Shape *self, ReversedRay *ray) {
     // we simply count this situation as no collision
     Vector D = ray->direction;
     Vector O = ray->start;
-    double C = vecDot(N, cp->vertexes[0]);
-    double NdotD = vecDot(N, D);
+    Real C = vecDot(N, cp->vertexes[0]);
+    Real NdotD = vecDot(N, D);
     if (fabs(NdotD) < error) {
         return notCollide();
     }
-    double t = (C - vecDot(N, O)) / NdotD;
+    Real t = (C - vecDot(N, O)) / NdotD;
     if (t <= error) {
         return notCollide();
     }
@@ -219,7 +219,7 @@ Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
     if (cp == NULL) {
         fprintf(stderr, "malloc cp failed\n");
-        exit(1);   
+        exit(1);
     }
     cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
     cp->vertexes = newDynamicArray(getSize(vertexes), Point);

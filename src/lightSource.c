@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(double)) {
+LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real)) {
     return (LightSource){shape, intensity};
 }
 
@@ -30,12 +30,13 @@ void initLightIntensity() {
     for (int i = 0; i < 89; i++) {
         int lambda;
         fscanf(csv, "%d,", &lambda);
-        fscanf(csv, "%lf,%lf,%lf", &convertTable[i].X, &convertTable[i].Y, &convertTable[i].Z);
+        fscanf(csv, REAL_FMT "," REAL_FMT "," REAL_FMT, &convertTable[i].X, &convertTable[i].Y,
+               &convertTable[i].Z);
     }
     fclose(csv);
 }
 
-ColorXYZ wavelengthToXYZ(double waveLength) {
+ColorXYZ wavelengthToXYZ(Real waveLength) {
     if (waveLength < startWavelength || waveLength > startWavelength + waveLengthStep * dataCount)
         return (ColorXYZ){0, 0, 0};
 
@@ -46,21 +47,21 @@ ColorXYZ wavelengthToXYZ(double waveLength) {
     // 830 nm.
     if (slot == 89) return convertTable[89];
 
-    double slot1WaveLength = startWavelength + waveLengthStep * slot;
-    double slot2WaveLength = startWavelength + waveLengthStep * (slot + 1);
+    Real slot1WaveLength = startWavelength + waveLengthStep * slot;
+    Real slot2WaveLength = startWavelength + waveLengthStep * (slot + 1);
     // lerp
-    double X = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].X,
-                    convertTable[slot + 1].X);
-    double Y = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Y,
-                    convertTable[slot + 1].Y);
-    double Z = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Z,
-                    convertTable[slot + 1].Z);
+    Real X = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].X,
+                  convertTable[slot + 1].X);
+    Real Y = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Y,
+                  convertTable[slot + 1].Y);
+    Real Z = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Z,
+                  convertTable[slot + 1].Z);
 
     return (ColorXYZ){X, Y, Z};
 }
 
-static inline double adj(double C) {
-    double sRGB;
+static inline Real adj(Real C) {
+    Real sRGB;
     if (C < 0) C = 0; // clamp
     if (fabs(C) < 0.0031308) {
         sRGB = 12.92 * C;
@@ -75,9 +76,9 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     // Source - https://stackoverflow.com/a/45238704
     // Posted by blazs, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-07-18, License - CC BY-SA 4.0
-    double X = xyz.X;
-    double Y = xyz.Y;
-    double Z = xyz.Z;
+    Real X = xyz.X;
+    Real Y = xyz.Y;
+    Real Z = xyz.Z;
 
     uint8_t R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
     uint8_t G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);
@@ -85,33 +86,33 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     return (ScreenColor){R, G, B, 0};
 }
 
- double getBlackbodyIntensity(double wavelength, double T) {
-    double lambda = wavelength * 1e-9;
+Real getBlackbodyIntensity(Real wavelength, Real T) {
+    Real lambda = wavelength * 1e-9;
 
-    static const double h = 6.62607015e-34;
-    static const double c = 2.99792458e+8;
-    static const double kB = 1.380649e-23;
+    static const Real h = 6.62607015e-34;
+    static const Real c = 2.99792458e+8;
+    static const Real kB = 1.380649e-23;
 
-    static const double c1 = 2.0 * h * c * c;
-    static const double c2 = (h * c) / kB;
+    static const Real c1 = 2.0 * h * c * c;
+    static const Real c2 = (h * c) / kB;
 
-    double exponent = c2 / (lambda * T);
+    Real exponent = c2 / (lambda * T);
 
     if (exponent > 700.0) return 0.0;
 
     return c1 / (pow(lambda, 5.0) * (exp(exponent) - 1.0));
 }
 
-double tungstenLampBase(double wavelength) {
+Real tungstenLampBase(Real wavelength) {
     return getBlackbodyIntensity(wavelength, 2800) /
            215561768139.854309; // getBlackbodyIntensity(555, 2800)
 }
 
-double sunlightBase(double wavelength) {
+Real sunlightBase(Real wavelength) {
     return getBlackbodyIntensity(wavelength, 5500) /
            20481294390815.578125; // getBlackbodyIntensity(555, 5500)
 }
 
-double whiteLightBase(double wavelength) {
+Real whiteLightBase(Real wavelength) {
     return getBlackbodyIntensity(wavelength, 6500) / getBlackbodyIntensity(555, 6500);
 }

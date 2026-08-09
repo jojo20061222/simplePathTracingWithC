@@ -5,7 +5,7 @@
 
 typedef struct {
     bool collide;
-    double t;
+    Real t;
     Vector normalVector;
 } CollideResult;
 
@@ -23,7 +23,7 @@ typedef struct Group Group;
 
 Shape *newTriangle(Point p1, Point p2, Point p3);
 
-Shape *newSphere(Point center, double radius);
+Shape *newSphere(Point center, Real radius);
 
 Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 

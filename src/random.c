@@ -61,4 +61,4 @@ void destroyMT19937(MT19937 *mt) {
     free(mt);
 }
 
-double randomReal(MT19937 *mt) { return (double)extractNumber(mt) / (double)UINT_MAX; }
+Real randomReal(MT19937 *mt) { return (Real)extractNumber(mt) / (Real)UINT_MAX; }

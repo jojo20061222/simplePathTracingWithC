@@ -5,17 +5,17 @@
 #include <stdlib.h>
 
 typedef struct Texture {
-    double (*baseColor)(double lambda);
-    Complex (*refractiveIndexInside)(double lambda);
-    Complex (*refractiveIndexOutside)(double lambda);
+    Real (*baseColor)(Real lambda);
+    Complex (*refractiveIndexInside)(Real lambda);
+    Complex (*refractiveIndexOutside)(Real lambda);
     bool transparent;
     bool metallic;
-    double roughness;
+    Real roughness;
 } Texture;
 
-Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metallic,
-                    double roughness) {
+Texture *newTexture(Real (*baseColor)(Real), Complex (*refractiveIndexInside)(Real),
+                    Complex (*refractiveIndexOutside)(Real), bool transparent, bool metallic,
+                    Real roughness) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
         fprintf(stderr, "malloc tex failed\n");
@@ -31,33 +31,33 @@ Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside
 static Complex AgEta[AG_LINE_COUNT];
 static const char AG_PATH_N[] = "src/static/ag_n.csv";
 static const char AG_PATH_K[] = "src/static/ag_k.csv";
-static const double AG_LAMBDA_STEP = 1;
+static const Real AG_LAMBDA_STEP = 1;
 
 #define AU_LINE_COUNT 46
 static Complex AuEta[AU_LINE_COUNT];
 static const char AU_PATH_N[] = "src/static/au_n.csv";
 static const char AU_PATH_K[] = "src/static/au_k.csv";
-static const double AU_LAMBDA_STEP = 10;
+static const Real AU_LAMBDA_STEP = 10;
 
 #define CU_LINE_COUNT 46
 static Complex CuEta[CU_LINE_COUNT];
 static const char CU_PATH_N[] = "src/static/cu_n.csv";
 static const char CU_PATH_K[] = "src/static/cu_k.csv";
-static const double CU_LAMBDA_STEP = 10;
+static const Real CU_LAMBDA_STEP = 10;
 
 #define FE_LINE_COUNT 46
 static Complex FeEta[FE_LINE_COUNT];
 static const char FE_PATH_N[] = "src/static/fe_n.csv";
 static const char FE_PATH_K[] = "src/static/fe_k.csv";
-static const double FE_LAMBDA_STEP = 10;
+static const Real FE_LAMBDA_STEP = 10;
 
 #define GLASS_LINE_COUNT 45
 static Complex GlassEta[GLASS_LINE_COUNT];
 static const char GLASS_PATH_N[] = "src/static/glass_n.csv";
 static const char GLASS_PATH_K[] = "src/static/glass_k.csv";
-static const double GLASS_LAMBDA_STEP = 10;
+static const Real GLASS_LAMBDA_STEP = 10;
 
-static const double startLambda = 390;
+static const Real startLambda = 390;
 
 static void readFile(const char *filePathN, const char *filePathK, Complex eta[], int lineCount) {
     int lineCountFromFile;
@@ -69,8 +69,8 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
 
     fscanf(fN, "%d", &lineCount);
     for (int i = 0; i < lineCount; i++) {
-        double lambda;
-        int successfulCount = fscanf(fN, "%lf,%lf", &lambda, &eta[i].R);
+        Real lambda;
+        int successfulCount = fscanf(fN, REAL_FMT "," REAL_FMT, &lambda, &eta[i].R);
     }
     fclose(fN);
 
@@ -80,8 +80,8 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
     }
     fscanf(fK, "%d", &lineCount);
     for (int i = 0; i < lineCount; i++) {
-        double lambda;
-        int successfulCount = fscanf(fK, "%lf,%lf", &lambda, &eta[i].I);
+        Real lambda;
+        int successfulCount = fscanf(fK, REAL_FMT "," REAL_FMT, &lambda, &eta[i].I);
     }
     fclose(fK);
     return;
@@ -95,19 +95,19 @@ void initTexture() {
     readFile(GLASS_PATH_N, GLASS_PATH_K, GlassEta, GLASS_LINE_COUNT);
 }
 
-double pureWhite(double _) { return 0.8; }
+Real pureWhite(Real _) { return 0.8; }
 
-double pureBlack(double _) { return 0; }
+Real pureBlack(Real _) { return 0; }
 
-double red(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
+Real red(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 
-double green(double lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
+Real green(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 
-Complex getPlasticRefractivity(double _) { return (Complex){1.5, 0.0}; }
+Complex getPlasticRefractivity(Real _) { return (Complex){1.5, 0.0}; }
 
-Complex getAirRefractivity(double _) { return (Complex){1.0, 0.0}; };
+Complex getAirRefractivity(Real _) { return (Complex){1.0, 0.0}; };
 
-Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lineCount) {
+Complex getRefractivity(Real lambda, Complex eta[], Real lambdaStep, int lineCount) {
     if (lambda < startLambda) return (Complex){0, 0};
     if (lambda > startLambda + lineCount * lambdaStep) return (Complex){0, 0};
     int slot = (lambda - startLambda) / lambdaStep;
@@ -119,45 +119,45 @@ Complex getRefractivity(double lambda, Complex eta[], double lambdaStep, int lin
                      lerp(preLambda, nxtLambda, lambda, eta[slot].I, eta[slot + 1].I)};
 }
 
-Complex getSilverRefractivity(double lambda) {
+Complex getSilverRefractivity(Real lambda) {
     return getRefractivity(lambda, AgEta, AG_LAMBDA_STEP, AG_LINE_COUNT);
 }
 
-Complex getGoldRefractivity(double lambda) {
+Complex getGoldRefractivity(Real lambda) {
     return getRefractivity(lambda, AuEta, AU_LAMBDA_STEP, AU_LINE_COUNT);
 }
 
-Complex getCopperRefractivity(double lambda) {
+Complex getCopperRefractivity(Real lambda) {
     return getRefractivity(lambda, CuEta, CU_LAMBDA_STEP, CU_LINE_COUNT);
 }
 
-Complex getIronRefractivity(double lambda) {
+Complex getIronRefractivity(Real lambda) {
     return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
 
-Complex getGlassRefractivity(double lambda) {
+Complex getGlassRefractivity(Real lambda) {
     return getRefractivity(lambda, GlassEta, GLASS_LAMBDA_STEP, GLASS_LINE_COUNT);
 }
 
-Complex getDiamondRefractivity(double x) {
+Complex getDiamondRefractivity(Real x) {
     x /= 1000;
     return (Complex){
         sqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
 }
 
-Texture *getGold(double roughness) {
+Texture *getGold(Real roughness) {
     return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture *getSilver(double roughness) {
+Texture *getSilver(Real roughness) {
     return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture *getCopper(double roughness) {
+Texture *getCopper(Real roughness) {
     return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture *getIron(double roughness) {
+Texture *getIron(Real roughness) {
     return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
 }
 
@@ -170,16 +170,16 @@ Texture *getDiamond() {
 }
 
 // Wrappers
-double getTextureBaseColor(Texture *texture, double lambda) { return texture->baseColor(lambda); }
-Complex getTextureRefractiveIndexInside(Texture *texture, double lambda) {
+Real getTextureBaseColor(Texture *texture, Real lambda) { return texture->baseColor(lambda); }
+Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda) {
     return texture->refractiveIndexInside(lambda);
 }
-Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda) {
+Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda) {
     return texture->refractiveIndexOutside(lambda);
 }
 bool getTexturemetallic(Texture *texture) { return texture->metallic; }
 bool getTextureTransparent(Texture *texture) { return texture->transparent; }
-double getTextureRoughness(Texture *texture) { return texture->roughness; }
+Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
 #undef AG_LINE_COUNT
 #undef AU_LINE_COUNT

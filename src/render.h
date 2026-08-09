@@ -13,7 +13,7 @@ typedef struct VirtualScreen VirtualScreen;
 
 VirtualScreen *newScreen(int width, int height);
 
-double getRelativeError(VirtualScreen *vs, int x, int y);
+Real getRelativeError(VirtualScreen *vs, int x, int y);
 
 bool *accessConvergent(VirtualScreen *vs, int x, int y);
 
@@ -25,8 +25,7 @@ uint32_t getPixel(VirtualScreen *vs, int i);
 
 uint32_t *getBuffer(VirtualScreen *vs);
 
-bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects,
-                  LightSource **sources);
+bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources);
 
 void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold);
 

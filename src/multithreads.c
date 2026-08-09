@@ -180,7 +180,7 @@ static void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
             if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
-            double RE = getRelativeError(vs, x, y);
+            Real RE = getRelativeError(vs, x, y);
             if (RE < 3e-2) {
                 *accessConvergent(vs, x, y) = true;
             }

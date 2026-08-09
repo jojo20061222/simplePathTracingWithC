@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static const double startWavelength = 390;
-static const double endWavelength = 790;
+static const Real startWavelength = 390;
+static const Real endWavelength = 790;
 
 typedef struct VirtualScreen {
     ScreenColor *buffer;
@@ -20,7 +20,7 @@ typedef struct VirtualScreen {
     unsigned long long *threshold;
     ColorXYZ *mean;
     struct {
-        double X2, Y2, Z2;
+        Real X2, Y2, Z2;
     } *m2;
     bool *convergent;
     int width, height;
@@ -78,9 +78,7 @@ uint32_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
 
 uint32_t *getBuffer(VirtualScreen *vs) { return (uint32_t *)vs->buffer; }
 
-int getIndex(VirtualScreen *vs, int x, int y) {
-    return (vs->height - y - 1) * vs->width + x;
-}
+int getIndex(VirtualScreen *vs, int x, int y) { return (vs->height - y - 1) * vs->width + x; }
 
 int getX(VirtualScreen *vs, int i) { return i % vs->width; }
 
@@ -93,9 +91,9 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     int i = getIndex(vs, x, y);
     int n = ++vs->renderCount[i];
 
-    double dX = color.X - vs->mean[i].X;
-    double dY = color.Y - vs->mean[i].Y;
-    double dZ = color.Z - vs->mean[i].Z;
+    Real dX = color.X - vs->mean[i].X;
+    Real dY = color.Y - vs->mean[i].Y;
+    Real dZ = color.Z - vs->mean[i].Z;
     vs->mean[i].X += dX / n;
     vs->mean[i].Y += dY / n;
     vs->mean[i].Z += dZ / n;
@@ -112,25 +110,25 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
-static inline double getSingleRelativeError(double mean, double m2, double n) {
-    double relativeError;
+static inline Real getSingleRelativeError(Real mean, Real m2, Real n) {
+    Real relativeError;
     if (n <= 1) {
         relativeError = INFINITY;
     }
     else {
-        double stdDev = sqrt(m2 / (double)(n - 1));
+        Real stdDev = sqrt(m2 / (Real)(n - 1));
         relativeError = stdDev / (fabs(mean) + error);
     }
     return relativeError;
 }
 
-double getRelativeError(VirtualScreen *vs, int x, int y) {
+Real getRelativeError(VirtualScreen *vs, int x, int y) {
     // calculate sample standard deviation
     int i = getIndex(vs, x, y);
     int n = vs->renderCount[i];
-    double relativeErrorX = getSingleRelativeError(vs->mean[i].X, vs->m2[i].X2, n);
-    double relativeErrorY = getSingleRelativeError(vs->mean[i].Y, vs->m2[i].Y2, n);
-    double relativeErrorZ = getSingleRelativeError(vs->mean[i].Z, vs->m2[i].Z2, n);
+    Real relativeErrorX = getSingleRelativeError(vs->mean[i].X, vs->m2[i].X2, n);
+    Real relativeErrorY = getSingleRelativeError(vs->mean[i].Y, vs->m2[i].Y2, n);
+    Real relativeErrorZ = getSingleRelativeError(vs->mean[i].Z, vs->m2[i].Z2, n);
     return fmax(relativeErrorX, fmax(relativeErrorY, relativeErrorZ));
 }
 
@@ -139,11 +137,11 @@ bool *accessConvergent(VirtualScreen *vs, int x, int y) {
     return &vs->convergent[i];
 }
 
-static inline Vector GGXVectorSample(MT19937 *mt, double alpha) {
-    double u1 = randomReal(mt), u2 = randomReal(mt);
-    double theta = 2 * M_PI * u1;
-    double cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
-    double sinPhi = sqrt(fmax(0, 1 - cosPhi * cosPhi));
+static inline Vector GGXVectorSample(MT19937 *mt, Real alpha) {
+    Real u1 = randomReal(mt), u2 = randomReal(mt);
+    Real theta = 2 * M_PI * u1;
+    Real cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
+    Real sinPhi = sqrt(fmax(0, 1 - cosPhi * cosPhi));
     // <cos theta sinPhi, sin theta sin phi, cos phi>
     return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
 }
@@ -155,8 +153,8 @@ static inline Vector cosineVectorSample(MT19937 *mt) {
     // uniform distributed variable u1 to decide if the point is in such area, so u =
     // (r/R)^2, r = Rsqrt(u)
     // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
-    double u1 = randomReal(mt), u2 = randomReal(mt);
-    double sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
+    Real u1 = randomReal(mt), u2 = randomReal(mt);
+    Real sinPhi = sqrt(1 - u1), theta = 2 * M_PI * u2;
 
     // then we shall project it onto an sphere, then we get the cosine distribution
     // normally suppose the normal vector point towards z-axis, then base on spherical
@@ -263,26 +261,26 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // come from
 
     Vector v = vecNegative(ray.direction); // direction from collide point to observer
-    double roughness = getRoughness(firstCollideObject);
+    Real roughness = getRoughness(firstCollideObject);
     // By Disney's guidelines we square the roughness here to get alpha
-    double alpha = roughness * roughness;
+    Real alpha = roughness * roughness;
 
     Vector h = toWorld(GGXVectorSample(mt, alpha), N);        // sample normal vector through GGX
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
     // calculate F part
-    double VdotH = vecDot(v, h);
+    Real VdotH = vecDot(v, h);
     if (VdotH <= 0) return 0;
-    double cosTheta = VdotH;
-    double cosThetaForF;
+    Real cosTheta = VdotH;
+    Real cosThetaForF;
     bool metallic = getmetallic(firstCollideObject);
 
     // check total internal reflection
     if (!metallic && n1.R > n2.R) {
         // TIR need n1 sinTheta >= n2
         // or squared n1^2 sin^2Theta >= n2^2
-        double n1R2 = n1.R * n1.R;
-        double n2R2 = n2.R * n2.R;
-        double sin2Theta = 1 - cosTheta * cosTheta;
+        Real n1R2 = n1.R * n1.R;
+        Real n2R2 = n2.R * n2.R;
+        Real sin2Theta = 1 - cosTheta * cosTheta;
         if (n1R2 * sin2Theta >= n2R2) {
             cosThetaForF = 0;
         }
@@ -290,7 +288,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
             // use angle of refraction instead
             // ignore the imaginary part of n since metal does not have refraction
             // since n1 sinTheta1 = n2 sinTheta2 we have sinTheta2 = n1/n2 sinTheta1
-            double sin2Theta2 = n1R2 / n2R2 * sin2Theta;
+            Real sin2Theta2 = n1R2 / n2R2 * sin2Theta;
             cosThetaForF = sqrt(fmax(0, 1 - sin2Theta2));
         }
     }
@@ -300,22 +298,22 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
     // Schlick's approximation
     // F = F0 + (1 - F0) * y^5
-    double x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
-    double F0 = x * x;
-    double y = 1 - cosThetaForF;
-    double y2 = y * y;
-    double y5 = y2 * y2 * y;
-    double F = F0 + (1 - F0) * y5;
+    Real x = cplxModulus(cplxDivide(cplxMinus(n1, n2), cplxAdd(n1, n2)));
+    Real F0 = x * x;
+    Real y = 1 - cosThetaForF;
+    Real y2 = y * y;
+    Real y5 = y2 * y2 * y;
+    Real F = F0 + (1 - F0) * y5;
 
     // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
         // Cook-Torrance's BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
-        double NdotV = vecDot(N, v);
-        double NdotL = vecDot(N, l);
-        double NdotH = vecDot(N, h);
+        Real NdotV = vecDot(N, v);
+        Real NdotL = vecDot(N, l);
+        Real NdotH = vecDot(N, h);
 
-        static const double error = 1e-6;
+        static const Real error = 1e-6;
 
         // light goes below the surface is invalid
         if (NdotV <= error || NdotL <= error || NdotH <= error) {
@@ -324,12 +322,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         // calculating 4 * F * V * (N dot L) * (V dot H) / (N dot H)
         // Using highly-correlated Smith's model
-        double alpha2 = alpha * alpha;
-        double NdotV2 = NdotV * NdotV;
-        double NdotL2 = NdotL * NdotL;
-        double denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
-                        NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
-        double finalFactor = (2.0 * NdotL * VdotH) / (denom * NdotH);
+        Real alpha2 = alpha * alpha;
+        Real NdotV2 = NdotV * NdotV;
+        Real NdotL2 = NdotL * NdotL;
+        Real denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
+                      NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
+        Real finalFactor = (2.0 * NdotL * VdotH) / (denom * NdotH);
 
         // since metallic won't go into the 1 - F branch so we do have to * F
         if (metallic) finalFactor *= F;
@@ -338,7 +336,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // to avoid collide with the same object again, we move a little from the collide point
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-        double result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        Real result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
 
@@ -354,10 +352,10 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // First we test the condition that all transparent object have smooth
         // surface (roughness = 0)
         Vector I = d;
-        double cosTheta1 = -vecDot(N, I);
+        Real cosTheta1 = -vecDot(N, I);
         assert(cosTheta1 >= 0);
-        double n1R = n1.R;
-        double n2R = n2.R;
+        Real n1R = n1.R;
+        Real n2R = n2.R;
         /*
          * We simply assume that
          * >> I = <sin(Theta1), -cos(Theta1)>
@@ -385,14 +383,14 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
          * Sum up the reault
          * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
          */
-        double eta = n1R / n2R;
-        double eta2 = eta * eta;
-        double sin2Theta1 = 1 - cosTheta1 * cosTheta1;
-        double coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
+        Real eta = n1R / n2R;
+        Real eta2 = eta * eta;
+        Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
+        Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
         Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
         Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-        double result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        Real result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
 
@@ -403,7 +401,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         ReversedRay nxtRay =
             newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
 
-        double baseColor = getBaseColor(firstCollideObject, ray.waveLength);
+        Real baseColor = getBaseColor(firstCollideObject, ray.waveLength);
 
         return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) * baseColor;
     }
@@ -418,8 +416,7 @@ bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSourc
 
     for (int i = 0; i < width * height; i++) {
         int x = getX(vs, i), y = getY(vs, i);
-        ReversedRay initRay =
-            newRay(*camera, vecMinus((Vector){(double)x, (double)y, 0}, *camera), 0);
+        ReversedRay initRay = newRay(*camera, vecMinus((Vector){(Real)x, (Real)y, 0}, *camera), 0);
         SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
         if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
             touch[i] = true;
@@ -463,17 +460,17 @@ bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
 void renderPixel(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
-    double fixedX = (double)x + randomReal(mt);
-    double fixedY = (double)y + randomReal(mt);
+    Real fixedX = (Real)x + randomReal(mt);
+    Real fixedY = (Real)y + randomReal(mt);
     /*
      * Some basic idea about this function is to generate a reversed ray start from the camera and
      * goes through a pixel, then see if it collide with an object. If it collides with an object
      * then do something consequently.
      */
-    double intervalSize = endWavelength - startWavelength;
+    Real intervalSize = endWavelength - startWavelength;
     ReversedRay initRay;
     LightIntensity intensityResult;
-    double randomWavelength = randomReal(mt) * intervalSize + startWavelength;
+    Real randomWavelength = randomReal(mt) * intervalSize + startWavelength;
 
     initRay = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength);
 

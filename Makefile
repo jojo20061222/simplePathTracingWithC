@@ -66,7 +66,7 @@ build/multithreads.o: src/multithreads.c src/multithreads.h src/render.h \
 build/object.o: src/object.c src/object.h src/base.h src/shapes.h \
   src/textures.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
-build/random.o: src/random.c src/random.h
+build/random.o: src/random.c src/random.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto
 build/render.o: src/render.c src/render.h src/base.h src/dynamicArray.h \
   src/lightSource.h src/object.h src/shapes.h src/textures.h \

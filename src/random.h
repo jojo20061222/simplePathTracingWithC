@@ -1,7 +1,8 @@
-#ifndef MT19937_H
-#define MT19937_H
-#include <stdint.h>
+#ifndef RANDOM_H
+#define RANDOM_H
 #include <limits.h>
+#include <stdint.h>
+#include "base.h"
 
 typedef struct {
     uint32_t *mt;
@@ -14,6 +15,6 @@ uint32_t extractNumber(MT19937 *mt);
 
 void destroyMT19937(MT19937 *mt);
 
-double randomReal(MT19937 *mt);
+Real randomReal(MT19937 *mt);
 
 #endif

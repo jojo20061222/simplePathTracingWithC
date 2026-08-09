@@ -5,37 +5,37 @@
 
 typedef struct Texture Texture;
 
-double getTextureBaseColor(Texture *texture, double lambda);
-Complex getTextureRefractiveIndexInside(Texture *texture, double lambda);
-Complex getTextureRefractiveIndexOutside(Texture *texture, double lambda);
+Real getTextureBaseColor(Texture *texture, Real lambda);
+Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda);
+Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda);
 bool getTexturemetallic(Texture *texture);
 bool getTextureTransparent(Texture *texture);
-double getTextureRoughness(Texture *texture);
+Real getTextureRoughness(Texture *texture);
 
-Texture *newTexture(double (*baseColor)(double), Complex (*refractiveIndexInside)(double),
-                    Complex (*refractiveIndexOutside)(double), bool transparent, bool metallic,
-                    double roughness);
+Texture *newTexture(Real (*baseColor)(Real), Complex (*refractiveIndexInside)(Real),
+                    Complex (*refractiveIndexOutside)(Real), bool transparent, bool metallic,
+                    Real roughness);
 
 void initTexture();
 
 // base colors
-double pureWhite(double lambda);
-double pureBlack(double lambda);
-double red(double lambda);
+Real pureWhite(Real lambda);
+Real pureBlack(Real lambda);
+Real red(Real lambda);
 
 // refractivities
-Complex getPlasticRefractivity(double lambda);
-Complex getAirRefractivity(double lambda);
-Complex getSilverRefractivity(double lambda);
-Complex getGoldRefractivity(double lambda);
-Complex getCopperRefractivity(double lambda);
-Complex getIronRefractivity(double lambda);
-Complex getDiamondRefractivity(double lambda);
+Complex getPlasticRefractivity(Real lambda);
+Complex getAirRefractivity(Real lambda);
+Complex getSilverRefractivity(Real lambda);
+Complex getGoldRefractivity(Real lambda);
+Complex getCopperRefractivity(Real lambda);
+Complex getIronRefractivity(Real lambda);
+Complex getDiamondRefractivity(Real lambda);
 
-Texture *getGold(double roughness);
-Texture *getSilver(double roughness);
-Texture *getCopper(double roughness);
-Texture *getIron(double roughness);
+Texture *getGold(Real roughness);
+Texture *getSilver(Real roughness);
+Texture *getCopper(Real roughness);
+Texture *getIron(Real roughness);
 Texture *getGlass();
 Texture *getDiamond();
 
