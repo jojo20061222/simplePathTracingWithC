@@ -69,14 +69,43 @@ int main() {
     pushBack(&objects, backWall, Object *);
 
     // diamond
+    
     Real radius = (Real)width / 10;
-    Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
+    Point showing = {(Real)width / 2, (Real)height / 2, pz + 1.5 * radius};
+    /*
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     destroyRegulartransformPara(para);
     Object *diamondObj = newObject(diamondShape, getDiamond());
     pushBack(&objects, diamondObj, Object *);
+    */
+    Shape *goldenBallSphere = newSphere(showing, radius);
+    Object *goldenBallObj = newObject(goldenBallSphere, getGold(0.3));
+    pushBack(&objects, goldenBallObj, Object *);
+
+    Point *frontPoints = newDynamicArray(4, Point);
+    frontPoints[0] = (Point){endx, starty, bz};
+    frontPoints[1] = (Point){endx, endy, bz};
+    frontPoints[2] = (Point){startx, endy, bz};
+    frontPoints[3] = (Point){startx, starty, bz};
+    Shape *glassPlateShape = newConvexPolygon(frontPoints);
+    freeDynamicArray(frontPoints);
+    Object *glassPlateObj = newObject(glassPlateShape, getGlass(0.5));
+    pushBack(&objects, glassPlateObj, Object *);
+
+    Point *frontPoints2 = newDynamicArray(4, Point);
+    Real thickness = (double)width / 100;
+    Real bz2 = bz - thickness;
+    frontPoints2[3] = (Point){endx, starty, bz2};
+    frontPoints2[2] = (Point){endx, endy, bz2};
+    frontPoints2[1] = (Point){startx, endy, bz2};
+    frontPoints2[0] = (Point){startx, starty, bz2};
+    Shape *glassPlateShape2 = newConvexPolygon(frontPoints2);
+    freeDynamicArray(frontPoints2);
+    Object *glassPlateObj2 = newObject(glassPlateShape, getGlass(0.5));
+    pushBack(&objects, glassPlateObj2, Object *);
+
 
     Real lightRadius = (Real)width / 40;
 

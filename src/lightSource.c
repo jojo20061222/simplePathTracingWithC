@@ -63,7 +63,7 @@ ColorXYZ wavelengthToXYZ(Real waveLength) {
 static inline Real adj(Real C) {
     Real sRGB;
     if (C < 0) C = 0; // clamp
-    if (fabs(C) < 0.0031308) {
+    if (rabs(C) < 0.0031308) {
         sRGB = 12.92 * C;
     }
     else {

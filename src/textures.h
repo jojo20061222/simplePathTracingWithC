@@ -36,7 +36,7 @@ Texture *getGold(Real roughness);
 Texture *getSilver(Real roughness);
 Texture *getCopper(Real roughness);
 Texture *getIron(Real roughness);
-Texture *getGlass();
-Texture *getDiamond();
+Texture *getGlass(Real roughness);
+Texture *getDiamond(Real roughness);
 
 #endif

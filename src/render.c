@@ -117,7 +117,7 @@ static inline Real getSingleRelativeError(Real mean, Real m2, Real n) {
     }
     else {
         Real stdDev = sqrt(m2 / (Real)(n - 1));
-        relativeError = stdDev / (fabs(mean) + error);
+        relativeError = stdDev / (rabs(mean) + error);
     }
     return relativeError;
 }
@@ -165,7 +165,7 @@ static inline Vector cosineVectorSample(MT19937 *mt) {
 }
 
 static inline Vector toWorld(Vector local, Vector N) {
-    Vector helper = (fabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
+    Vector helper = (rabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
     Vector T = unitVector(vecCross(helper, N));
     Vector B = vecCross(N, T);
     // project the unturned to turned
@@ -252,7 +252,7 @@ static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, 
     return O;
 }
 
-static inline Real getGeometryTermDenom(double NdotL, double NdotV, double alpha) {
+static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
     Real alpha2 = alpha * alpha;
     Real NdotV2 = NdotV * NdotV;
     Real NdotL2 = NdotL * NdotL;
@@ -404,16 +404,27 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Real NdotM = vecDot(N, m);
 
         // check if this refraction is valid
-        if (NdotL >= -error || NdotV <= error || NdotL >= -error || NdotM <= error) {
+        // 1. n dot l must <= 0 to ensure the reversed ray goes through the macrosurface
+        // 2. n dot v must >= 0 to ensure the reversed ray comes from the right direction
+        // 3. n dot m must >= 0 to ensure the microsurface sampled correctly
+        if (NdotL >= -error || NdotV <= error || NdotM <= error) {
             return 0;
         }
 
-        Real absNdotL = fabs(NdotL);
-
-        Real GTermDenom = getGeometryTermDenom(NdotL, NdotV, alpha);
-        Real GTerm = (2 * NdotV * NdotL) / GTermDenom;
         Real MdotL = vecDot(m, l);
-        Real finalFactor = (MdotL * GTerm) / (NdotV * NdotM);
+        Real MdotV = vecDot(m, v);
+
+        // check the ray actually goes through the microsurface
+        if (MdotL * MdotV >= -error) {
+            return 0;
+        }
+
+        Real absNdotL = rabs(NdotL);
+        Real absMdotL = rabs(MdotL);
+
+        Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
+        Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
+        Real finalFactor = (absMdotL * GTerm) / (NdotV * NdotM);
 
         Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);

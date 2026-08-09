@@ -161,12 +161,12 @@ Texture *getIron(Real roughness) {
     return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
 }
 
-Texture *getGlass() {
-    return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, 0);
+Texture *getGlass(Real roughness) {
+    return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, roughness);
 }
 
-Texture *getDiamond() {
-    return newTexture(NULL, getDiamondRefractivity, getAirRefractivity, true, false, 0);
+Texture *getDiamond(Real roughness) {
+    return newTexture(NULL, getDiamondRefractivity, getAirRefractivity, true, false, roughness);
 }
 
 // Wrappers

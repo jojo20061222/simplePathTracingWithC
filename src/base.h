@@ -6,11 +6,20 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef DOUBLE_AS_REAL
+#define REAL_FMT "%lf"
+typedef double Real;
+#else
 #define REAL_FMT "%f"
 typedef float Real;
+#endif
 
 static inline Real rabs(Real x) {
-#ifdef 
+#ifdef DOUBLE_AS_REAL
+    return fabs(x);
+#else
+    return fabsf(x);
+#endif
 }
 
 typedef union {
@@ -114,7 +123,7 @@ static inline Real lerp(Real x1, Real x2, Real x, Real y1, Real y2) {
     // we have (y - y1)(x2 - x) = (y2 - y)(x - x1)
     // x2y - xy - x2y1 + y1x = y2x - x1y2 - xy + x1y
     // (x2 - x1)y = x2y1 - x1y2 + y2x - y1x = y1(x2 - x) + y2(x - x1)
-    if (fabs(x2 - x1) < error) return y1;
+    if (rabs(x2 - x1) < error) return y1;
     return (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1);
 }
 

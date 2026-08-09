@@ -74,7 +74,7 @@ static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
 
     Real delta = A.x * B.y * (-D.z) + A.z * B.x * (-D.y) + A.y * B.z * (-D.x) - A.z * B.y * (-D.x) -
                  A.x * B.z * (-D.y) - A.y * B.x * (-D.z);
-    if (fabs(delta) < error) return result;
+    if (rabs(delta) < error) return result;
 
     Real deltaU = W.x * B.y * (-D.z) + W.z * B.x * (-D.y) + W.y * B.z * (-D.x) -
                   W.z * B.y * (-D.x) - W.x * B.z * (-D.y) - W.y * B.x * (-D.z);
@@ -184,7 +184,7 @@ static CollideResult detectConvexPolygonCollide(Shape *self, ReversedRay *ray) {
     Vector O = ray->start;
     Real C = vecDot(N, cp->vertexes[0]);
     Real NdotD = vecDot(N, D);
-    if (fabs(NdotD) < error) {
+    if (rabs(NdotD) < error) {
         return notCollide();
     }
     Real t = (C - vecDot(N, O)) / NdotD;
