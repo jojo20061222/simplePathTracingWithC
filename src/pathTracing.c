@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 30;
+static const int threadCount = 11;
 
 Real strongWhiteLight(Real waveLength) { return 3 * whiteLightBase(waveLength); }
 
@@ -60,27 +60,14 @@ int main() {
     
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
-    /*
+    
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     destroyRegulartransformPara(para);
-    Object *diamondObj = newObject(diamondShape, getDiamond());
+    Object *diamondObj = newObject(diamondShape, getDiamond(0));
     pushBack(&objects, diamondObj, Object *);
-    */
-    Shape *goldenBallSphere = newSphere(showing, radius);
-    Object *goldenBallObj = newObject(goldenBallSphere, getGold(0.3));
-    pushBack(&objects, goldenBallObj, Object *);
 
-    Point *frontPoints = newDynamicArray(4, Point);
-    frontPoints[0] = (Point){endx, starty, bz};
-    frontPoints[1] = (Point){endx, endy, bz};
-    frontPoints[2] = (Point){startx, endy, bz};
-    frontPoints[3] = (Point){startx, starty, bz};
-    Shape *glassPlateShape = newConvexPolygon(frontPoints);
-    freeDynamicArray(frontPoints);
-    Object *glassPlateObj = newObject(glassPlateShape, getGlass(0.5));
-    pushBack(&objects, glassPlateObj, Object *);
 
 
     Real lightRadius = (Real)width / 40;
