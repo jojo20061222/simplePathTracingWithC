@@ -265,12 +265,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // By Disney's guidelines we square the roughness here to get alpha
     Real alpha = roughness * roughness;
 
-    Vector h = toWorld(GGXVectorSample(mt, alpha), N);        // sample normal vector through GGX
-    Vector l = vecMinus(vecMultiply(2 * vecDot(v, h), h), v); // direction of reflection
+    Vector m = toWorld(GGXVectorSample(mt, alpha), N); // normalized normal vector through GGX
+    Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
     // calculate F part
-    Real VdotH = vecDot(v, h);
-    if (VdotH <= 0) return 0;
-    Real cosTheta = VdotH;
+    Real VdotM = vecDot(v, m);
+    if (VdotM <= 0) return 0;
+    Real cosTheta = VdotM;
     Real cosThetaForF;
     bool metallic = getmetallic(firstCollideObject);
 
@@ -311,12 +311,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         Real NdotV = vecDot(N, v);
         Real NdotL = vecDot(N, l);
-        Real NdotH = vecDot(N, h);
+        Real NdotM = vecDot(N, m);
 
         static const Real error = 1e-6;
 
         // light goes below the surface is invalid
-        if (NdotV <= error || NdotL <= error || NdotH <= error) {
+        if (NdotV <= error || NdotL <= error || NdotM <= error) {
             return 0;
         }
 
@@ -327,7 +327,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Real NdotL2 = NdotL * NdotL;
         Real denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
                       NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
-        Real finalFactor = (2.0 * NdotL * VdotH) / (denom * NdotH);
+        Real finalFactor = (2.0 * NdotL * VdotM) / (denom * NdotM);
 
         // since metallic won't go into the 1 - F branch so we do have to * F
         if (metallic) finalFactor *= F;
