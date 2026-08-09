@@ -215,6 +215,42 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
                                     firstCollideSourceResult, firstCollideSource};
 }
 
+static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, Vector I, Vector N) {
+    /*
+         * We simply assume that
+         * >> I = <sin(Theta1), -cos(Theta1)>
+         * >> O = <sin(Theta2), -cos(Theta2)>
+         * >> N = <0, 1>
+         *
+         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
+         * we simply use these simplified vectors to do linear combinations and the results won't
+         * change
+         *
+         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
+         *
+         * Hence,
+         * >> (n1/n2)sin(Theta1) = sin(Theta2)
+         * we take relative refractivity as eta
+         * >> eta * sin(Theta1) = sin(Theta2)
+         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
+         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
+         *
+         * We first do the cosine part
+         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
+         *
+         * Then the sine part
+         * >> eta * I + eta * cos(Theta1) N
+         * Sum up the reault
+         * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
+         */
+        Real eta = n1R / n2R;
+        Real eta2 = eta * eta;
+        Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
+        Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
+        Vector l = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
+        return l;
+}
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth) {
     if (maxDepth == 0) return 0;
@@ -266,7 +302,6 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     Real alpha = roughness * roughness;
 
     Vector m = toWorld(GGXVectorSample(mt, alpha), N); // normalized normal vector through GGX
-    Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
     // calculate F part
     Real VdotM = vecDot(v, m);
     if (VdotM <= 0) return 0;
@@ -275,6 +310,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     bool metallic = getmetallic(firstCollideObject);
 
     // check total internal reflection
+    // if this is triggered, 100% goes into branch reflection
+    // metal is neglected since metals won't refract or diffuse
     if (!metallic && n1.R > n2.R) {
         // TIR need n1 sinTheta >= n2
         // or squared n1^2 sin^2Theta >= n2^2
@@ -307,6 +344,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
     // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
+        Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
         // Cook-Torrance's BRDF
         // calculate V * (v dot h) / (n dot h) part = DG / PDF
         Real NdotV = vecDot(N, v);
@@ -349,49 +387,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // branch is 1 - F
         // There is no need to * (1 - F) in the result
 
-        // First we test the condition that all transparent object have smooth
-        // surface (roughness = 0)
-        Vector I = d;
-        Real cosTheta1 = -vecDot(N, I);
-        assert(cosTheta1 >= 0);
-        Real n1R = n1.R;
-        Real n2R = n2.R;
-        /*
-         * We simply assume that
-         * >> I = <sin(Theta1), -cos(Theta1)>
-         * >> O = <sin(Theta2), -cos(Theta2)>
-         * >> N = <0, 1>
-         *
-         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
-         * we simply use these simplified vectors to do linear combinations and the results won't
-         * change
-         *
-         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
-         *
-         * Hence,
-         * >> (n1/n2)sin(Theta1) = sin(Theta2)
-         * we take relative refractivity as eta
-         * >> eta * sin(Theta1) = sin(Theta2)
-         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
-         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
-         *
-         * We first do the cosine part
-         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
-         *
-         * Then the sine part
-         * >> eta * I + eta * cos(Theta1) N
-         * Sum up the reault
-         * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
-         */
-        Real eta = n1R / n2R;
-        Real eta2 = eta * eta;
-        Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
-        Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
-        Vector nxtDirection = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-        Real result = simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
-        return result;
+        // BTDF
+        
+        
     }
 
     else {
