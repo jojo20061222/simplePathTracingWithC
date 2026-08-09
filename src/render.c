@@ -447,8 +447,9 @@ void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold) {
                 int nx = x + dx;
                 int ny = y + dy;
                 if (!inBoundary(nx, width) || !inBoundary(ny, height)) continue;
+                int ni = getIndex(vs, nx, ny);
                 // if neighbor touches objects then set threshold to default value
-                if (touchMap[i]) vs->threshold[i] = sampleThreshold;
+                if (touchMap[ni]) vs->threshold[i] = sampleThreshold;
             }
         }
     }

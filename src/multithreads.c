@@ -180,20 +180,8 @@ static void *worker(void *para) {
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
             if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
-            // to ensure the pixel won't convergent too early, we consider its neighbors to
-            // decide if it's gonna converge
-            double RE = 0;
-
-            for (int dx = -1; dx <= 1; dx++) {
-                for (int dy = -1; dy <= 1; dy++) {
-                    if (!inBoundary(x + dx, width) || !inBoundary(y + dy, height)) continue;
-                    int index = getIndex(vs, x + dx, x + dy);
-                    if (!(index <= ))
-                    RE = fmax(RE, getRelativeError(vs, x + dx, y + dy));
-                }
-            }
-
-            if (RE < 1e-2) {
+            double RE = getRelativeError(vs, x, y);
+            if (RE < 3e-2) {
                 *accessConvergent(vs, x, y) = true;
             }
         }

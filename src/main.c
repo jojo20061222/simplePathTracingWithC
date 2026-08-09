@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 1080;
-const int height = 720;
+const int width = 720;
+const int height = 540;
 
 // 定義高強度白光，用來激發鑽石內部火彩
 double strongWhiteLight(double waveLength) { return 6 * whiteLightBase(waveLength); }
