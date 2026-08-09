@@ -215,40 +215,49 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
                                     firstCollideSourceResult, firstCollideSource};
 }
 
-static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, Vector I, Vector N) {
+static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, Vector I,
+                                            Vector N) {
     /*
-         * We simply assume that
-         * >> I = <sin(Theta1), -cos(Theta1)>
-         * >> O = <sin(Theta2), -cos(Theta2)>
-         * >> N = <0, 1>
-         *
-         * Since there exist a simple rotating Jacobian that rotate these vectors to world,
-         * we simply use these simplified vectors to do linear combinations and the results won't
-         * change
-         *
-         * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
-         *
-         * Hence,
-         * >> (n1/n2)sin(Theta1) = sin(Theta2)
-         * we take relative refractivity as eta
-         * >> eta * sin(Theta1) = sin(Theta2)
-         * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
-         * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
-         *
-         * We first do the cosine part
-         * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
-         *
-         * Then the sine part
-         * >> eta * I + eta * cos(Theta1) N
-         * Sum up the reault
-         * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
-         */
-        Real eta = n1R / n2R;
-        Real eta2 = eta * eta;
-        Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
-        Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
-        Vector l = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
-        return l;
+     * We simply assume that
+     * >> I = <sin(Theta1), -cos(Theta1)>
+     * >> O = <sin(Theta2), -cos(Theta2)>
+     * >> N = <0, 1>
+     *
+     * Since there exist a simple rotating Jacobian that rotate these vectors to world,
+     * we simply use these simplified vectors to do linear combinations and the results won't
+     * change
+     *
+     * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
+     *
+     * Hence,
+     * >> (n1/n2)sin(Theta1) = sin(Theta2)
+     * we take relative refractivity as eta
+     * >> eta * sin(Theta1) = sin(Theta2)
+     * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
+     * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
+     *
+     * We first do the cosine part
+     * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
+     *
+     * Then the sine part
+     * >> eta * I + eta * cos(Theta1) N
+     * Sum up the reault
+     * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
+     */
+    Real eta = n1R / n2R;
+    Real eta2 = eta * eta;
+    Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
+    Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
+    Vector O = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
+    return O;
+}
+
+static inline Real getGeometryTermDenom(double NdotL, double NdotV, double alpha) {
+    Real alpha2 = alpha * alpha;
+    Real NdotV2 = NdotV * NdotV;
+    Real NdotL2 = NdotL * NdotL;
+    return (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
+            NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
@@ -360,11 +369,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         // calculating 4 * Fterm * Vterm * (N dot L) * (V dot H) / (N dot H)
         // Using highly-correlated Smith's model
-        Real alpha2 = alpha * alpha;
-        Real NdotV2 = NdotV * NdotV;
-        Real NdotL2 = NdotL * NdotL;
-        Real denom = (NdotL * sqrt(alpha2 + (1 - alpha2) * NdotV2) +
-                      NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
+        Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
         Real finalFactor = (2.0 * NdotL * VdotM) / (denom * NdotM);
 
         // since metallic won't go into the 1 - F branch so we do have to * F
@@ -388,8 +393,33 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // There is no need to * (1 - F) in the result
 
         // BTDF
-        
-        
+        // calculate (l dot m)G / ((v dot n) (n dot m))
+        Vector I = ray.direction;
+        Real n1R = n1.R;
+        Real n2R = n2.R;
+        Real cosTheta1 = VdotM; // cosine of incident angle
+        Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, m);
+        Real NdotL = vecDot(N, l); // left
+        Real NdotV = vecDot(N, v);
+        Real NdotM = vecDot(N, m);
+
+        // check if this refraction is valid
+        if (NdotL >= -error || NdotV <= error || NdotL >= -error || NdotM <= error) {
+            return 0;
+        }
+
+        Real absNdotL = fabs(NdotL);
+
+        Real GTermDenom = getGeometryTermDenom(NdotL, NdotV, alpha);
+        Real GTerm = (2 * NdotV * NdotL) / GTermDenom;
+        Real MdotL = vecDot(m, l);
+        Real finalFactor = (MdotL * GTerm) / (NdotV * NdotM);
+
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
+        ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
+        Real result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+
+        return result;
     }
 
     else {

@@ -9,6 +9,10 @@
 #define REAL_FMT "%f"
 typedef float Real;
 
+static inline Real rabs(Real x) {
+#ifdef 
+}
+
 typedef union {
     struct {
         uint8_t R, G, B, A;
