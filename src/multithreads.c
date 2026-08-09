@@ -181,7 +181,7 @@ static void *worker(void *para) {
             int x = getX(vs, i), y = getY(vs, i);
             if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
             Real RE = getRelativeError(vs, x, y);
-            if (RE < 3e-2) {
+            if (RE < 5e-2) {
                 *accessConvergent(vs, x, y) = true;
             }
         }
