@@ -126,7 +126,7 @@ typedef struct {
     VirtualScreen *vs;
     Object **objects;
     LightSource **sources;
-    Point *camera;
+    Camera *camera;
     int workerCount;
     int maxDepth;
     int *exit;
@@ -145,7 +145,7 @@ static void *worker(void *para) {
     int id = workerPara->id;
     Object **objects = workerPara->objects;
     LightSource **sources = workerPara->sources;
-    Point *camera = workerPara->camera;
+    Camera *camera = workerPara->camera;
     int maxDepth = workerPara->maxDepth;
     VirtualScreen *vs = workerPara->vs;
     ThreadSafeQueue *taskQueue = workerPara->taskQueue;
@@ -196,7 +196,7 @@ static void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects, LightSource **sources,
-                               Point *camera, int maxDepth, int sampleThreshold) {
+                               Camera *camera, int maxDepth, int sampleThreshold) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 
@@ -209,8 +209,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
 
     int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
     // set render threshold for every pixel
-    bool *touchMap = getTouchMap(camera, vs, objects, sources);
-    setThreshold(vs, touchMap, sampleThreshold);
+    setThreshold(camera, vs, objects, sources, sampleThreshold);
 
     // here, we divide the screen into (blockCount) blocks
     // and push them into task queue for workers to work

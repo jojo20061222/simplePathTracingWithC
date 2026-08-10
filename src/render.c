@@ -536,14 +536,18 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     return 0;
 }
 
-bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources) {
+// form a touch map before actual rendering
+// if a reversed ray touches an object then it's marked as true (touched)
+// otherwise it is marked as false
+static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
+                         LightSource **sources) {
     int width = vs->width;
     int height = vs->height;
     bool *touch = calloc(width * height, sizeof(*touch));
 
     for (int i = 0; i < width * height; i++) {
         int x = getX(vs, i), y = getY(vs, i);
-        ReversedRay initRay = newRay(*camera, vecMinus((Vector){(Real)x, (Real)y, 0}, *camera), 0);
+        ReversedRay initRay = getInitRay(camera, (double)x, (double)y);
         SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
         if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
             touch[i] = true;
@@ -555,7 +559,9 @@ bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSourc
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
 
-void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold) {
+void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
+                  int sampleThreshold) {
+    bool *touchMap = newTouchMap(camera, vs, objects, sources);
     int width = vs->width;
     int height = vs->height;
     for (int i = 0; i < width * height; i++) {
@@ -577,6 +583,7 @@ void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold) {
             }
         }
     }
+    free(touchMap);
 }
 
 bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
@@ -587,6 +594,8 @@ bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
 void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
+
+    // anti-aliasing by giving the init point a little shift
     Real fixedX = (Real)x + randomReal(mt);
     Real fixedY = (Real)y + randomReal(mt);
     /*
@@ -594,17 +603,20 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
      * goes through a pixel, then see if it collide with an object. If it collides with an object
      * then do something consequently.
      */
+
+    // randomly choose a wavelength from the interval
     Real intervalSize = endWavelength - startWavelength;
     ReversedRay initRay;
     LightIntensity intensityResult;
     Real randomWavelength = randomReal(mt) * intervalSize + startWavelength;
 
-    initRay = camera(x, y, );
+    initRay = getInitRay(camera, fixedX, fixedY);
 
     intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
     if (!isfinite(intensityResult)) return;
 
+    // here we times by interval size because of pdf
     ColorXYZ colorResult =
         colorComponent(intensityResult * intervalSize, wavelengthToXYZ(randomWavelength));
 

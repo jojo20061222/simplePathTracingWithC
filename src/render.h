@@ -1,6 +1,7 @@
 #ifndef RENDER_H
 #define RENDER_H
 #include "base.h"
+#include "camera.h"
 #include "dynamicArray.h"
 #include "lightSource.h"
 #include "object.h"
@@ -25,9 +26,8 @@ uint32_t getPixel(VirtualScreen *vs, int i);
 
 uint32_t *getBuffer(VirtualScreen *vs);
 
-bool *getTouchMap(Point *camera, VirtualScreen *vs, Object **objects, LightSource **sources);
-
-void setThreshold(VirtualScreen *vs, bool *touchMap, int sampleThreshold);
+void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
+                  int sampleThreshold);
 
 bool isThresholdAchived(VirtualScreen *vs, int x, int y);
 
