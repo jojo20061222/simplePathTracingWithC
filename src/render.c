@@ -246,7 +246,7 @@ static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, 
      */
     Real eta = n1R / n2R;
     Real eta2 = eta * eta;
-    Real sin2Theta1 = 1 - cosTheta1 * cosTheta1;
+    Real sin2Theta1 = fmax(1 - cosTheta1 * cosTheta1, 0);
     Real coefficientOfSecondPart = eta * cosTheta1 - sqrt(fmax(0, 1 - eta2 * sin2Theta1));
     Vector O = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
     return O;
@@ -354,7 +354,9 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // final factor is (m dot l)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
     // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
     // to multiply by 1 - F again.
-    Real finalFactor = (absMdotV * GTerm) / (NdotV * NdotM);
+    // besides, we need to times by angle factor eta^2 too
+    Real eta = n1R / n2R;
+    Real finalFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
 
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
