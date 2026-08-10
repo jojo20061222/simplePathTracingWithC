@@ -354,10 +354,8 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // final factor is (m dot l)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
     // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
     // to multiply by 1 - F again.
-    // besides, we need to times by angle factor eta^2 too
     Real eta = n1R / n2R;
     Real finalFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
-
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
 
