@@ -56,13 +56,13 @@ static inline Real vecDot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a
 
 static const Real error = 1e-8;
 
+static inline Real lengthOf(Vector v) { return sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+
 static inline Vector unitVector(Vector vec) {
-    Real length = sqrt(vecDot(vec, vec));
+    Real length = lengthOf(vec);
     if (length < error) return (Vector){0, 0, 0};
     return (Vector){vec.x / length, vec.y / length, vec.z / length};
 }
-
-static inline Real lengthOf(Vector v) { return sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
 
 typedef struct {
     Point start;

@@ -195,9 +195,9 @@ static void *worker(void *para) {
     return NULL;
 }
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               LightSource **sources, Point *camera, int maxDepth,
-                               int sampleThreshold) {
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Shape **shapes,
+                               Texture **textures, Object **objects, LightSource **sources,
+                               Point *camera, int maxDepth, int sampleThreshold) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 

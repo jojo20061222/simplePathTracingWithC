@@ -29,16 +29,21 @@ int main() {
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(Real)width / 2, (Real)height / 2, width};
+    Shape **shapes = newDynamicArray(0, Shape *);
+    Texture **textures = newDynamicArray(0, Texture *);
+    Object **objects = newDynamicArray(0, Object *);
+    LightSource **sources = newDynamicArray(0, LightSource *);
 
     // 材質設定：準備白色反光板與黑色擋板
     // 假設系統有 pureBlack 變數，若無請替換為 RGB(0,0,0) 的對應常數
     Texture *whiteReflector =
         newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    pushBack(&textures, whiteReflector, Texture*);
+
     Texture *blackBlocker =
         newTexture(pureBlack, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+    pushBack(&textures, blackBlocker, Texture*);
 
-    Object **objects = newDynamicArray(0, Object *);
-    LightSource **sources = newDynamicArray(0, LightSource *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -52,6 +57,7 @@ int main() {
     groundPoints[2] = (Point){startx, starty, pz};
     groundPoints[3] = (Point){startx, starty, bz};
     Shape *groundShape = newConvexPolygon(groundPoints);
+    pushBack(&shapes, groundShape, Shape *);
     freeDynamicArray(groundPoints);
     Object *ground = newObject(groundShape, whiteReflector);
     pushBack(&objects, ground, Object *);
@@ -95,7 +101,7 @@ int main() {
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
-    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100, 64);
+    Multithreads *mul = initMultithreads(vs, 11, shapes, textures, objects, sources, &camera, 100, 64);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
@@ -110,6 +116,10 @@ int main() {
     }
 
     destroyMultithreads(mul);
+
+    for (int i = 0; i < getSize(objects); i++) {
+        destroyObject(objects[i]);
+    }
 
     freeDynamicArray(objects);
     freeDynamicArray(sources);

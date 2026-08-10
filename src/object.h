@@ -10,6 +10,8 @@ typedef struct Object Object;
 
 Object *newObject(Shape *shape, Texture *texture);
 
+void destroyObject(Object *obj);
+
 CollideResult collideObject(Object *, ReversedRay *);
 
 Complex getRefractiveIndexInside(Object *self, Real lambda);

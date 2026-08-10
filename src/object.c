@@ -17,6 +17,10 @@ Object *newObject(Shape *shape, Texture *texture) {
     return obj;
 }
 
+void destroyObject(Object *obj) {
+    free(obj);
+}
+
 CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
