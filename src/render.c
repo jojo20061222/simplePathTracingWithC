@@ -379,7 +379,7 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
 
-    Real eta = n2R / n1R;
+    Real eta = n1R / n2R;
 
     // the spherical angle of the refraction is "compressed", so we have to compensate that by
     // giving a factor eta^2
