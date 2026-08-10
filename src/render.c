@@ -265,6 +265,111 @@ typedef struct {
     ReversedRay nxtRay;
 } NextSimulationData;
 
+static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real alpha, Real F,
+                                            bool metallic, Point collidePoint,
+                                            ReversedRay currentRay) {
+    Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
+    // Cook-Torrance's BRDF
+    // calculate V * (v dot h) / (n dot h) part = DG / PDF
+    Real NdotV = vecDot(N, v);
+    Real NdotL = vecDot(N, l);
+    Real NdotM = vecDot(N, m);
+    Real MdotV = vecDot(m, v);
+
+    static const Real error = 1e-6;
+
+    // light goes below the surface is invalid
+    if (NdotV <= error || NdotL <= error || NdotM <= error) {
+        return (NextSimulationData){0};
+    }
+
+    // calculating 4 * Fterm * Vterm * (N dot L) * (V dot H) / (N dot H)
+    // Using highly-correlated Smith's model
+    Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
+    Real finalFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
+
+    // since metallic won't go into the 1 - F branch so we do have to * F
+    if (metallic) finalFactor *= F;
+
+    Vector nxtDirection = l;
+    // to avoid collide with the same object again, we move a little from the collide point
+    Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, currentRay.waveLength);
+
+    return (NextSimulationData){finalFactor, nxtRay};
+}
+
+static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, bool metallic,
+                                                Point collidePoint, ReversedRay currentRay) {
+    Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
+    Vector nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    ReversedRay nxtRay = newRay(nxtStart, l, currentRay.waveLength);
+
+    return (NextSimulationData){metallic ? F : 1, nxtRay};
+}
+
+static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real alpha,
+                                            Point collidePoint, ReversedRay ray, Complex n1,
+                                            Complex n2) {
+    // BTDF
+    // calculate (l dot m)G / ((v dot n) (n dot m))
+    Vector I = ray.direction;
+    Real n1R = n1.R;
+    Real n2R = n2.R;
+    Real cosTheta1 = vecDot(m, v); // cosine of incident angle
+    Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, m);
+    Real NdotL = vecDot(N, l); // left
+    Real NdotV = vecDot(N, v);
+    Real NdotM = vecDot(N, m);
+
+    // check if this refraction is valid
+    // 1. n dot l must <= 0 to ensure the reversed ray goes through the macrosurface
+    // 2. n dot v must >= 0 to ensure the reversed ray comes from the right direction
+    // 3. n dot m must >= 0 to ensure the microsurface sampled correctly
+    if (NdotL >= -error || NdotV <= error || NdotM <= error) {
+        return (NextSimulationData){0};
+    }
+
+    Real MdotL = vecDot(m, l);
+    Real MdotV = vecDot(m, v);
+
+    // check the ray actually goes through the microsurface
+    if (MdotL * MdotV >= -error) {
+        return (NextSimulationData){0};
+    }
+
+    Real absNdotL = rabs(NdotL);
+    Real absMdotL = rabs(MdotL);
+
+    Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
+    Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
+    Real finalFactor = (absMdotL * GTerm) / (NdotV * NdotM);
+
+    Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
+    ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
+
+    return (NextSimulationData){finalFactor, nxtRay};
+}
+
+// sample the next direction (nxtRay) and scaling factor through regular refraction to avoid
+// accuracy error in ggx and BTDF
+// 
+static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point collidePoint,
+                                                  ReversedRay ray, Complex n1, Complex n2) {
+    Real n1R = n1.R;
+    Real n2R = n2.R;
+    Real cosTheta1 = vecDot(v, N);
+    Vector I = ray.direction;
+    Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, N);
+
+    Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
+    ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
+
+    Real eta = n2R / n1R;
+
+    return (NextSimulationData){eta * eta, nxtRay};
+}
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth) {
     if (maxDepth == 0) return 0;
@@ -315,8 +420,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // By Disney's guidelines we square the roughness here to get alpha
     Real alpha = roughness * roughness;
 
-    Vector m = toWorld(GGXVectorSample(mt, alpha), N);
-
+    Vector m = roughness >= error ? toWorld(GGXVectorSample(mt, alpha), N) : N;
     // calculate F part
     Real VdotM = vecDot(v, m);
     if (VdotM <= 0) return 0;
@@ -359,33 +463,19 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
     // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
-        Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
-        // Cook-Torrance's BRDF
-        // calculate V * (v dot h) / (n dot h) part = DG / PDF
-        Real NdotV = vecDot(N, v);
-        Real NdotL = vecDot(N, l);
-        Real NdotM = vecDot(N, m);
+        NextSimulationData nxt;
 
-        static const Real error = 1e-6;
-
-        // light goes below the surface is invalid
-        if (NdotV <= error || NdotL <= error || NdotM <= error) {
-            return 0;
+        if (roughness < error) {
+            nxt = sampleSpecular(N, v, F, metallic, collidePoint, ray);
+        }
+        else {
+            nxt = sampleBRDF(m, v, N, alpha, F, metallic, collidePoint, ray);
         }
 
-        // calculating 4 * Fterm * Vterm * (N dot L) * (V dot H) / (N dot H)
-        // Using highly-correlated Smith's model
-        Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
-        Real finalFactor = (2.0 * NdotL * VdotM) / (denom * NdotM);
+        if (nxt.scalingFactor == 0) return 0;
 
-        // since metallic won't go into the 1 - F branch so we do have to * F
-        if (metallic) finalFactor *= F;
-
-        Vector nxtDirection = l;
-        // to avoid collide with the same object again, we move a little from the collide point
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
-        Real result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        Real result =
+            nxt.scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1);
         return result;
     }
 
@@ -398,43 +488,18 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // branch is 1 - F
         // There is no need to * (1 - F) in the result
 
-        // BTDF
-        // calculate (l dot m)G / ((v dot n) (n dot m))
-        Vector I = ray.direction;
-        Real n1R = n1.R;
-        Real n2R = n2.R;
-        Real cosTheta1 = VdotM; // cosine of incident angle
-        Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, m);
-        Real NdotL = vecDot(N, l); // left
-        Real NdotV = vecDot(N, v);
-        Real NdotM = vecDot(N, m);
-
-        // check if this refraction is valid
-        // 1. n dot l must <= 0 to ensure the reversed ray goes through the macrosurface
-        // 2. n dot v must >= 0 to ensure the reversed ray comes from the right direction
-        // 3. n dot m must >= 0 to ensure the microsurface sampled correctly
-        if (NdotL >= -error || NdotV <= error || NdotM <= error) {
-            return 0;
+        NextSimulationData nxt;
+        if (roughness < error) {
+            nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
+        }
+        else {
+            nxt = sampleBTDF(N, v, m, alpha, collidePoint, ray, n1, n2);
         }
 
-        Real MdotL = vecDot(m, l);
-        Real MdotV = vecDot(m, v);
+        if (nxt.scalingFactor == 0) return 0;
 
-        // check the ray actually goes through the microsurface
-        if (MdotL * MdotV >= -error) {
-            return 0;
-        }
-
-        Real absNdotL = rabs(NdotL);
-        Real absMdotL = rabs(MdotL);
-
-        Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
-        Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
-        Real finalFactor = (absMdotL * GTerm) / (NdotV * NdotM);
-
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-        ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
-        Real result = finalFactor * simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1);
+        Real result =
+            nxt.scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1);
 
         return result;
     }
