@@ -260,6 +260,11 @@ static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
             NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
 }
 
+typedef struct {
+    Real scalingFactor;
+    ReversedRay nxtRay;
+} NextSimulationData;
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth) {
     if (maxDepth == 0) return 0;
@@ -310,7 +315,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // By Disney's guidelines we square the roughness here to get alpha
     Real alpha = roughness * roughness;
 
-    Vector m = toWorld(GGXVectorSample(mt, alpha), N); // normalized normal vector through GGX
+    Vector m = toWorld(GGXVectorSample(mt, alpha), N);
+
     // calculate F part
     Real VdotM = vecDot(v, m);
     if (VdotM <= 0) return 0;

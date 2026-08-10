@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-static const int threadCount = 11;
+static const int threadCount = 30;
 
 Real strongWhiteLight(Real waveLength) { return 3 * whiteLightBase(waveLength); }
 
@@ -57,7 +57,6 @@ int main() {
     pushBack(&objects, backWall, Object *);
 
     // diamond
-    
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
     
@@ -67,7 +66,6 @@ int main() {
     destroyRegulartransformPara(para);
     Object *diamondObj = newObject(diamondShape, getDiamond(0));
     pushBack(&objects, diamondObj, Object *);
-
 
 
     Real lightRadius = (Real)width / 40;
