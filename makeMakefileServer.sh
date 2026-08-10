@@ -18,7 +18,7 @@ if [[ ! (-d $sourcePath) ]]; then
 fi
 
 
-optimizationFlags="-O2 -pthread -g -flto"
+optimizationFlags="-O2 -pthread -g -flto -DDOUBLE_AS_REAL"
 
 echo "all: $binaryPath/pathTracing"
 

@@ -86,6 +86,11 @@ int main() {
     LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
     pushBack(&sources, &light1, LightSource *);
 
+    Shape *lightSph2 =
+        newSphere((Point){(Real)width * 0.75, (Real)height * 0.8, pz + 5 * radius}, lightRadius);
+    LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
+    pushBack(&sources, &light2, LightSource *);
+
     Shape *lightSph3 =
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);

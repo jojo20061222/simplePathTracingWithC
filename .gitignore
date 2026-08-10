@@ -10,3 +10,4 @@ README.txt
 .venv/
 convergentImg*
 upload.sh
+processImg.sh
