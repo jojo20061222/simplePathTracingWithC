@@ -4,6 +4,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * @author: seaofvoices
+ * @date: 2026/08/10 20:56
+ * @brief: this file provides definition and example of textures, where refractive data mainly from
+ * https://refractiveindex.info and lerped by lerp.py. Some data of gems comes from
+ * http://minerals.gps.caltech.edu/FILES/Index.html
+ */
+
 typedef struct Texture {
     Real (*baseColor)(Real lambda);
     Complex (*refractiveIndexInside)(Real lambda);
@@ -181,9 +189,7 @@ bool getTexturemetallic(Texture *texture) { return texture->metallic; }
 bool getTextureTransparent(Texture *texture) { return texture->transparent; }
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
-void destroyTexture(Texture *tex) {
-    free(tex);
-}
+void destroyTexture(Texture *tex) { free(tex); }
 
 #undef AG_LINE_COUNT
 #undef AU_LINE_COUNT
