@@ -14,7 +14,7 @@ typedef struct Frame {
     Face *faces;
 } Frame;
 
-Frame *readFrame(const char *path) {
+Frame *newFrame(const char *path) {
     FILE *f = fopen(path, "r");
     if (f == NULL) {
         printf("Open file %s failed\n", path);
@@ -63,6 +63,12 @@ Frame *readFrame(const char *path) {
     free(buffer);
     fclose(f);
     return frame;
+}
+
+void destroyFrame(Frame *frame) {
+    freeDynamicArray(frame->vertexes);
+    freeDynamicArray(frame->faces);
+    free(frame);
 }
 
 Shape *newGroupFromFrame(Frame *m, Transform t, void *para) {

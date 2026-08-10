@@ -15,6 +15,7 @@ Real getTextureRoughness(Texture *texture);
 Texture *newTexture(Real (*baseColor)(Real), Complex (*refractiveIndexInside)(Real),
                     Complex (*refractiveIndexOutside)(Real), bool transparent, bool metallic,
                     Real roughness);
+void destroyTexture(Texture *tex);
 
 void initTexture();
 

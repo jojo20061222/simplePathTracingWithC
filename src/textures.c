@@ -181,6 +181,10 @@ bool getTexturemetallic(Texture *texture) { return texture->metallic; }
 bool getTextureTransparent(Texture *texture) { return texture->transparent; }
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
+void destroyTexture(Texture *tex) {
+    free(tex);
+}
+
 #undef AG_LINE_COUNT
 #undef AU_LINE_COUNT
 #undef CU_LINE_COUNT

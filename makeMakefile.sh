@@ -26,7 +26,7 @@ mainDependency="$binaryPath/main: "
 
 for file in src/*.c; do
     filename=$(basename $file)
-    if [[ $filename == pathTracing.c ]]; then
+    if [[ $filename == mainOnServer.c ]]; then
         continue
     fi
     

@@ -29,6 +29,7 @@ int main() {
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(Real)width / 2, (Real)height / 2, width};
+    Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
     Object **objects = newDynamicArray(0, Object *);
@@ -78,10 +79,13 @@ int main() {
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
-    Frame *diamondFrame = readFrame("src/static/diamond.obj");
+    Frame *diamondFrame = newFrame("src/static/diamond.obj");
+    pushBack(&frames, diamondFrame, Frame *);
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
+    pushBack(&shapes, diamondShape, Shape *);
     destroyRegulartransformPara(para);
+
     Object *diamondObj = newObject(diamondShape, getDiamond(0));
     pushBack(&objects, diamondObj, Object *);
 
@@ -89,19 +93,25 @@ int main() {
 
     Shape *lightSph1 =
         newSphere((Point){(Real)width * 0.25, (Real)height * 0.8, pz + radius}, lightRadius);
+    pushBack(&shapes, lightSph1, Shape *);
+
     LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
     pushBack(&sources, &light1, LightSource *);
 
     Shape *lightSph2 =
         newSphere((Point){(Real)width * 0.75, (Real)height * 0.8, pz + 5 * radius}, lightRadius);
+    pushBack(&shapes, lightSph2, Shape *);
+
     LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
     pushBack(&sources, &light2, LightSource *);
 
     Shape *lightSph3 =
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
+    pushBack(&shapes, lightSph3, Shape *);
+
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
-    Multithreads *mul = initMultithreads(vs, 11, shapes, textures, objects, sources, &camera, 100, 64);
+    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100, 64);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
@@ -117,12 +127,27 @@ int main() {
 
     destroyMultithreads(mul);
 
+    for (int i = 0; i < getSize(frames); i++) {
+        destroyFrame(frames[i]);
+    }
+
+
+    for (int i = 0; i < getSize(sources); i++) {
+        destroyShape(shapes[i]);
+    }
+    freeDynamicArray(shapes);
+
+    for (int i = 0; i < getSize(textures); i++) {
+        destroyTexture(textures[i]);
+    }
+    freeDynamicArray(textures);
+
     for (int i = 0; i < getSize(objects); i++) {
         destroyObject(objects[i]);
     }
-
     freeDynamicArray(objects);
-    freeDynamicArray(sources);
+
+
     freeScreen(vs);
     SDL_DestroyTexture(texture);
     SDL_DestroyRenderer(renderer);

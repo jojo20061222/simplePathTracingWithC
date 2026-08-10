@@ -60,7 +60,7 @@ int main() {
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
     
-    Frame *diamondFrame = readFrame("src/static/diamond.obj");
+    Frame *diamondFrame = newFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     destroyRegulartransformPara(para);
