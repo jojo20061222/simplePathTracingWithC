@@ -6,8 +6,8 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-const int width = 720;
-const int height = 540;
+static const int width = 1080;
+static const int height = 720;
 
 // 定義高強度白光，用來激發鑽石內部火彩
 Real strongWhiteLight(Real waveLength) { return 6 * whiteLightBase(waveLength); }
@@ -27,7 +27,6 @@ int main() {
                                              SDL_TEXTUREACCESS_STREAMING, width, height);
     SDL_Event event;
     bool isRunning = true;
-
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(Real)width / 2, (Real)height / 2, width};
 
@@ -69,17 +68,16 @@ int main() {
     pushBack(&objects, backWall, Object *);
 
     // diamond
-    
+
     Real radius = (Real)width / 10;
-    Point showing = {(Real)width / 2, (Real)height / 2, pz + 1.5 * radius};
-    
+    Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
+
     Frame *diamondFrame = readFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     destroyRegulartransformPara(para);
     Object *diamondObj = newObject(diamondShape, getDiamond(0));
     pushBack(&objects, diamondObj, Object *);
-
 
     Real lightRadius = (Real)width / 40;
 
@@ -97,7 +95,6 @@ int main() {
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
-
     Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100, 64);
 
     while (isRunning) {
