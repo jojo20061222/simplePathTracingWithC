@@ -584,7 +584,7 @@ bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
     return vs->renderCount[i] >= vs->threshold[i];
 }
 
-void renderPixel(Point *camera, VirtualScreen *vs, int x, int y, Object **objects,
+void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
     Real fixedX = (Real)x + randomReal(mt);
@@ -599,7 +599,7 @@ void renderPixel(Point *camera, VirtualScreen *vs, int x, int y, Object **object
     LightIntensity intensityResult;
     Real randomWavelength = randomReal(mt) * intervalSize + startWavelength;
 
-    initRay = newRay(*camera, vecMinus((Vector){fixedX, fixedY, 0}, *camera), randomWavelength);
+    initRay = camera(x, y, );
 
     intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
