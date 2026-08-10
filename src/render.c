@@ -265,6 +265,7 @@ typedef struct {
     ReversedRay nxtRay;
 } NextSimulationData;
 
+// Sample through BRDF
 static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real alpha, Real F,
                                             bool metallic, Point collidePoint,
                                             ReversedRay currentRay) {
@@ -288,7 +289,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
     Real finalFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
 
-    // since metallic won't go into the 1 - F branch so we do have to * F
+    // since metallic texture won't go into the 1 - F branch so we do have to * F
     if (metallic) finalFactor *= F;
 
     Vector nxtDirection = l;
@@ -299,6 +300,9 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     return (NextSimulationData){finalFactor, nxtRay};
 }
 
+// similar to sample refraction, we have to switch to this branch instead of using sampleBRDF when
+// the roughness (alpha) is to small, or the surface is too smooth. In such case the PDF of ggx
+// sampling will approaches to infinity.
 static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, bool metallic,
                                                 Point collidePoint, ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
@@ -338,11 +342,17 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
         return (NextSimulationData){0};
     }
 
+    // N dot L is natrally negative, and we shall use its absolute value in calculation
     Real absNdotL = rabs(NdotL);
     Real absMdotL = rabs(MdotL);
 
+    // calculate Geometry term
     Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
     Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
+
+    // final factor is (m dot l)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
+    // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
+    // to multiply by 1 - F again.
     Real finalFactor = (absMdotL * GTerm) / (NdotV * NdotM);
 
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
@@ -353,20 +363,26 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
 
 // sample the next direction (nxtRay) and scaling factor through regular refraction to avoid
 // accuracy error in ggx and BTDF
-// 
+// if roughness is exactly 0 then pdf at N = M will approaches infinity, which is the main reason we
+// cannot use that method
 static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point collidePoint,
                                                   ReversedRay ray, Complex n1, Complex n2) {
+    // get the direction of refraction ray
     Real n1R = n1.R;
     Real n2R = n2.R;
     Real cosTheta1 = vecDot(v, N);
     Vector I = ray.direction;
     Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, N);
 
+    // we move a little bit from the surface so that the ray will not be captured by the same object
+    // or surface again immediately
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
 
     Real eta = n2R / n1R;
 
+    // the spherical angle of the refraction is "compressed", so we have to compensate that by
+    // giving a factor eta^2
     return (NextSimulationData){eta * eta, nxtRay};
 }
 
@@ -508,8 +524,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // Branch Diffusion, only non-transparent materials need to do this
         Vector local = cosineVectorSample(mt);
         Vector nxtDirection = toWorld(local, N);
-        ReversedRay nxtRay =
-            newRay(vecAdd(collidePoint, vecMultiply(1e-4, N)), nxtDirection, ray.waveLength);
+        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
 
         Real baseColor = getBaseColor(firstCollideObject, ray.waveLength);
 
