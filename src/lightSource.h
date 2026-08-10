@@ -7,7 +7,7 @@
 
 typedef struct {
     Shape *shape;
-    LightIntensity (*intensity)(Real waveLength);
+    LightIntensity (*intensity)(Real wavelength);
 } LightSource;
 
 LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real));
@@ -24,7 +24,7 @@ typedef struct {
 
 void initLightIntensity();
 
-ColorXYZ wavelengthToXYZ(Real waveLength);
+ColorXYZ wavelengthToXYZ(Real wavelength);
 
 ScreenColor XYZtoRGB(ColorXYZ xyz);
 
@@ -38,11 +38,11 @@ static inline ColorXYZ colorComponent(Real c, ColorXYZ color) {
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray);
 
-Real getBlackbodyIntensity(Real T, Real waveLength);
+Real getBlackbodyIntensity(Real T, Real wavelength);
 
-Real tungstenLampBase(Real waveLength);
+Real tungstenLampBase(Real wavelength);
 
-Real sunlightBase(Real waveLength);
+Real sunlightBase(Real wavelength);
 
 Real whiteLightBase(Real wavelength);
 

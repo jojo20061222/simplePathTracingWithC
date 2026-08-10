@@ -1,3 +1,4 @@
+#include "camera.h"
 #include "dynamicArray.h"
 #include "frame.h"
 #include "multithreads.h"
@@ -6,11 +7,11 @@
 #include <stdbool.h>
 #include <stdio.h>
 
-static const int width = 1080;
-static const int height = 720;
+static const int width = 720;
+static const int height = 540;
 
 // 定義高強度白光，用來激發鑽石內部火彩
-Real strongWhiteLight(Real waveLength) { return 6 * whiteLightBase(waveLength); }
+Real strongWhiteLight(Real wavelength) { return 6 * whiteLightBase(wavelength); }
 
 int main() {
     initLightIntensity();
@@ -28,7 +29,7 @@ int main() {
     SDL_Event event;
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
-    Point camera = {(Real)width / 2, (Real)height / 2, width};
+    Camera *camera = newRegularCamera(width, height, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
@@ -39,12 +40,11 @@ int main() {
     // 假設系統有 pureBlack 變數，若無請替換為 RGB(0,0,0) 的對應常數
     Texture *whiteReflector =
         newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    pushBack(&textures, whiteReflector, Texture*);
+    pushBack(&textures, whiteReflector, Texture *);
 
     Texture *blackBlocker =
         newTexture(pureBlack, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    pushBack(&textures, blackBlocker, Texture*);
-
+    pushBack(&textures, blackBlocker, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -111,7 +111,7 @@ int main() {
 
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
-    Multithreads *mul = initMultithreads(vs, 11, objects, sources, &camera, 100, 64);
+    Multithreads *mul = initMultithreads(vs, 11, objects, sources, camera, 100, 64);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
@@ -126,11 +126,11 @@ int main() {
     }
 
     destroyMultithreads(mul);
+    destroyRegularCamera(camera);
 
     for (int i = 0; i < getSize(frames); i++) {
         destroyFrame(frames[i]);
     }
-
 
     for (int i = 0; i < getSize(sources); i++) {
         destroyShape(shapes[i]);
@@ -146,7 +146,6 @@ int main() {
         destroyObject(objects[i]);
     }
     freeDynamicArray(objects);
-
 
     freeScreen(vs);
     SDL_DestroyTexture(texture);

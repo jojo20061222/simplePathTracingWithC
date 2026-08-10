@@ -67,11 +67,11 @@ static inline Vector unitVector(Vector vec) {
 typedef struct {
     Point start;
     Vector direction;
-    Real waveLength;
+    Real wavelength;
 } ReversedRay;
 
-static inline ReversedRay newRay(Point start, Vector direction, Real waveLength) {
-    return (ReversedRay){start, unitVector(direction), waveLength};
+static inline ReversedRay newRay(Point start, Vector direction, Real wavelength) {
+    return (ReversedRay){start, unitVector(direction), wavelength};
 }
 
 typedef Real LightIntensity;

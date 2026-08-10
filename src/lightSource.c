@@ -10,11 +10,11 @@ LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real)) {
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
     CollideResult result = detectCollide(source->shape, ray);
-    return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->waveLength)};
+    return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->wavelength)};
 }
 
 static const int startWavelength = 390;
-static const int waveLengthStep = 5;
+static const int wavelengthStep = 5;
 static const int dataCount = 89;
 // 390 ~ 835 nm
 static ColorXYZ convertTable[90];
@@ -36,25 +36,25 @@ void initLightIntensity() {
     fclose(csv);
 }
 
-ColorXYZ wavelengthToXYZ(Real waveLength) {
-    if (waveLength < startWavelength || waveLength > startWavelength + waveLengthStep * dataCount)
+ColorXYZ wavelengthToXYZ(Real wavelength) {
+    if (wavelength < startWavelength || wavelength > startWavelength + wavelengthStep * dataCount)
         return (ColorXYZ){0, 0, 0};
 
     // we shall find which two the slots that should be used
-    int slot = (waveLength - startWavelength) / waveLengthStep;
+    int slot = (wavelength - startWavelength) / wavelengthStep;
     // so we use slot and slot + 1.
     // Theoretically slot + 1 should < end of wavelength data except wavelength is exactly equal to
     // 830 nm.
     if (slot == 89) return convertTable[89];
 
-    Real slot1WaveLength = startWavelength + waveLengthStep * slot;
-    Real slot2WaveLength = startWavelength + waveLengthStep * (slot + 1);
+    Real slot1WaveLength = startWavelength + wavelengthStep * slot;
+    Real slot2WaveLength = startWavelength + wavelengthStep * (slot + 1);
     // lerp
-    Real X = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].X,
+    Real X = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].X,
                   convertTable[slot + 1].X);
-    Real Y = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Y,
+    Real Y = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Y,
                   convertTable[slot + 1].Y);
-    Real Z = lerp(slot1WaveLength, slot2WaveLength, waveLength, convertTable[slot].Z,
+    Real Z = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Z,
                   convertTable[slot + 1].Z);
 
     return (ColorXYZ){X, Y, Z};

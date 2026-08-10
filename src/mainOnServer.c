@@ -6,7 +6,7 @@
 
 static const int threadCount = 30;
 
-Real strongWhiteLight(Real waveLength) { return 3 * whiteLightBase(waveLength); }
+Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
 
 int main() {
     initLightIntensity();
@@ -59,14 +59,13 @@ int main() {
     // diamond
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
-    
+
     Frame *diamondFrame = newFrame("src/static/diamond.obj");
     RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     destroyRegulartransformPara(para);
     Object *diamondObj = newObject(diamondShape, getDiamond(0));
     pushBack(&objects, diamondObj, Object *);
-
 
     Real lightRadius = (Real)width / 40;
 

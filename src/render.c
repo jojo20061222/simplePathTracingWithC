@@ -295,7 +295,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     Vector nxtDirection = l;
     // to avoid collide with the same object again, we move a little from the collide point
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, currentRay.waveLength);
+    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, currentRay.wavelength);
 
     return (NextSimulationData){finalFactor, nxtRay};
 }
@@ -307,7 +307,7 @@ static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, bool
                                                 Point collidePoint, ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
     Vector nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, currentRay.waveLength);
+    ReversedRay nxtRay = newRay(nxtStart, l, currentRay.wavelength);
 
     return (NextSimulationData){metallic ? F : 1, nxtRay};
 }
@@ -357,7 +357,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     Real eta = n1R / n2R;
     Real finalFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
+    ReversedRay nxtRay = newRay(nxtStart, l, ray.wavelength);
 
     return (NextSimulationData){finalFactor, nxtRay};
 }
@@ -378,7 +378,7 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
     // we move a little bit from the surface so that the ray will not be captured by the same object
     // or surface again immediately
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);
+    ReversedRay nxtRay = newRay(nxtStart, l, ray.wavelength);
 
     Real eta = n1R / n2R;
 
@@ -422,12 +422,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // N vecDot d < 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
         N = (Vector){-N.x, -N.y, -N.z};
-        n1 = getRefractiveIndexInside(firstCollideObject, ray.waveLength);
-        n2 = getRefractiveIndexOutside(firstCollideObject, ray.waveLength);
+        n1 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
+        n2 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
     }
     else {
-        n1 = getRefractiveIndexOutside(firstCollideObject, ray.waveLength);
-        n2 = getRefractiveIndexInside(firstCollideObject, ray.waveLength);
+        n1 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
+        n2 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
     }
     // after the operations above, the normal vector should point on the side where reversed rays
     // come from
@@ -526,9 +526,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Vector local = cosineVectorSample(mt);
         Vector nxtDirection = toWorld(local, N);
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.waveLength);
+        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.wavelength);
 
-        Real baseColor = getBaseColor(firstCollideObject, ray.waveLength);
+        Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
 
         return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) * baseColor;
     }
@@ -547,7 +547,8 @@ static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
 
     for (int i = 0; i < width * height; i++) {
         int x = getX(vs, i), y = getY(vs, i);
-        ReversedRay initRay = getInitRay(camera, (double)x, (double)y);
+        // it won't reflect so a wavelength is fine
+        ReversedRay initRay = getInitRay(camera, (double)x, (double)y, 0); 
         SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
         if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
             touch[i] = true;
@@ -610,7 +611,7 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
     LightIntensity intensityResult;
     Real randomWavelength = randomReal(mt) * intervalSize + startWavelength;
 
-    initRay = getInitRay(camera, fixedX, fixedY);
+    initRay = getInitRay(camera, fixedX, fixedY, randomWavelength);
 
     intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
 
