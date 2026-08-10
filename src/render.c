@@ -345,6 +345,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // N dot L is natrally negative, and we shall use its absolute value in calculation
     Real absNdotL = rabs(NdotL);
     Real absMdotL = rabs(MdotL);
+    Real absMdotV = rabs(MdotV);
 
     // calculate Geometry term
     Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
@@ -353,7 +354,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // final factor is (m dot l)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
     // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
     // to multiply by 1 - F again.
-    Real finalFactor = (absMdotL * GTerm) / (NdotV * NdotM);
+    Real finalFactor = (absMdotV * GTerm) / (NdotV * NdotM);
 
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.waveLength);

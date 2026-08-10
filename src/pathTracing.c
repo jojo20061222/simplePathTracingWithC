@@ -14,8 +14,8 @@ int main() {
 
     bool isRunning = true;
 
-    static const int width = 720;
-    static const int height = 540;
+    static const int width = 300;
+    static const int height = 200;
     VirtualScreen *vs = newScreen(width, height);
     Point camera = {(Real)width / 2, (Real)height / 2, width};
 
