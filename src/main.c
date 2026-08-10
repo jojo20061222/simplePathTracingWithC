@@ -29,15 +29,15 @@ int main() {
     SDL_Event event;
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
-    Camera *camera = newRegularCamera(width, height, width);
+    Camera *camera =
+        newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
+                         (Real)height * 0.65, (double)width * (-1.0 / 3.0), width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
     Object **objects = newDynamicArray(0, Object *);
     LightSource **sources = newDynamicArray(0, LightSource *);
 
-    // 材質設定：準備白色反光板與黑色擋板
-    // 假設系統有 pureBlack 變數，若無請替換為 RGB(0,0,0) 的對應常數
     Texture *whiteReflector =
         newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
     pushBack(&textures, whiteReflector, Texture *);
