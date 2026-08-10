@@ -316,7 +316,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
                                             Point collidePoint, ReversedRay ray, Complex n1,
                                             Complex n2) {
     // BTDF
-    // calculate (l dot m)G / ((v dot n) (n dot m))
+    // calculate (v dot m)G / ((v dot n) (n dot m))
     Vector I = ray.direction;
     Real n1R = n1.R;
     Real n2R = n2.R;
