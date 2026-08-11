@@ -13,25 +13,58 @@
  */
 
 typedef struct Texture {
-    Real (*baseColor)(Real lambda);
-    Complex (*refractiveIndexInside)(Real lambda);
-    Complex (*refractiveIndexOutside)(Real lambda);
+    Complex (*refractiveIndexInside)(Texture *self, Real lambda);
+    Complex (*refractiveIndexOutside)(Texture *self, Real lambda);
     bool transparent;
     bool metallic;
     Real roughness;
+    void *data; // for those data that are not common for all textures
 } Texture;
 
-Texture *newTexture(Real (*baseColor)(Real), Complex (*refractiveIndexInside)(Real),
-                    Complex (*refractiveIndexOutside)(Real), bool transparent, bool metallic,
-                    Real roughness) {
+static void mallocFailed() {
+    fprintf(stderr, "malloc tex failed\n");
+    exit(1);
+}
+
+// to make sure the data of diffrent textures won't confuse anyone we have to seperate the original
+// "newTexture" into different functions
+Texture *newOpaqueDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
+                            Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
+                            Real (*baseColor)(Real)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
-        fprintf(stderr, "malloc tex failed\n");
-        exit(1);
+        mallocFailed();
     }
 
     *tex = (Texture){
-        baseColor, refractiveIndexInside, refractiveIndexOutside, transparent, metallic, roughness};
+        refractiveIndexInside, refractiveIndexOutside, false, false, roughness, baseColor};
+    return tex;
+}
+
+Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
+                                 Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
+                                 Real concentration) {
+    Texture *tex = malloc(sizeof(*tex));
+    if (tex == NULL) {
+        mallocFailed();
+    }
+
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, true, false, roughness};
+    tex->data = malloc(sizeof(Real));
+    if (tex->data == NULL) {
+        mallocFailed();
+    }
+    *(Real *)(tex->data) = concentration;
+    return tex;
+}
+
+Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
+                  Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness) {
+    Texture *tex = malloc(sizeof(*tex));
+    if (tex == NULL) {
+        mallocFailed();
+    }
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, false, true, roughness, NULL};
     return tex;
 }
 
@@ -68,7 +101,7 @@ static const Real GLASS_LAMBDA_STEP = 10;
 static const Real startLambda = 390;
 
 static void readFile(const char *filePathN, const char *filePathK, Complex eta[], int lineCount) {
-    int lineCountFromFile;
+    int lineCountFromFile = 0;
 
     FILE *fN = fopen(filePathN, "r");
     if (fN == NULL) {
@@ -77,7 +110,7 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
 
     fscanf(fN, "%d", &lineCount);
     for (int i = 0; i < lineCount; i++) {
-        Real lambda;
+        Real lambda = 0;
         int successfulCount = fscanf(fN, REAL_FMT "," REAL_FMT, &lambda, &eta[i].R);
     }
     fclose(fN);
@@ -88,10 +121,33 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
     }
     fscanf(fK, "%d", &lineCount);
     for (int i = 0; i < lineCount; i++) {
-        Real lambda;
+        Real lambda = 0;
         int successfulCount = fscanf(fK, REAL_FMT "," REAL_FMT, &lambda, &eta[i].I);
     }
     fclose(fK);
+    return;
+}
+
+#define SAPPHIRE_LINE_COUNT 46
+// let real part of EC be E perp C and the imaginary part be E para C since I want to reuse the code
+// of "getRefractivity" function
+static Complex EC[SAPPHIRE_LINE_COUNT];
+static const char SAPPHIRE_PATH[] = "src/static/sapphire_epsilon.csv";
+static const Real SAPPHIRE_STEP = 10;
+
+// since no direct k can be directly used by sapphire, we need a different way to read the epsilon
+static void readSapphireEpsilon() {
+    int lineCountFromFile = 0;
+    FILE *f = fopen(SAPPHIRE_PATH, "r");
+    
+    fscanf(f, "%d", &lineCountFromFile);
+
+    for (int i = 0; i < SAPPHIRE_LINE_COUNT; i++) {
+        Real lambda;
+        fscanf(f, REAL_FMT "," REAL_FMT "," REAL_FMT, &lambda, &EC[i].R, &EC[i].I);
+    }
+
+    fclose(f);
     return;
 }
 
@@ -101,6 +157,7 @@ void initTexture() {
     readFile(CU_PATH_N, CU_PATH_K, CuEta, CU_LINE_COUNT);
     readFile(FE_PATH_N, FE_PATH_K, FeEta, FE_LINE_COUNT);
     readFile(GLASS_PATH_N, GLASS_PATH_K, GlassEta, GLASS_LINE_COUNT);
+    readSapphireEpsilon();
 }
 
 Real pureWhite(Real _) { return 0.8; }
@@ -111,87 +168,137 @@ Real red(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); 
 
 Real green(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
 
-Complex getPlasticRefractivity(Real _) { return (Complex){1.5, 0.0}; }
+Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}; }
 
-Complex getAirRefractivity(Real _) { return (Complex){1.0, 0.0}; };
+Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0.0}; };
 
+// get refractivity from tables above
 Complex getRefractivity(Real lambda, Complex eta[], Real lambdaStep, int lineCount) {
     if (lambda < startLambda) return (Complex){0, 0};
     if (lambda > startLambda + lineCount * lambdaStep) return (Complex){0, 0};
     int slot = (lambda - startLambda) / lambdaStep;
     if (slot < 0) return (Complex){0, 0};
-    if (slot >= lineCount) return (Complex){0, 0};
+    if (slot + 1 >= lineCount) return (Complex){0, 0};
     int preLambda = startLambda + lambdaStep * slot;
     int nxtLambda = startLambda + lambdaStep * (slot + 1);
     return (Complex){lerp(preLambda, nxtLambda, lambda, eta[slot].R, eta[slot + 1].R),
                      lerp(preLambda, nxtLambda, lambda, eta[slot].I, eta[slot + 1].I)};
 }
 
-Complex getSilverRefractivity(Real lambda) {
+Complex getSilverRefractivity(Texture *_, Real lambda) {
     return getRefractivity(lambda, AgEta, AG_LAMBDA_STEP, AG_LINE_COUNT);
 }
 
-Complex getGoldRefractivity(Real lambda) {
+Complex getGoldRefractivity(Texture *_, Real lambda) {
     return getRefractivity(lambda, AuEta, AU_LAMBDA_STEP, AU_LINE_COUNT);
 }
 
-Complex getCopperRefractivity(Real lambda) {
+Complex getCopperRefractivity(Texture *_, Real lambda) {
     return getRefractivity(lambda, CuEta, CU_LAMBDA_STEP, CU_LINE_COUNT);
 }
 
-Complex getIronRefractivity(Real lambda) {
+Complex getIronRefractivity(Texture *_, Real lambda) {
     return getRefractivity(lambda, FeEta, FE_LAMBDA_STEP, FE_LINE_COUNT);
 }
 
-Complex getGlassRefractivity(Real lambda) {
+Complex getGlassRefractivity(Texture *_, Real lambda) {
     return getRefractivity(lambda, GlassEta, GLASS_LAMBDA_STEP, GLASS_LINE_COUNT);
 }
 
-Complex getDiamondRefractivity(Real x) {
+Complex getDiamondRefractivity(Texture *_, Real x) {
     x /= 1000;
     return (Complex){
         sqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
 }
 
+Complex getSapphireRefractivity(Texture *self, Real lambda) {
+    lambda /= 1000; // convert lambda from nanometer to micrometer
+    // calculate the n part
+    static const Real a = 1.5039759;
+    static const Real b = 0.0740288;
+    static const Real c = 0.55069141;
+    static const Real d = 0.1216529;
+    static const Real e = 6.5927379;
+    static const Real f = 20.072248;
+    Real lambda2 = lambda * lambda;
+    Real nterm1 = a * lambda2 / (lambda2 - b * b);
+    Real nterm2 = c * lambda2 / (lambda2 - d * d);
+    Real nterm3 = e * lambda2 / (lambda2 - f * f);
+    Real n = sqrt(1 + nterm1 + nterm2 + nterm3);
+    // little trick: let function getRefractivity lerp and edge check for me
+    Complex eCombined = getRefractivity(lambda, EC, SAPPHIRE_STEP, SAPPHIRE_LINE_COUNT);
+    // calcuate the k part
+    Real EperpC = eCombined.R;
+    Real EparaC = eCombined.I;
+    Real epsilon = (EperpC + EparaC) / 2;
+    Real concentration = *(Real *)self->data;
+    Real alpha = log(10) * epsilon * concentration * 1e-4; // convert alpha to micrometer^(-1)
+    Real k = alpha * lambda / (4 * M_PI);
+
+    return (Complex){n, k};
+}
+
+Texture *newSapphire(Real roughness, Real concentration) {
+    return newTransparentDieletric(getSapphireRefractivity, getAirRefractivity, roughness,
+                                   concentration);
+}
+
 Texture *getGold(Real roughness) {
-    return newTexture(NULL, getGoldRefractivity, getAirRefractivity, false, true, roughness);
+    return newMetal(getGoldRefractivity, getAirRefractivity, roughness);
 }
 
 Texture *getSilver(Real roughness) {
-    return newTexture(NULL, getSilverRefractivity, getAirRefractivity, false, true, roughness);
+    return newMetal(getSilverRefractivity, getAirRefractivity, roughness);
 }
 
 Texture *getCopper(Real roughness) {
-    return newTexture(NULL, getCopperRefractivity, getAirRefractivity, false, true, roughness);
+    return newMetal(getCopperRefractivity, getAirRefractivity, roughness);
 }
 
 Texture *getIron(Real roughness) {
-    return newTexture(NULL, getIronRefractivity, getAirRefractivity, false, true, roughness);
+    return newMetal(getIronRefractivity, getAirRefractivity, roughness);
 }
 
 Texture *getGlass(Real roughness) {
-    return newTexture(NULL, getGlassRefractivity, getAirRefractivity, true, false, roughness);
+    // for glass we don't care about its color (it has a fixed extinction coefficient), so
+    // concentration remains 0
+    return newTransparentDieletric(getGlassRefractivity, getAirRefractivity, roughness, 0);
 }
 
 Texture *getDiamond(Real roughness) {
-    return newTexture(NULL, getDiamondRefractivity, getAirRefractivity, true, false, roughness);
+    // for the same reason as glass, so concentration remains 0
+    return newTransparentDieletric(getDiamondRefractivity, getAirRefractivity, roughness, 0);
 }
 
 // Wrappers
-Real getTextureBaseColor(Texture *texture, Real lambda) { return texture->baseColor(lambda); }
+Real getTextureBaseColor(Texture *texture, Real lambda) {
+    Real (*baseColor)(Real) = texture->data;
+    return baseColor(lambda);
+}
 Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda) {
-    return texture->refractiveIndexInside(lambda);
+    return texture->refractiveIndexInside(texture, lambda);
 }
+
 Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda) {
-    return texture->refractiveIndexOutside(lambda);
+    return texture->refractiveIndexOutside(texture, lambda);
 }
+
 bool getTexturemetallic(Texture *texture) { return texture->metallic; }
 bool getTextureTransparent(Texture *texture) { return texture->transparent; }
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
-void destroyTexture(Texture *tex) { free(tex); }
+void destroyTexture(Texture *tex) {
+    if (tex->transparent) {
+        // for opaque materials, data is a function
+        // they shall not be freed
+        free(tex->data);
+    }
+    free(tex);
+}
 
 #undef AG_LINE_COUNT
 #undef AU_LINE_COUNT
 #undef CU_LINE_COUNT
 #undef FE_LINE_COUNT
+#undef GLASS_LINE_COUNT
+#undef SAPPHIRE_LINE_COUNT
