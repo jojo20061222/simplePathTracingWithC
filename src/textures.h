@@ -42,11 +42,12 @@ Complex getCopperRefractivity(Texture*, Real lambda);
 Complex getIronRefractivity(Texture *, Real lambda);
 Complex getDiamondRefractivity(Texture *, Real lambda);
 
-Texture *getGold(Real roughness);
-Texture *getSilver(Real roughness);
-Texture *getCopper(Real roughness);
-Texture *getIron(Real roughness);
-Texture *getGlass(Real roughness);
-Texture *getDiamond(Real roughness);
+Texture *newGold(Real roughness);
+Texture *newSilver(Real roughness);
+Texture *newCopper(Real roughness);
+Texture *newIron(Real roughness);
+Texture *newGlass(Real roughness);
+Texture *newDiamond(Real roughness);
+Texture *newSapphire(Real roughness, Real concentration);
 
 #endif

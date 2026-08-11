@@ -27,12 +27,9 @@ int main() {
     LightSource **sources = newDynamicArray(0, LightSource *);
 
     Texture *whiteReflector =
-        newTexture(pureWhite, getPlasticRefractivity, getAirRefractivity, false, false, 1);
+        newOpaqueDieletric(getPlasticRefractivity, getAirRefractivity, 1, pureWhite);
     pushBack(&textures, whiteReflector, Texture *);
 
-    Texture *blackBlocker =
-        newTexture(pureBlack, getPlasticRefractivity, getAirRefractivity, false, false, 1);
-    pushBack(&textures, blackBlocker, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -74,7 +71,7 @@ int main() {
     pushBack(&shapes, diamondShape, Shape *);
     destroyRegulartransformPara(para);
 
-    Object *diamondObj = newObject(diamondShape, getDiamond(0));
+    Object *diamondObj = newObject(diamondShape, newDiamond(0));
     pushBack(&objects, diamondObj, Object *);
 
     Real lightRadius = (Real)width / 40;

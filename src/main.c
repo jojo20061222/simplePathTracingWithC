@@ -10,9 +10,8 @@
 static const int width = 720;
 static const int height = 540;
 
-
 // 定義高強度白光，用來激發鑽石內部火彩
-Real strongWhiteLight(Real wavelength) { return 6 * whiteLightBase(wavelength); }
+Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
 
 int main() {
     initLightIntensity();
@@ -30,9 +29,7 @@ int main() {
     SDL_Event event;
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
-    Camera *camera =
-        newRegularCamera(width, height, 0, width, 0,
-                         height, 0, width);
+    Camera *camera = newRegularCamera(width, height, 0, width, 0, height, 0, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
@@ -83,8 +80,8 @@ int main() {
     pushBack(&shapes, diamondShape, Shape *);
     destroyRegulartransformPara(para);
 
-    Object *diamondObj = newObject(diamondShape, getDiamond(0));
-    pushBack(&objects, diamondObj, Object *);
+    Object *sapphireObj = newObject(diamondShape, newSapphire(0, 1e-2));
+    pushBack(&objects, sapphireObj, Object *);
 
     Real lightRadius = (Real)width / 40;
 
@@ -106,8 +103,6 @@ int main() {
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
 
-    LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
-    pushBack(&sources, &light3, LightSource *);
     Multithreads *mul = initMultithreads(vs, 11, objects, sources, camera, 100, 64);
 
     while (isRunning) {

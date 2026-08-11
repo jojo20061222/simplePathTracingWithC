@@ -139,7 +139,7 @@ static const Real SAPPHIRE_STEP = 10;
 static void readSapphireEpsilon() {
     int lineCountFromFile = 0;
     FILE *f = fopen(SAPPHIRE_PATH, "r");
-    
+
     fscanf(f, "%d", &lineCountFromFile);
 
     for (int i = 0; i < SAPPHIRE_LINE_COUNT; i++) {
@@ -212,6 +212,9 @@ Complex getDiamondRefractivity(Texture *_, Real x) {
 }
 
 Complex getSapphireRefractivity(Texture *self, Real lambda) {
+    // little trick: let function getRefractivity lerp and edge check for me
+    Complex eCombined = getRefractivity(lambda, EC, SAPPHIRE_STEP, SAPPHIRE_LINE_COUNT);
+
     lambda /= 1000; // convert lambda from nanometer to micrometer
     // calculate the n part
     static const Real a = 1.5039759;
@@ -225,11 +228,10 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
     Real nterm2 = c * lambda2 / (lambda2 - d * d);
     Real nterm3 = e * lambda2 / (lambda2 - f * f);
     Real n = sqrt(1 + nterm1 + nterm2 + nterm3);
-    // little trick: let function getRefractivity lerp and edge check for me
-    Complex eCombined = getRefractivity(lambda, EC, SAPPHIRE_STEP, SAPPHIRE_LINE_COUNT);
     // calcuate the k part
     Real EperpC = eCombined.R;
     Real EparaC = eCombined.I;
+
     Real epsilon = (EperpC + EparaC) / 2;
     Real concentration = *(Real *)self->data;
     Real alpha = log(10) * epsilon * concentration * 1e-4; // convert alpha to micrometer^(-1)
@@ -243,29 +245,29 @@ Texture *newSapphire(Real roughness, Real concentration) {
                                    concentration);
 }
 
-Texture *getGold(Real roughness) {
+Texture *newGold(Real roughness) {
     return newMetal(getGoldRefractivity, getAirRefractivity, roughness);
 }
 
-Texture *getSilver(Real roughness) {
+Texture *newSilver(Real roughness) {
     return newMetal(getSilverRefractivity, getAirRefractivity, roughness);
 }
 
-Texture *getCopper(Real roughness) {
+Texture *newCopper(Real roughness) {
     return newMetal(getCopperRefractivity, getAirRefractivity, roughness);
 }
 
-Texture *getIron(Real roughness) {
+Texture *newIron(Real roughness) {
     return newMetal(getIronRefractivity, getAirRefractivity, roughness);
 }
 
-Texture *getGlass(Real roughness) {
+Texture *newGlass(Real roughness) {
     // for glass we don't care about its color (it has a fixed extinction coefficient), so
     // concentration remains 0
     return newTransparentDieletric(getGlassRefractivity, getAirRefractivity, roughness, 0);
 }
 
-Texture *getDiamond(Real roughness) {
+Texture *newDiamond(Real roughness) {
     // for the same reason as glass, so concentration remains 0
     return newTransparentDieletric(getDiamondRefractivity, getAirRefractivity, roughness, 0);
 }
