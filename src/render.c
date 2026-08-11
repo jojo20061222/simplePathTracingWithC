@@ -409,7 +409,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // case 2: first collide with source, so we return the intensity of light source directly
     if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
         firstCollideSource != NULL) {
-        Real travelingDistance = firstCollideObjectResult.distance;
+        Real travelingDistance = firstCollideSourceResult.distance;
         Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
         return scalingFactor * firstCollideSourceResult.intensity;
     }
@@ -526,7 +526,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         // calculate the extinction factor for next ray
         // Beer-Lembert's Law
-        Real sigma = 4 * M_PI * n2.I / ray.wavelength * 1e5; // 4pi k / lambda and convert to 
+        // 4pi k / lambda and convert to (10^(-4)m^(-1))
+        Real sigma = 4 * M_PI * n2.I / ray.wavelength * 1e5;
 
         Real result =
             scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, sigma);

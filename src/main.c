@@ -10,6 +10,7 @@
 static const int width = 720;
 static const int height = 540;
 
+
 // 定義高強度白光，用來激發鑽石內部火彩
 Real strongWhiteLight(Real wavelength) { return 6 * whiteLightBase(wavelength); }
 
@@ -30,8 +31,8 @@ int main() {
     bool isRunning = true;
     VirtualScreen *vs = newScreen(width, height);
     Camera *camera =
-        newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
-                         (Real)height * 0.65, (double)width * (-1.0 / 3.0), width);
+        newRegularCamera(width, height, 0, width, 0,
+                         height, 0, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
