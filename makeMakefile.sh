@@ -15,6 +15,13 @@ fi
 
 if [[ ! (-d $sourcePath) ]]; then
     echo "Where is your source?"
+    exit 1
+fi
+
+mainFile=$1
+if [[ $# != 1 ]]; then
+    echo "Usage: ./makeMakefile.sh <main file>"
+    exit 1
 fi
 
 
@@ -24,7 +31,8 @@ echo "all: $binaryPath/pathTracing"
 
 mainDependency="$binaryPath/pathTracing: "
 
-for file in src/*.c; do
+
+for file in $sourcePath/*.c $1; do
     filename=$(basename $file)
     if [[ $filename == mainOnServer.c ]]; then
         continue
@@ -42,8 +50,6 @@ for file in src/*.c; do
         echo -e "\t$CC -o \$@ -c \$< $optimizationFlags"
     fi
 done
-
-mainFile=$1
 
 
 echo $mainDependency

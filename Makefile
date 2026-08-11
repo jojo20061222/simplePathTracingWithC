@@ -1,4 +1,4 @@
-all: bin/main
+all: bin/pathTracing
 build/camera.o: src/camera.c src/camera.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
 build/frame.o: src/frame.c src/frame.h src/shapes.h src/base.h src/transform.h \
@@ -7,9 +7,20 @@ build/frame.o: src/frame.c src/frame.h src/shapes.h src/base.h src/transform.h \
 build/lightSource.o: src/lightSource.c src/lightSource.h src/base.h \
   src/object.h src/shapes.h src/textures.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-build/main.o: src/main.c src/camera.h src/base.h src/dynamicArray.h src/frame.h \
-  src/shapes.h src/transform.h src/multithreads.h src/render.h \
-  src/lightSource.h src/object.h src/textures.h src/random.h \
+build/multithreads.o: src/multithreads.c src/multithreads.h src/render.h \
+  src/base.h src/camera.h src/dynamicArray.h src/lightSource.h \
+  src/object.h src/shapes.h src/textures.h src/random.h
+	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
+build/object.o: src/object.c src/object.h src/base.h src/shapes.h \
+  src/textures.h
+	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
+build/pathTracing.o: src/pathTracing.c src/../include/pathTracing.h \
+  src/../include/../src/camera.h src/../include/../src/base.h \
+  src/../include/../src/lightSource.h src/../include/../src/object.h \
+  src/../include/../src/shapes.h src/../include/../src/textures.h \
+  src/../include/../src/multithreads.h src/../include/../src/render.h \
+  src/../include/../src/dynamicArray.h src/../include/../src/random.h \
+  src/../include/../src/frame.h src/../include/../src/transform.h \
   /opt/homebrew/include/SDL2/SDL.h /opt/homebrew/include/SDL2/SDL_main.h \
   /opt/homebrew/include/SDL2/SDL_stdinc.h \
   /opt/homebrew/include/SDL2/SDL_config.h \
@@ -61,13 +72,6 @@ build/main.o: src/main.c src/camera.h src/base.h src/dynamicArray.h src/frame.h 
   /opt/homebrew/include/SDL2/SDL_locale.h \
   /opt/homebrew/include/SDL2/SDL_misc.h
 	clang -o $@ -c $< `sdl2-config --cflags` -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-build/multithreads.o: src/multithreads.c src/multithreads.h src/render.h \
-  src/base.h src/camera.h src/dynamicArray.h src/lightSource.h \
-  src/object.h src/shapes.h src/textures.h src/random.h
-	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-build/object.o: src/object.c src/object.h src/base.h src/shapes.h \
-  src/textures.h
-	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
 build/random.o: src/random.c src/random.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
 build/render.o: src/render.c src/render.h src/base.h src/camera.h \
@@ -80,7 +84,15 @@ build/textures.o: src/textures.c src/textures.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
 build/transform.o: src/transform.c src/transform.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-bin/main: build/camera.o build/frame.o build/lightSource.o build/main.o build/multithreads.o build/object.o build/random.o build/render.o build/shapes.o build/textures.o build/transform.o 
+build/test.o: test.c include/pathTracing.h include/../src/camera.h \
+  include/../src/base.h include/../src/lightSource.h \
+  include/../src/object.h include/../src/shapes.h \
+  include/../src/textures.h include/../src/multithreads.h \
+  include/../src/render.h include/../src/dynamicArray.h \
+  include/../src/random.h include/../src/frame.h \
+  include/../src/transform.h
+	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
+bin/pathTracing: build/camera.o build/frame.o build/lightSource.o build/multithreads.o build/object.o build/pathTracing.o build/random.o build/render.o build/shapes.o build/textures.o build/transform.o build/test.o 
 	clang $^ -o $@ `sdl2-config --libs` -lm -lpthread -flto
 
 .PHONY: clean
