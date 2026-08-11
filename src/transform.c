@@ -14,8 +14,8 @@ Vector rotateAboutXAxis(Vector v, Real degree) {
     // x remains
     Real x = v.x;
     Real theta = degree / 180 * M_PI;
-    Real cosTheta = cos(theta);
-    Real sinTheta = sin(theta);
+    Real cosTheta = rcos(theta);
+    Real sinTheta = rsin(theta);
     Real y = cosTheta * v.y - sinTheta * v.z;
     Real z = sinTheta * v.y + cosTheta * v.z;
 
@@ -26,8 +26,8 @@ Vector rotateAboutYAxis(Vector v, Real degree) {
     // y remains
     Real y = v.y;
     Real theta = degree / 180 * M_PI;
-    Real cosTheta = cos(theta);
-    Real sinTheta = sin(theta);
+    Real cosTheta = rcos(theta);
+    Real sinTheta = rsin(theta);
     Real x = cosTheta * v.x - sinTheta * v.z;
     Real z = sinTheta * v.x + cosTheta * v.z;
 
@@ -38,8 +38,8 @@ Vector rotateAboutZAxis(Vector v, Real degree) {
     // z remains
     Real z = v.z;
     Real theta = degree / 180 * M_PI;
-    Real cosTheta = cos(theta);
-    Real sinTheta = sin(theta);
+    Real cosTheta = rcos(theta);
+    Real sinTheta = rsin(theta);
     Real x = cosTheta * v.x - sinTheta * v.y;
     Real y = sinTheta * v.x + cosTheta * v.y;
 

@@ -164,9 +164,9 @@ Real pureWhite(Real _) { return 0.8; }
 
 Real pureBlack(Real _) { return 0; }
 
-Real red(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
+Real red(Real lambda) { return 0.05 + 0.75 / (1 + rexp(-0.06 * (lambda - 650))); }
 
-Real green(Real lambda) { return 0.05 + 0.75 / (1 + exp(-0.06 * (lambda - 650))); }
+Real green(Real lambda) { return 0.05 + 0.75 / (1 + rexp(-0.06 * (lambda - 650))); }
 
 Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}; }
 

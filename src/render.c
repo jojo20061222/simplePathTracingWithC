@@ -143,7 +143,7 @@ static inline Vector GGXVectorSample(MT19937 *mt, Real alpha) {
     Real cosPhi = sqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
     Real sinPhi = sqrt(fmax(0, 1 - cosPhi * cosPhi));
     // <cos theta sinPhi, sin theta sin phi, cos phi>
-    return (Vector){cos(theta) * sinPhi, sin(theta) * sinPhi, cosPhi};
+    return (Vector){rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 }
 
 static inline Vector cosineVectorSample(MT19937 *mt) {
@@ -158,9 +158,9 @@ static inline Vector cosineVectorSample(MT19937 *mt) {
 
     // then we shall project it onto an sphere, then we get the cosine distribution
     // normally suppose the normal vector point towards z-axis, then base on spherical
-    // coordinate <1, theta, phi> <=> <cos(theta)sin(phi), sin(theta)sin(phi), cos(phi)>
-    // where sin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
-    Vector local = {cos(theta) * sinPhi, sin(theta) * sinPhi, sqrt(u1)};
+    // coordinate <1, theta, phi> <=> <rcos(theta)rsin(phi), rsin(theta)rsin(phi), rcos(phi)>
+    // where rsin(phi) is sqrt(1 - r^2), or sqrt(1 - u1)
+    Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, sqrt(u1)};
     return local;
 }
 
@@ -193,7 +193,7 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
     for (int i = 0; i < objectsCount; i++) {
         CollideResult collideResult = collideObject(objects[i], &ray);
         if (!collideResult.collide) continue;
-        if (collideResult.t <= firstCollideObjectResult.t) {
+        if (collideResult.distance <= firstCollideObjectResult.distance) {
             firstCollideObjectResult = collideResult;
             firstCollideObject = objects[i];
         }
@@ -205,7 +205,7 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
     for (int i = 0; i < sourcesCount; i++) {
         CollideLightSourceResult collideResult = collideLightSource(sources[i], &ray);
         if (!collideResult.collide) continue;
-        if (collideResult.t <= firstCollideSourceResult.t) {
+        if (collideResult.distance <= firstCollideSourceResult.distance) {
             firstCollideSourceResult = collideResult;
             firstCollideSource = sources[i];
         }
@@ -219,30 +219,30 @@ static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, 
                                             Vector N) {
     /*
      * We simply assume that
-     * >> I = <sin(Theta1), -cos(Theta1)>
-     * >> O = <sin(Theta2), -cos(Theta2)>
+     * >> I = <rsin(Theta1), -rcos(Theta1)>
+     * >> O = <rsin(Theta2), -rcos(Theta2)>
      * >> N = <0, 1>
      *
      * Since there exist a simple rotating Jacobian that rotate these vectors to world,
      * we simply use these simplified vectors to do linear combinations and the results won't
      * change
      *
-     * With snell's law, n1 sin(Theta1) = n2 sin(Theta2)
+     * With snell's law, n1 rsin(Theta1) = n2 rsin(Theta2)
      *
      * Hence,
-     * >> (n1/n2)sin(Theta1) = sin(Theta2)
+     * >> (n1/n2)rsin(Theta1) = rsin(Theta2)
      * we take relative refractivity as eta
-     * >> eta * sin(Theta1) = sin(Theta2)
+     * >> eta * rsin(Theta1) = rsin(Theta2)
      * >> eta^2(1 - cos^2(Theta1)) = (1 - cos^2(Theta2))
-     * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = cos(Theta2)
+     * >> sqrt(1 - eta^2(1 - cos^2(Theta1))) = rcos(Theta2)
      *
      * We first do the cosine part
      * >> -sqrt(1 - eta^2(1 - cos^2(Theta1))) N
      *
      * Then the sine part
-     * >> eta * I + eta * cos(Theta1) N
+     * >> eta * I + eta * rcos(Theta1) N
      * Sum up the reault
-     * >> eta * I + (eta * cos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
+     * >> eta * I + (eta * rcos(Theta1) - sqrt(1 - eta^2(1 - cos^2(Theta1))))N
      */
     Real eta = n1R / n2R;
     Real eta2 = eta * eta;
@@ -287,17 +287,17 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     // calculating 4 * Fterm * Vterm * (N dot L) * (V dot H) / (N dot H)
     // Using highly-correlated Smith's model
     Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
-    Real finalFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
+    Real scalingFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
 
     // since metallic texture won't go into the 1 - F branch so we do have to * F
-    if (metallic) finalFactor *= F;
+    if (metallic) scalingFactor *= F;
 
     Vector nxtDirection = l;
     // to avoid collide with the same object again, we move a little from the collide point
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, nxtDirection, currentRay.wavelength);
 
-    return (NextSimulationData){finalFactor, nxtRay};
+    return (NextSimulationData){scalingFactor, nxtRay};
 }
 
 // similar to sample refraction, we have to switch to this branch instead of using sampleBRDF when
@@ -355,11 +355,11 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
     // to multiply by 1 - F again.
     Real eta = n1R / n2R;
-    Real finalFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
+    Real scaflingFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, ray.wavelength);
 
-    return (NextSimulationData){finalFactor, nxtRay};
+    return (NextSimulationData){scaflingFactor, nxtRay};
 }
 
 // sample the next direction (nxtRay) and scaling factor through regular refraction to avoid
@@ -388,7 +388,7 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth) {
+                                        MT19937 *mt, int maxDepth, Real extinctionFactor) {
     if (maxDepth == 0) return 0;
 
     // first we see if this light first touches a light source
@@ -407,13 +407,18 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     }
 
     // case 2: first collide with source, so we return the intensity of light source directly
-    if (firstCollideSourceResult.t <= firstCollideObjectResult.t && firstCollideSource != NULL) {
-        return firstCollideSourceResult.intensity;
+    if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
+        firstCollideSource != NULL) {
+        Real travelingDistance = firstCollideObjectResult.distance;
+        Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
+        return scalingFactor * firstCollideSourceResult.intensity;
     }
 
     // case 3: we collide with an object first
+    Real travelingDistance = firstCollideObjectResult.distance;
+    Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
     Vector d = ray.direction;
-    Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.t, d));
+    Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.distance, d));
     // Now the normal vector is still point toward outside
     Vector N = firstCollideObjectResult.normalVector;
 
@@ -440,7 +445,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     Vector m = roughness >= error ? toWorld(GGXVectorSample(mt, alpha), N) : N;
     // calculate F part
     Real VdotM = vecDot(v, m);
-    if (VdotM <= 0) return 0;
+    if (VdotM <= 0) return 0; // v dot m must >= 0, or else the sample fails
     Real cosTheta = VdotM;
     Real cosThetaForF;
     bool metallic = getmetallic(firstCollideObject);
@@ -491,8 +496,10 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         if (nxt.scalingFactor == 0) return 0;
 
+        scalingFactor *= nxt.scalingFactor;
+
         Real result =
-            nxt.scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1);
+            scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, 0);
         return result;
     }
 
@@ -515,8 +522,14 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         if (nxt.scalingFactor == 0) return 0;
 
+        scalingFactor *= nxt.scalingFactor;
+
+        // calculate the extinction factor for next ray
+        // Beer-Lembert's Law
+        Real sigma = 4 * M_PI * n2.I / ray.wavelength * 1e5; // 4pi k / lambda and convert to 
+
         Real result =
-            nxt.scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1);
+            scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, sigma);
 
         return result;
     }
@@ -530,7 +543,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
 
-        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1) * baseColor;
+        scalingFactor *= baseColor;
+
+        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1, 0) * scalingFactor;
     }
 
     return 0;
@@ -548,7 +563,7 @@ static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
     for (int i = 0; i < width * height; i++) {
         int x = getX(vs, i), y = getY(vs, i);
         // it won't reflect so a wavelength is fine
-        ReversedRay initRay = getInitRay(camera, (double)x, (double)y, 0); 
+        ReversedRay initRay = getInitRay(camera, (double)x, (double)y, 0);
         SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
         if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
             touch[i] = true;
@@ -613,7 +628,7 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
 
     initRay = getInitRay(camera, fixedX, fixedY, randomWavelength);
 
-    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth);
+    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth, 0);
 
     if (!isfinite(intensityResult)) return;
 

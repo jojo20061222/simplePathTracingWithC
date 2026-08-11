@@ -14,7 +14,7 @@ LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real));
 
 typedef struct {
     bool collide;
-    Real t;
+    Real distance;
     LightIntensity intensity;
 } CollideLightSourceResult;
 

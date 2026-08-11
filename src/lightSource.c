@@ -10,7 +10,7 @@ LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real)) {
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
     CollideResult result = detectCollide(source->shape, ray);
-    return (CollideLightSourceResult){result.collide, result.t, source->intensity(ray->wavelength)};
+    return (CollideLightSourceResult){result.collide, result.distance, source->intensity(ray->wavelength)};
 }
 
 static const int startWavelength = 390;

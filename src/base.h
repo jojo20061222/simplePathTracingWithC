@@ -22,6 +22,30 @@ static inline Real rabs(Real x) {
 #endif
 }
 
+static inline Real rexp(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return exp(x);
+#else
+    return expf(x);
+#endif
+}
+
+static inline Real rsin(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return sin(x);
+#else
+    return sinf(x);
+#endif
+}
+
+static inline Real rcos(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return cos(x);
+#else
+    return cosf(x);
+#endif
+}
+
 typedef union {
     struct {
         uint8_t R, G, B, A;

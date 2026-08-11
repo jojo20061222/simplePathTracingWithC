@@ -5,7 +5,7 @@
 
 typedef struct {
     bool collide;
-    Real t;
+    Real distance;
     Vector normalVector;
 } CollideResult;
 

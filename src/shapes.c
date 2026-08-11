@@ -250,7 +250,7 @@ CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {
     CollideResult firstCollideObjectResult = notCollide();
     for (int i = 0; i < shapesCount; i++) {
         CollideResult curResult = group->elements[i]->detectCollide(group->elements[i], ray);
-        if (curResult.t <= firstCollideObjectResult.t) {
+        if (curResult.distance <= firstCollideObjectResult.distance) {
             firstCollideObjectResult = curResult;
         }
     }
