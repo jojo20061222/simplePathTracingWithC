@@ -62,7 +62,7 @@ VirtualScreen *newScreen(int width, int height) {
     return result;
 }
 
-void freeScreen(VirtualScreen *screen) {
+void destroyScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->mean);
     free(screen->renderCount);

@@ -20,9 +20,9 @@ fi
 
 optimizationFlags="-O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL"
 
-echo "all: $binaryPath/main"
+echo "all: $binaryPath/pathTracing"
 
-mainDependency="$binaryPath/main: "
+mainDependency="$binaryPath/pathTracing: "
 
 for file in src/*.c; do
     filename=$(basename $file)
@@ -34,7 +34,7 @@ for file in src/*.c; do
     mainDependency+="$buildPath/$xfpref.o "
 
 
-    if [[ $filename == main.c ]]; then
+    if [[ $filename == pathTracing.c ]]; then
         echo "$buildPath/$($CC `sdl2-config --cflags` -MM $file)"
         echo -e "\t$CC -o \$@ -c \$< \`sdl2-config --cflags\` $optimizationFlags"
     else 
@@ -42,6 +42,9 @@ for file in src/*.c; do
         echo -e "\t$CC -o \$@ -c \$< $optimizationFlags"
     fi
 done
+
+mainFile=$1
+
 
 echo $mainDependency
 echo -e "\t$CC \$^ -o \$@ \`sdl2-config --libs\` -lm -lpthread -flto"

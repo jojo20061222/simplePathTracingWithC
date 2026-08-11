@@ -37,7 +37,7 @@ int getY(VirtualScreen *vs, int i);
 
 int getIndex(VirtualScreen *vs, int x, int y);
 
-void freeScreen(VirtualScreen *screen);
+void destroyScreen(VirtualScreen *screen);
 
 void renderPixel(Camera *camera, VirtualScreen *s, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth);
