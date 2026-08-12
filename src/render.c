@@ -387,66 +387,9 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
     return (NextSimulationData){eta * eta, nxtRay};
 }
 
-static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth, Real extinctionFactor) {
-    if (maxDepth == 0) return 0;
-
-    // first we see if this light first touches a light source
-    // to attain that, we need to simulate both collide with sources and objects to decide which is
-    // touched first.
-
-    SingleRayCollideResult result = singleRayCollide(objects, sources, ray);
-    CollideResult firstCollideObjectResult = result.firstCollideObjectResult;
-    Object *firstCollideObject = result.firstCollideObject;
-    CollideLightSourceResult firstCollideSourceResult = result.firstCollideSourceResult;
-    LightSource *firstCollideSource = result.firstCollideSource;
-
-    // case 1: collide with nothing.
-    if (firstCollideObject == NULL && firstCollideSource == NULL) {
-        return 0.0;
-    }
-
-    // case 2: first collide with source, so we return the intensity of light source directly
-    if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
-        firstCollideSource != NULL) {
-        Real travelingDistance = firstCollideSourceResult.distance;
-        Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
-        return scalingFactor * firstCollideSourceResult.intensity;
-    }
-
-    // case 3: we collide with an object first
-    Real travelingDistance = firstCollideObjectResult.distance;
-    Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
-    Vector d = ray.direction;
-    Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.distance, d));
-    // Now the normal vector is still point toward outside
-    Vector N = firstCollideObjectResult.normalVector;
-
-    Complex n1, n2;
-    if (vecDot(N, d) > 0) {
-        // N vecDot d < 0 implys the ray is now in the object
-        // n1 = inside, n2 = outside, since we goes from inside to outside
-        N = (Vector){-N.x, -N.y, -N.z};
-        n1 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
-        n2 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
-    }
-    else {
-        n1 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
-        n2 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
-    }
-    // after the operations above, the normal vector should point on the side where reversed rays
-    // come from
-
-    Vector v = vecNegative(ray.direction); // direction from collide point to observer
-    Real roughness = getRoughness(firstCollideObject);
-    // By Disney's guidelines we square the roughness here to get alpha
-    Real alpha = roughness * roughness;
-
-    Vector m = roughness >= error ? toWorld(GGXVectorSample(mt, alpha), N) : N;
-    // calculate F part
-    Real VdotM = vecDot(v, m);
-    if (VdotM <= 0) return 0; // v dot m must >= 0, or else the sample fails
-    Real cosTheta = VdotM;
+// calculate the F term
+static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta,
+                                  Object *firstCollideObject) {
     Real cosThetaForF;
     bool metallic = getmetallic(firstCollideObject);
 
@@ -483,6 +426,80 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     Real y5 = y2 * y2 * y;
     Real F = F0 + (1 - F0) * y5;
 
+    return F;
+}
+
+static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
+                                        MT19937 *mt, int maxDepth, Real extinctionFactor) {
+    if (maxDepth == 0) return 0;
+
+    // first we see if this light first touches a light source
+    // to attain that, we need to simulate both collide with sources and objects to decide which is
+    // touched first.
+
+    SingleRayCollideResult result = singleRayCollide(objects, sources, ray);
+    CollideResult firstCollideObjectResult = result.firstCollideObjectResult;
+    Object *firstCollideObject = result.firstCollideObject;
+    CollideLightSourceResult firstCollideSourceResult = result.firstCollideSourceResult;
+    LightSource *firstCollideSource = result.firstCollideSource;
+
+    // case 1: collide with nothing.
+    if (firstCollideObject == NULL && firstCollideSource == NULL) {
+        return 0.0;
+    }
+
+    // case 2: first collide with source, so we return the intensity of light source directly
+    if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
+        firstCollideSource != NULL) {
+        Real travelingDistance = firstCollideSourceResult.distance;
+        Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
+        return scalingFactor * firstCollideSourceResult.intensity;
+    }
+
+    // case 3: we collide with an object first
+    Real travelingDistance = firstCollideObjectResult.distance;
+    Real scalingFactor = rexp(-extinctionFactor * travelingDistance);
+    Vector d = ray.direction;
+    Point collidePoint = vecAdd(ray.start, vecMultiply(firstCollideObjectResult.distance, d));
+    // Now the normal vector is still point toward outside
+    Vector N = firstCollideObjectResult.normalVector;
+
+    // n1 symbolizes the refractivity of the material the reversed ray is currently in
+    // n2 symbolizes the refractivity of material on the other side
+    Complex n1, n2;
+    if (vecDot(N, d) > 0) {
+        // N vecDot d < 0 implys the ray is now in the object
+        // n1 = inside, n2 = outside, since we goes from inside to outside
+        N = (Vector){-N.x, -N.y, -N.z};
+        n1 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
+        n2 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
+    }
+    else {
+        n1 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
+        n2 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
+    }
+    // after the operations above, the normal vector should point on the side where reversed rays
+    // come from
+
+    Vector v = vecNegative(ray.direction); // direction from collide point to observer
+    Real roughness = getRoughness(firstCollideObject);
+    // By Disney's guidelines we square the roughness here to get alpha
+    Real alpha = roughness * roughness;
+
+    Vector m = roughness >= error ? toWorld(GGXVectorSample(mt, alpha), N) : N;
+    // calculate F part
+    Real VdotM = vecDot(v, m);
+    // v dot m must >= 0, or else the sample fails
+    // this should not happen (or at least should not happen often) since the sample itself should
+    // not sample a microfacet that is inversed
+    if (VdotM <= 0) return 0;
+    Real cosTheta = VdotM;
+
+    // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
+    // surface and so refraction or diffusion
+    bool metallic = getmetallic(firstCollideObject);
+    Real F = getFresnelTerm(n1, n2, cosTheta, firstCollideObject);
+
     // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
         NextSimulationData nxt;
@@ -498,8 +515,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         scalingFactor *= nxt.scalingFactor;
 
-        Real result =
-            scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, 0);
+        Real result = scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt,
+                                                        maxDepth - 1, extinctionFactor);
         return result;
     }
 
@@ -526,11 +543,11 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
 
         // calculate the extinction factor for next ray
         // Beer-Lembert's Law
-        // 4pi k / lambda and convert to (10^(-4)m^(-1))
+        // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
         Real sigma = 4 * M_PI * n2.I / ray.wavelength * 1e5;
 
-        Real result =
-            scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, sigma);
+        Real result = scalingFactor *
+                      simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, sigma);
 
         return result;
     }
@@ -542,13 +559,14 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
         ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.wavelength);
 
+        // after diffusion the light should have the color of the material
         Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
-
         scalingFactor *= baseColor;
 
-        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1, 0) * scalingFactor;
+        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor) *
+               scalingFactor;
     }
-
+    // should not be reached
     return 0;
 }
 
@@ -596,10 +614,13 @@ void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSour
                 if (!inBoundary(nx, width) || !inBoundary(ny, height)) continue;
                 int ni = getIndex(vs, nx, ny);
                 // if neighbor touches objects then set threshold to default value
-                if (touchMap[ni]) vs->threshold[i] = sampleThreshold;
+                if (touchMap[ni]) {
+                    vs->threshold[i] = sampleThreshold;
+                }
             }
         }
     }
+    // we use "new"TouchMap so we have to free here
     free(touchMap);
 }
 

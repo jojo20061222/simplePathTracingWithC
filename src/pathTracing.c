@@ -1,6 +1,9 @@
 #include "../include/pathTracing.h"
 #include <SDL.h>
 
+static const int maxDepth = 100;
+static const int threshold = 64;
+
 void renderThroughWindow(const char *windowTitle, Object **objects, LightSource **sources,
                          Camera *camera, int width, int height, int threadCount) {
     initLightIntensity();
@@ -10,7 +13,7 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
     VirtualScreen *vs = newScreen(width, height);
 
     SDL_Window *window =
-        SDL_CreateWindow("Path Tracing - Diamond Studio Setup", SDL_WINDOWPOS_CENTERED,
+        SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED,
                          SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_METAL);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
@@ -18,10 +21,12 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
                                              SDL_TEXTUREACCESS_STREAMING, width, height);
     SDL_Event event;
     bool isRunning = true;
-    Multithreads *mul = initMultithreads(vs, 11, objects, sources, camera, 100, 64);
+    Multithreads *mul =
+        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth, threshold);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
+            // if receive a event to quit then stop running
             if (event.type == SDL_QUIT) isRunning = false;
         }
 
@@ -40,21 +45,22 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
     SDL_Quit();
 }
 
-void renderThroughPictures(Object **objects, LightSource **sources,
-                         Camera *camera, int width, int height, int threadCount) {
+void renderThroughPictures(const char *outputPath, Object **objects, LightSource **sources, Camera *camera, int width,
+                           int height, int threadCount) {
     initLightIntensity();
     initTexture();
 
     VirtualScreen *vs = newScreen(width, height);
 
     bool isRunning = true;
-    Multithreads *mul = initMultithreads(vs, 11, objects, sources, camera, 100, 64);
+    Multithreads *mul =
+        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth, threshold);
 
     while (isRunning) {
         char input[1000];
         scanf("%s", input);
         if (!strcmp(input, "p")) {
-            FILE *f = fopen("outputImg", "w");
+            FILE *f = fopen(outputPath, "w");
             if (f == NULL) {
                 printf("open failed\n");
                 continue;

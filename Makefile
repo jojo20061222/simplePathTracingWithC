@@ -84,7 +84,7 @@ build/textures.o: src/textures.c src/textures.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
 build/transform.o: src/transform.c src/transform.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-build/test.o: test.c include/pathTracing.h include/../src/camera.h \
+build/example.o: example.c include/pathTracing.h include/../src/camera.h \
   include/../src/base.h include/../src/lightSource.h \
   include/../src/object.h include/../src/shapes.h \
   include/../src/textures.h include/../src/multithreads.h \
@@ -92,7 +92,7 @@ build/test.o: test.c include/pathTracing.h include/../src/camera.h \
   include/../src/random.h include/../src/frame.h \
   include/../src/transform.h
 	clang -o $@ -c $< -O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL
-bin/pathTracing: build/camera.o build/frame.o build/lightSource.o build/multithreads.o build/object.o build/pathTracing.o build/random.o build/render.o build/shapes.o build/textures.o build/transform.o build/test.o 
+bin/pathTracing: build/camera.o build/frame.o build/lightSource.o build/multithreads.o build/object.o build/pathTracing.o build/random.o build/render.o build/shapes.o build/textures.o build/transform.o build/example.o 
 	clang $^ -o $@ `sdl2-config --libs` -lm -lpthread -flto
 
 .PHONY: clean

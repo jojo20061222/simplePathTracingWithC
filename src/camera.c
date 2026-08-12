@@ -1,7 +1,6 @@
 #include "camera.h"
 #include <stdlib.h>
 
-
 typedef struct Camera {
     ReversedRay (*mapFunction)(struct Camera *self, Real x, Real y, Real wavelength);
     void *data;
@@ -16,13 +15,12 @@ Camera *newCamera(ReversedRay (*mapFunction)(Camera *, Real, Real, Real), void *
 }
 
 typedef struct {
-    Real width, height;
-    Real startX, endX;
-    Real startY, endY;
-    Real z;
-    Point start;
+    Real width, height; // width of the screen
+    Real startX, endX;  // the actual range of x of the sensor
+    Real startY, endY;  // the actual range of y of the sensor
+    Real z;             // the actual z of the sensor
+    Point start;        // the position of observer, or simply the source of reversed ray
 } RegularCameraData;
-
 
 ReversedRay regularCameraMapFucntion(Camera *camera, Real x, Real y, Real wavelength) {
     RegularCameraData *data = camera->data;

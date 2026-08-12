@@ -3,9 +3,11 @@
 Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
 
 int main() {
-    static const int width = 720;
-    static const int height = 540;
-    Camera *camera = newRegularCamera(width, height, 0, width, 0, height, 0, width);
+    static const int width = 540;
+    static const int height = 360;
+    Camera *camera =
+        newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
+                         (Real)height * 0.65, -1.0 / 3.0 * (Real)height, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
@@ -44,44 +46,46 @@ int main() {
     Object *backWall = newObject(backShape, whiteReflector);
     pushBack(&objects, backWall, Object *);
 
-    // diamond
 
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
+    // diamond
     Frame *diamondFrame = newFrame("src/static/gem.obj");
     pushBack(&frames, diamondFrame, Frame *);
-    RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
+    RegularTransformPara *para = newRegularTransformPara(radius, 75, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     pushBack(&shapes, diamondShape, Shape *);
     destroyRegulartransformPara(para);
 
-    Object *sapphireObj = newObject(diamondShape, newSapphire(0.5, 3e-3));
+    Object *sapphireObj = newObject(diamondShape, newSapphire(0, 0.005));
     pushBack(&objects, sapphireObj, Object *);
 
     Real lightRadius = (Real)width / 40;
 
+    // light 1: upper-left behind the diamond
     Shape *lightSph1 =
         newSphere((Point){(Real)width * 0.25, (Real)height * 0.8, pz + radius}, lightRadius);
     pushBack(&shapes, lightSph1, Shape *);
     LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
     pushBack(&sources, &light1, LightSource *);
 
+    // light 2: upper-right behind the diamond
     Shape *lightSph2 =
         newSphere((Point){(Real)width * 0.75, (Real)height * 0.8, pz + 5 * radius}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
     LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
     pushBack(&sources, &light2, LightSource *);
 
+    // light3 : behind the diamond
     Shape *lightSph3 =
         newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    renderThroughPictures(objects, sources, camera, width, height, 11);
+    renderThroughWindow("Example diamond showing", objects, sources, camera, width, height, 11);
 
-    
     destroyRegularCamera(camera);
 
     for (int i = 0; i < getSize(frames); i++) {
@@ -102,7 +106,6 @@ int main() {
         destroyObject(objects[i]);
     }
     freeDynamicArray(objects);
-    
 
     return 0;
 }
