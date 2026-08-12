@@ -9,10 +9,10 @@
 #include "../src/render.h"
 #include "../src/textures.h"
 
-void renderThroughWindow(const char *windowTitle, Object **objects, LightSource **sources,
+void renderToWindow(const char *windowTitle, Object **objects, LightSource **sources,
                          Camera *camera, int width, int height, int threadCount);
 
-void renderThroughPictures(const char *outputPath, Object **objects, LightSource **sources,
+void renderToPictures(const char *outputPath, Object **objects, LightSource **sources,
                            Camera *camera, int width, int height, int threadCount);
 
 #endif

@@ -48,7 +48,6 @@ int main() {
     Object *backWall = newObject(backShape, whiteReflector);
     pushBack(&objects, backWall, Object *);
 
-
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
@@ -86,7 +85,7 @@ int main() {
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    renderThroughWindow("Example diamond showing", objects, sources, camera, width, height, 11);
+    renderToWindow("Example diamond showing", objects, sources, camera, width, height, 11);
 
     destroyRegularCamera(camera);
 

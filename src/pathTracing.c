@@ -13,8 +13,8 @@
 static const int maxDepth = 100;
 static const int threshold = 64;
 
-void renderThroughWindow(const char *windowTitle, Object **objects, LightSource **sources,
-                         Camera *camera, int width, int height, int threadCount) {
+void renderToWindow(const char *windowTitle, Object **objects, LightSource **sources,
+                    Camera *camera, int width, int height, int threadCount) {
     initLightIntensity();
     initTexture();
 
@@ -53,8 +53,8 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
     SDL_Quit();
 }
 
-void renderThroughPictures(const char *outputPath, Object **objects, LightSource **sources,
-                           Camera *camera, int width, int height, int threadCount) {
+void renderToPictures(const char *outputPath, Object **objects, LightSource **sources,
+                      Camera *camera, int width, int height, int threadCount) {
     initLightIntensity();
     initTexture();
 
