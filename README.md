@@ -1,4 +1,4 @@
-# Simple Path Tracer in C
+# Simple Path Tracer with C
 ## 簡述
 這是一個簡單的專案，用 C 從 0 實現路徑追蹤。這個專案實現的項目包括但不限於
 - BSDF

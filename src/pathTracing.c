@@ -21,8 +21,14 @@ void renderToWindow(const char *windowTitle, Object **objects, LightSource **sou
     SDL_Init(SDL_INIT_VIDEO);
     VirtualScreen *vs = newScreen(width, height);
 
+#if defined(__APPLE__)
+    Uint32 windowFlags = SDL_WINDOW_METAL;
+#elif defined(__linux__)
+    Uint32 windowFlags = SDL_WINDOW_OPENGL;
+#endif
+
     SDL_Window *window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED,
-                                          SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_METAL);
+                                          SDL_WINDOWPOS_CENTERED, width, height, windowFlags);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888,
