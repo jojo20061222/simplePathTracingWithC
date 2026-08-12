@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/bash
 
 CC="clang"
 buildPath="build"

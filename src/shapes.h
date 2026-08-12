@@ -15,8 +15,6 @@ typedef struct Triangle Triangle;
 
 typedef struct Sphere Sphere;
 
-typedef struct DirectedTriangle DirectedTriangle;
-
 typedef struct ConvexPolygon ConvexPolygon;
 
 typedef struct Group Group;
@@ -24,8 +22,6 @@ typedef struct Group Group;
 Shape *newTriangle(Point p1, Point p2, Point p3);
 
 Shape *newSphere(Point center, Real radius);
-
-Shape *newDirectedTriangle(Point p1, Point p2, Point p3, Vector normalVector);
 
 Shape *newConvexPolygon(Point *vertexes);
 

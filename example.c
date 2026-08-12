@@ -17,6 +17,8 @@ int main() {
     Texture *whiteReflector =
         newOpaqueDieletric(getPlasticRefractivity, getAirRefractivity, 1, pureWhite);
     pushBack(&textures, whiteReflector, Texture *);
+    Texture *diamond = newDiamond(0);
+    pushBack(&textures, diamond, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -51,15 +53,15 @@ int main() {
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
     // diamond
-    Frame *diamondFrame = newFrame("src/static/gem.obj");
+    Frame *diamondFrame = newFrame("src/static/diamond.obj");
     pushBack(&frames, diamondFrame, Frame *);
-    RegularTransformPara *para = newRegularTransformPara(radius, 75, 0, 0, showing);
+    RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
     Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
     pushBack(&shapes, diamondShape, Shape *);
     destroyRegulartransformPara(para);
 
-    Object *sapphireObj = newObject(diamondShape, newSapphire(0, 0.005));
-    pushBack(&objects, sapphireObj, Object *);
+    Object *diamondObj = newObject(diamondShape, diamond);
+    pushBack(&objects, diamondObj, Object *);
 
     Real lightRadius = (Real)width / 40;
 
