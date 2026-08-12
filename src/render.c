@@ -11,6 +11,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief The main logic to make all the things come true. Simulate the phsical world and project it
+ * onto the screen.
+ */
+
 static const Real startWavelength = 390;
 static const Real endWavelength = 790;
 

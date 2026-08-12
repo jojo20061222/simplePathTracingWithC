@@ -7,6 +7,13 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * @author seaofvoices
+ * @brief This file provides methods to convert the object files into frame first, then
+ * one can convert frames into real groups of shapes. Only supports that of composed of convex
+ * polygons
+ */
+
 typedef int *Face;
 
 typedef struct Frame {

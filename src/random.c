@@ -3,6 +3,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief To ensure the quality of Monte Carlo method, we cannot use the srand() and rand() included
+ * in standard library in C. Instead, we implement our own random engine based on mt19937 algorithm.
+ * The definition and source is mainly referenced from wikipedia, and some of the optimization is
+ * done by Gemini to erase the branch prediction.
+ */
+
 MT19937 *initMT19937(uint32_t seed) {
     MT19937 *mt = malloc(sizeof(MT19937));
     if (mt == NULL) {

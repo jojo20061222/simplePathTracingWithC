@@ -4,13 +4,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief This file defines how light behaves and relate energy and color. It also gives some
+ * classic example of light sources such as sunlight and standard white light at 6,500 K
+ */
+
 LightSource newLightSource(Shape *shape, LightIntensity (*intensity)(Real)) {
     return (LightSource){shape, intensity};
 }
 
 CollideLightSourceResult collideLightSource(LightSource *source, ReversedRay *ray) {
     CollideResult result = detectCollide(source->shape, ray);
-    return (CollideLightSourceResult){result.collide, result.distance, source->intensity(ray->wavelength)};
+    return (CollideLightSourceResult){result.collide, result.distance,
+                                      source->intensity(ray->wavelength)};
 }
 
 static const int startWavelength = 390;

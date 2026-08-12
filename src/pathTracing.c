@@ -1,6 +1,11 @@
 #include "../include/pathTracing.h"
 #include <SDL.h>
 
+/*
+ * @author seaofvoices
+ * @brief This file provides two default method for the users to render.
+ */
+
 static const int maxDepth = 100;
 static const int threshold = 64;
 
@@ -12,9 +17,8 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
     SDL_Init(SDL_INIT_VIDEO);
     VirtualScreen *vs = newScreen(width, height);
 
-    SDL_Window *window =
-        SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED,
-                         SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_METAL);
+    SDL_Window *window = SDL_CreateWindow(windowTitle, SDL_WINDOWPOS_CENTERED,
+                                          SDL_WINDOWPOS_CENTERED, width, height, SDL_WINDOW_METAL);
 
     SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     SDL_Texture *texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ABGR8888,
@@ -45,8 +49,8 @@ void renderThroughWindow(const char *windowTitle, Object **objects, LightSource 
     SDL_Quit();
 }
 
-void renderThroughPictures(const char *outputPath, Object **objects, LightSource **sources, Camera *camera, int width,
-                           int height, int threadCount) {
+void renderThroughPictures(const char *outputPath, Object **objects, LightSource **sources,
+                           Camera *camera, int width, int height, int threadCount) {
     initLightIntensity();
     initTexture();
 

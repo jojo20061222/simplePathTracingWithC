@@ -5,6 +5,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief To make full use of modern CPUs, this file divide the original task into parts on the
+ * screen. Provides methods to manage the workers.
+ */
+
 typedef struct {
     int leftBoundary, rightBoundary;
 } Range;
@@ -195,8 +201,9 @@ static void *worker(void *para) {
     return NULL;
 }
 
-Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects, LightSource **sources,
-                               Camera *camera, int maxDepth, int sampleThreshold) {
+Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
+                               LightSource **sources, Camera *camera, int maxDepth,
+                               int sampleThreshold) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 

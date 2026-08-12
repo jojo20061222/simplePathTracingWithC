@@ -2,6 +2,12 @@
 #include "math.h"
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief To make instance of shapes from frame, we need to transform their size, angle and
+ * position. This file provides definition of transformation and gives example for them.
+ */
+
 typedef struct RegularTransformPara {
     Real scalingFactor;
     Real rotateXAngle, rotateYAngle, rotateZAngle;

@@ -6,6 +6,11 @@
 #include <stdlib.h>
 #include <string.h>
 
+/*
+ * @author seaofvoices
+ * @brief Gives the definition of shape and default shapes.
+ */
+
 typedef struct Shape {
     CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
     void (*destroySelf)(struct Shape *);

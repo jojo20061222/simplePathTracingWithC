@@ -72,16 +72,19 @@ static inline Vector vecMinus(Vector a, Vector b) {
     return (Vector){a.x - b.x, a.y - b.y, a.z - b.z};
 }
 
+// return -v
 static inline Vector vecNegative(Vector v) { return (Vector){-v.x, -v.y, -v.z}; }
 
+// scaler multiplication of vectors
 static inline Vector vecMultiply(Real c, Vector a) { return (Vector){c * a.x, c * a.y, c * a.z}; }
 
 static inline Real vecDot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
-static const Real error = 1e-8;
+static const Real error = 1e-6;
 
 static inline Real lengthOf(Vector v) { return sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
 
+// normalize the vector
 static inline Vector unitVector(Vector vec) {
     Real length = lengthOf(vec);
     if (length < error) return (Vector){0, 0, 0};
@@ -142,6 +145,7 @@ static inline Real cplxArg(Complex z) {
     return atan(z.I / z.R) - M_PI; // x < 0 and y < 0
 }
 
+// linearly map x from [x1, x2] to [y1, y2]
 static inline Real lerp(Real x1, Real x2, Real x, Real y1, Real y2) {
     // since (y - y1) / (x - x1) = (y2 - y) / (x2 - x)
     // we have (y - y1)(x2 - x) = (y2 - y)(x - x1)

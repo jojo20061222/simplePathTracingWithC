@@ -1,6 +1,11 @@
 #include "object.h"
 #include <stdlib.h>
 
+/*
+ * @author seaofvoices
+ * @brief This file defines attributes an object should possess and provide interfaces to others.
+ */
+
 typedef struct Object {
     Shape *shape;
     Texture *texture;
@@ -17,9 +22,7 @@ Object *newObject(Shape *shape, Texture *texture) {
     return obj;
 }
 
-void destroyObject(Object *obj) {
-    free(obj);
-}
+void destroyObject(Object *obj) { free(obj); }
 
 CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
