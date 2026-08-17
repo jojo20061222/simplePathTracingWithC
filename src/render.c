@@ -284,8 +284,7 @@ typedef struct {
 
 // Sample through BRDF
 static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real alpha, Real F,
-                                            bool metallic, Point collidePoint,
-                                            ReversedRay currentRay) {
+                                            Point collidePoint, ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, m), m), v); // direction of reflection
     // Cook-Torrance's BRDF
     // calculate V * (v dot h) / (n dot h) part = DG / PDF
@@ -306,9 +305,6 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
     Real scalingFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
 
-    // since metallic texture won't go into the 1 - F branch so we do have to * F
-    if (metallic) scalingFactor *= F;
-
     Vector nxtDirection = l;
     // to avoid collide with the same object again, we move a little from the collide point
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
@@ -320,13 +316,13 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
 // similar to sample refraction, we have to switch to this branch instead of using sampleBRDF when
 // the roughness (alpha) is to small, or the surface is too smooth. In such case the PDF of ggx
 // sampling will approaches to infinity.
-static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, bool metallic,
-                                                Point collidePoint, ReversedRay currentRay) {
+static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, Point collidePoint,
+                                                ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
     Vector nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
     ReversedRay nxtRay = newRay(nxtStart, l, currentRay.wavelength);
 
-    return (NextSimulationData){metallic ? F : 1, nxtRay};
+    return (NextSimulationData){F, nxtRay};
 }
 
 static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real alpha,
@@ -512,15 +508,17 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     if (metallic || randomReal(mt) <= F) {
         if (roughness < error) {
-            nxt = sampleSpecular(N, v, F, metallic, collidePoint, ray);
+            nxt = sampleSpecular(N, v, F, collidePoint, ray);
         }
         else {
-            nxt = sampleBRDF(m, v, N, alpha, F, metallic, collidePoint, ray);
+            nxt = sampleBRDF(m, v, N, alpha, F, collidePoint, ray);
         }
 
         if (nxt.scalingFactor == 0) return notCollideData;
 
         scalingFactor *= nxt.scalingFactor;
+        // since metallic texture won't go into the 1 - F branch so we do have to * F
+        if (metallic) scalingFactor *= F;
     }
     else {
         // the left branch is 1 - F
@@ -557,6 +555,13 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     return (NextSimulationData){scalingFactor, nxt.nxtRay};
 }
 
+static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
+    Real alpha2 = alpha * alpha;
+    Real NdotM2 = NdotM * NdotM;
+    Real denomPart = (NdotM2 * (alpha2 - 1) + 1);
+    return alpha2 / (M_PI * denomPart * denomPart);
+}
+
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         bool metallic, bool transparent) {
     // we have to derive m by l, v
@@ -564,11 +569,15 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Vector m;
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
-    Real NdotM;
+    Real NdotM, MdotL, MdotV;
+    bool refract;
 
     if (NdotL > 0 && NdotV > 0) {     // this means the light did not go through the surface
         m = unitVector(vecAdd(l, v)); // m is parallel to l + v
         NdotM = vecDot(N, m);
+        refract = false;
+        MdotL = vecDot(m, l);
+        MdotV = vecDot(m, v);
     }
     else {
         Vector n1v = vecMultiply(n1.R, v);
@@ -580,12 +589,13 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
             return 0;
         }
 
-        Real MdotL = vecDot(m, l);
-        Real MdotV = vecDot(m, v);
+        MdotL = vecDot(m, l);
+        MdotV = vecDot(m, v);
 
         if (MdotL * MdotV >= -error) {
             return 0;
         }
+        refract = true;
     }
 
     Real cosTheta = vecDot(m, v);
@@ -593,7 +603,21 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     // F term
     Real F = getFresnelTerm(n1, n2, cosTheta, metallic);
 
+    // G term
+    Real G = getGrometryTerm(l, v, N, alpha);
+
     // D term
+    Real D = getNormalDistributionTerm(NdotM, alpha);
+
+    if (refract) {
+        // this means the ray must in the BTDF branch or refract branch
+        Real firstTerm = rabs(MdotL * MdotV / NdotL / NdotV);
+        Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (n2.R )
+        Real BTDF =  firstTerm* ;
+    }
+    else {
+
+    }
 
     return 0;
 }
