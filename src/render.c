@@ -362,7 +362,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
     Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
 
-    // final factor is (m dot l)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
+    // final factor is (m dot v)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
     // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
     // to multiply by 1 - F again.
     Real eta = n1R / n2R;
