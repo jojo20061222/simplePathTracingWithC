@@ -610,14 +610,16 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Real D = getNormalDistributionTerm(NdotM, alpha);
 
     if (refract) {
-        // this means the ray must in the BTDF branch or refract branch
-        Real firstTerm = rabs(MdotL * MdotV / NdotL / NdotV);
-        Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (n2.R )
-        Real BTDF =  firstTerm* ;
+        // this means the ray must in the BTDF branch
+        Real firstTerm = rabs(MdotL * MdotV / (NdotL * NdotV));
+        Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (n2.R * MdotL + n1.R * MdotV);
+        Real BTDF = firstTerm * secondTerm;
+        return BTDF;
     }
-    else {
 
-    }
+    // the light may comes from BRDF or diffusion branch
+    Real BRDF = D * F * G / (4 * (NdotL) * (NdotV));
+    Real difussion
 
     return 0;
 }
