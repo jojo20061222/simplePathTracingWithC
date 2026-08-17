@@ -159,12 +159,13 @@ static void destroySphere(Shape *self) { free(self); }
 // choose a ramdom point on sphere
 void randomPointOnSphere(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
     Sphere *sph = (Sphere *)self;
+    *PDF = 1 / (4 * M_PI * sph->radius * sph->radius); // 1 / (4 pi r^2)
     Real u = randomReal(mt), v = randomReal(mt);
     Real theta = 2 * M_PI * u;
     Real z = 1 - 2 * v;
     Real sinPhi = sqrt(1 - z * z);
     Real x = sinPhi * rcos(theta), y = sinPhi * rsin(theta);
-    *point = (Point){x, y, z};
+    *point = (Point){x, y, z}; // <sqrt(1 - u^2) * cos(theta), sqrt(1 - u^2) * sin(theta), u>
 }
 
 Shape *newSphere(Point center, Real radius) {

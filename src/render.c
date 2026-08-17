@@ -442,7 +442,7 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta,
 
 static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, ReversedRay ray,
                                                  Point collidePoint, Object *firstCollideObject) {
-    
+
     Vector local = cosineVectorSample(mt);
     Vector nxtDirection = toWorld(local, N);
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
@@ -456,7 +456,8 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Reversed
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth, Real extinctionFactor, bool directLight) {
+                                        MT19937 *mt, int maxDepth, Real extinctionFactor,
+                                        bool directLight) {
     if (maxDepth == 0) return 0;
 
     // first we see if this light first touches a light source
@@ -526,9 +527,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     bool metallic = getmetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta, firstCollideObject);
 
-    NextSimulationData nxt;
-
     // here we implement BSDF
+    NextSimulationData nxt;
     if (metallic || randomReal(mt) <= F) {
         if (roughness < error) {
             nxt = sampleSpecular(N, v, F, metallic, collidePoint, ray);
@@ -574,7 +574,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
     }
 
-    Real res = simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor, false);
+    ray = nxt.nxtRay;
+    directLight = false;
+
+
+    Real res =
+        simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor, false);
     return scalingFactor * res;
 }
 
