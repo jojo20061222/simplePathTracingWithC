@@ -271,6 +271,12 @@ static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
             NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
 }
 
+static inline Real getGrometryTerm(Vector l, Vector v, Vector N, Real alpha) {
+    Real absNdotV = rabs(vecDot(N, v));
+    Real absNdotL = rabs(vecDot(N, l));
+    return 2 * absNdotV * absNdotL / getGeometryTermDenom(absNdotL, absNdotV, alpha);
+}
+
 typedef struct {
     Real scalingFactor;
     ReversedRay nxtRay;
@@ -456,7 +462,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Reversed
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
                                             Object *firstCollideObject, Real *extinctionFactor,
                                             ReversedRay ray, MT19937 *mt) {
-    const NextSimulationData notCollideData = {0};
+    static const NextSimulationData notCollideData = {0};
 
     Real travelingDistance = firstCollideObjectResult->distance;
     Real scalingFactor = rexp(-*extinctionFactor * travelingDistance);
@@ -555,10 +561,39 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
                         bool metallic, bool transparent) {
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
-
     Vector m;
+    Real NdotL = vecDot(N, l);
+    Real NdotV = vecDot(N, v);
+    Real NdotM;
+
+    if (NdotL > 0 && NdotV > 0) {     // this means the light did not go through the surface
+        m = unitVector(vecAdd(l, v)); // m is parallel to l + v
+        NdotM = vecDot(N, m);
+    }
+    else {
+        Vector n1v = vecMultiply(n1.R, v);
+        Vector n2l = vecMultiply(n2.R, l);
+        m = vecNegative(unitVector(vecAdd(n1v, n2l)));
+        NdotM = vecDot(N, m);
+        // check if light goes through the surface
+        if (NdotL >= -error || NdotV <= error || NdotM <= error) {
+            return 0;
+        }
+
+        Real MdotL = vecDot(m, l);
+        Real MdotV = vecDot(m, v);
+
+        if (MdotL * MdotV >= -error) {
+            return 0;
+        }
+    }
+
     Real cosTheta = vecDot(m, v);
+
+    // F term
     Real F = getFresnelTerm(n1, n2, cosTheta, metallic);
+
+    // D term
 
     return 0;
 }
