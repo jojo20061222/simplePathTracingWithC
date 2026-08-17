@@ -23,12 +23,14 @@ static const Real endWavelength = 790;
 typedef struct VirtualScreen {
     ScreenColor *buffer;
     unsigned long long *renderCount;
-    unsigned long long *threshold;
     ColorXYZ *mean;
+#if defined(ADAPTIVE_RENDERING)
+    unsigned long long *threshold;
     struct {
         Real X2, Y2, Z2;
     } *m2;
     bool *convergent;
+#endif
     int width, height;
 } VirtualScreen;
 
@@ -49,10 +51,9 @@ VirtualScreen *newScreen(int width, int height) {
 
     result->renderCount = calloc(width * height, sizeof(*result->renderCount));
     if (result->renderCount == NULL) mallocFailedExit();
-
     result->mean = calloc(width * height, sizeof(*result->mean));
     if (result->mean == NULL) mallocFailedExit();
-
+#if defined(ADAPTIVE_RENDERING)
     // Welford's algorithm needs m2 to calculate variance
     // we calculate variance of x, y, z so that colors will be considered
     result->m2 = calloc(width * height, sizeof(*result->m2));
@@ -64,6 +65,7 @@ VirtualScreen *newScreen(int width, int height) {
 
     result->threshold = calloc(width * height, sizeof(*result->threshold));
     if (result->threshold == NULL) mallocFailedExit();
+#endif
 
     return result;
 }
@@ -104,6 +106,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->mean[i].Y += dY / n;
     vs->mean[i].Z += dZ / n;
 
+#if defined(ADAPTIVE_RENDERING)
     vs->m2[i].X2 += dX * (color.X - vs->mean[i].X);
     vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
     vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
@@ -113,6 +116,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
         vs->threshold[i]++;
     }
 
+#endif
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
 
@@ -128,6 +132,7 @@ static inline Real getSingleRelativeError(Real mean, Real m2, Real n) {
     return relativeError;
 }
 
+#if defined(ADAPTIVE_RENDERING)
 Real getRelativeError(VirtualScreen *vs, int x, int y) {
     // calculate sample standard deviation
     int i = getIndex(vs, x, y);
@@ -137,11 +142,11 @@ Real getRelativeError(VirtualScreen *vs, int x, int y) {
     Real relativeErrorZ = getSingleRelativeError(vs->mean[i].Z, vs->m2[i].Z2, n);
     return fmax(relativeErrorX, fmax(relativeErrorY, relativeErrorZ));
 }
-
 bool *accessConvergent(VirtualScreen *vs, int x, int y) {
     int i = getIndex(vs, x, y);
     return &vs->convergent[i];
 }
+#endif
 
 static inline Vector GGXVectorSample(MT19937 *mt, Real alpha) {
     Real u1 = randomReal(mt), u2 = randomReal(mt);
@@ -600,6 +605,7 @@ static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
 
+#if defined(ADAPTIVE_RENDERING)
 void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
                   int sampleThreshold) {
     bool *touchMap = newTouchMap(camera, vs, objects, sources);
@@ -634,6 +640,7 @@ bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
     int i = getIndex(vs, x, y);
     return vs->renderCount[i] >= vs->threshold[i];
 }
+#endif
 
 void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {

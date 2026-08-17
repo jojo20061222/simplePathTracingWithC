@@ -36,7 +36,7 @@ void renderToWindow(const char *windowTitle, Object **objects, LightSource **sou
     SDL_Event event;
     bool isRunning = true;
     Multithreads *mul =
-        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth, threshold);
+        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth);
 
     while (isRunning) {
         while (SDL_PollEvent(&event) != 0) {
@@ -68,7 +68,7 @@ void renderToPictures(const char *outputPath, Object **objects, LightSource **so
 
     bool isRunning = true;
     Multithreads *mul =
-        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth, threshold);
+        initMultithreads(vs, threadCount, objects, sources, camera, maxDepth);
 
     while (isRunning) {
         char input[1000];

@@ -6,8 +6,7 @@
 typedef struct Multithreads Multithreads;
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               LightSource **sources, Camera *camera, int maxDepth,
-                               int sampleThreshold);
+                               LightSource **sources, Camera *camera, int maxDepth);
 
 void destroyMultithreads(Multithreads *mul);
 

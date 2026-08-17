@@ -172,6 +172,7 @@ static void *worker(void *para) {
         int leftBoundary = range->leftBoundary;
         int rightBoundary = range->rightBoundary;
 
+#if defined(ADAPTIVE_RENDERING)
         for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 // in order to reduce cache miss rate we have but to do this :(
@@ -191,6 +192,7 @@ static void *worker(void *para) {
                 *accessConvergent(vs, x, y) = true;
             }
         }
+#endif
 
         TSQPush(taskQueue, range);
     }
@@ -202,8 +204,7 @@ static void *worker(void *para) {
 }
 
 Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **objects,
-                               LightSource **sources, Camera *camera, int maxDepth,
-                               int sampleThreshold) {
+                               LightSource **sources, Camera *camera, int maxDepth) {
     Multithreads *mul = malloc(sizeof(Multithreads));
     pthread_t *threadPool = malloc(sizeof(pthread_t) * threadCount);
 
@@ -215,9 +216,10 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
     *mul->exit = 0;
 
     int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
+#if defined(ADAPTIVE_RENDERING)
     // set render threshold for every pixel
-    setThreshold(camera, vs, objects, sources, sampleThreshold);
-
+    setThreshold(camera, vs, objects, sources, 64);
+#endif
     // here, we divide the screen into (blockCount) blocks
     // and push them into task queue for workers to work
     int blockCount = threadCount * 2;
