@@ -70,3 +70,25 @@ void destroyMT19937(MT19937 *mt) {
 }
 
 Real randomReal(MT19937 *mt) { return (Real)extractNumber(mt) / (Real)UINT_MAX; }
+
+uint32_t randomInt(MT19937 *mt, uint32_t n) {
+    // https://lemire.me/blog/2016/06/27/a-fast-alternative-to-the-modulo-reduction/
+    // this algorithm is essentially changing the division operation into multiplication to reduce
+    // time
+    /*
+     * The core idea is to see x as a float in [0, 1) and nx is uniformly distributed in [0, n - 1).
+     * However, the 
+     */
+    uint64_t m = extractNumber(mt) * (uint64_t)n;
+    uint32_t l = (uint32_t)m;
+
+    if (l < n) {
+        uint32_t t = -n % n; // 2^32 - n % n
+        while (l < t) {
+            m = extractNumber(mt) * (uint64_t)n;
+            l = (uint32_t)m;
+        }
+    }
+
+    return m >> 32;
+}
