@@ -17,7 +17,7 @@ int main() {
     Texture *whiteReflector =
         newOpaqueDieletric(getPlasticRefractivity, getAirRefractivity, 1, pureWhite);
     pushBack(&textures, whiteReflector, Texture *);
-    Texture *diamond = newDiamond(0);
+    Texture *diamond = newDiamond(0.01);
     pushBack(&textures, diamond, Texture *);
 
     Real startx = 0, endx = width;
