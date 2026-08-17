@@ -25,7 +25,7 @@ if [[ $# != 1 ]]; then
 fi
 
 
-optimizationFlags="-O2 -pthread -g -DDEBUG -flto -DDOUBLE_AS_REAL"
+optimizationFlags="-O2 -pthread -g -flto -DDOUBLE_AS_REAL"
 
 echo "all: $binaryPath/pathTracing"
 

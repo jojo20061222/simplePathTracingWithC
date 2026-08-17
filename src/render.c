@@ -24,7 +24,7 @@ typedef struct VirtualScreen {
     ScreenColor *buffer;
     unsigned long long *renderCount;
     ColorXYZ *mean;
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
     unsigned long long *threshold;
     struct {
         Real X2, Y2, Z2;
@@ -53,7 +53,7 @@ VirtualScreen *newScreen(int width, int height) {
     if (result->renderCount == NULL) mallocFailedExit();
     result->mean = calloc(width * height, sizeof(*result->mean));
     if (result->mean == NULL) mallocFailedExit();
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
     // Welford's algorithm needs m2 to calculate variance
     // we calculate variance of x, y, z so that colors will be considered
     result->m2 = calloc(width * height, sizeof(*result->m2));
@@ -106,7 +106,7 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->mean[i].Y += dY / n;
     vs->mean[i].Z += dZ / n;
 
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
     vs->m2[i].X2 += dX * (color.X - vs->mean[i].X);
     vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
     vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
@@ -132,7 +132,7 @@ static inline Real getSingleRelativeError(Real mean, Real m2, Real n) {
     return relativeError;
 }
 
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
 Real getRelativeError(VirtualScreen *vs, int x, int y) {
     // calculate sample standard deviation
     int i = getIndex(vs, x, y);
@@ -440,6 +440,21 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta,
     return F;
 }
 
+static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, ReversedRay ray,
+                                                 Point collidePoint, Object *firstCollideObject) {
+    
+    Vector local = cosineVectorSample(mt);
+    Vector nxtDirection = toWorld(local, N);
+    Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.wavelength);
+
+    // after diffusion the light should have the color of the material
+    Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
+    Real scalingFactor = baseColor;
+
+    return (NextSimulationData){scalingFactor, nxtRay};
+}
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor) {
     if (maxDepth == 0) return 0;
@@ -448,11 +463,11 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     // to attain that, we need to simulate both collide with sources and objects to decide which is
     // touched first.
 
-    SingleRayCollideResult result = singleRayCollide(objects, sources, ray);
-    CollideResult firstCollideObjectResult = result.firstCollideObjectResult;
-    Object *firstCollideObject = result.firstCollideObject;
-    CollideLightSourceResult firstCollideSourceResult = result.firstCollideSourceResult;
-    LightSource *firstCollideSource = result.firstCollideSource;
+    SingleRayCollideResult collideResult = singleRayCollide(objects, sources, ray);
+    CollideResult firstCollideObjectResult = collideResult.firstCollideObjectResult;
+    Object *firstCollideObject = collideResult.firstCollideObject;
+    CollideLightSourceResult firstCollideSourceResult = collideResult.firstCollideSourceResult;
+    LightSource *firstCollideSource = collideResult.firstCollideSource;
 
     // case 1: collide with nothing.
     if (firstCollideObject == NULL && firstCollideSource == NULL) {
@@ -511,10 +526,10 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
     bool metallic = getmetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta, firstCollideObject);
 
+    NextSimulationData nxt;
+
     // here we implement BSDF
     if (metallic || randomReal(mt) <= F) {
-        NextSimulationData nxt;
-
         if (roughness < error) {
             nxt = sampleSpecular(N, v, F, metallic, collidePoint, ray);
         }
@@ -525,62 +540,45 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         if (nxt.scalingFactor == 0) return 0;
 
         scalingFactor *= nxt.scalingFactor;
-
-        Real result = scalingFactor * simulateSingleRay(nxt.nxtRay, objects, sources, mt,
-                                                        maxDepth - 1, extinctionFactor);
-        return result;
     }
-
-    // note that we have returned in the if branch above
-    // so the left branch is 1 - F
-    bool transparent = getTransparent(firstCollideObject);
-
-    if (transparent) {
-        // Note that we have returned a value in reflection branch so the proabability of this
-        // branch is 1 - F
-        // There is no need to * (1 - F) in the result
-
-        NextSimulationData nxt;
-        if (roughness < error) {
-            nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
-        }
-        else {
-            nxt = sampleBTDF(N, v, m, alpha, collidePoint, ray, n1, n2);
-        }
-
-        if (nxt.scalingFactor == 0) return 0;
-
-        scalingFactor *= nxt.scalingFactor;
-
-        // calculate the extinction factor for next ray
-        // Beer-Lembert's Law
-        // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
-        Real sigma = 4 * M_PI * n2.I / ray.wavelength * 1e5;
-
-        Real result = scalingFactor *
-                      simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, sigma);
-
-        return result;
-    }
-
     else {
-        // Branch Diffusion, only non-transparent materials need to do this
-        Vector local = cosineVectorSample(mt);
-        Vector nxtDirection = toWorld(local, N);
-        Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-        ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.wavelength);
+        // the left branch is 1 - F
+        bool transparent = getTransparent(firstCollideObject);
 
-        // after diffusion the light should have the color of the material
-        Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
-        scalingFactor *= baseColor;
+        if (transparent) {
+            // Note that we have returned a value in reflection branch so the proabability of this
+            // branch is 1 - F
+            // There is no need to * (1 - F) in the result
 
-        return simulateSingleRay(nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor) *
-               scalingFactor;
+            if (roughness < error) {
+                nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
+            }
+            else {
+                nxt = sampleBTDF(N, v, m, alpha, collidePoint, ray, n1, n2);
+            }
+
+            if (nxt.scalingFactor == 0) return 0;
+
+            scalingFactor *= nxt.scalingFactor;
+
+            // calculate the extinction factor for next ray
+            // Beer-Lembert's Law
+            // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
+            extinctionFactor = 4 * M_PI * n2.I / ray.wavelength * 1e5;
+        }
+
+        else {
+            // Branch Diffusion, only non-transparent materials need to do this
+            nxt = sampleDiffusion(mt, N, ray, collidePoint, firstCollideObject);
+            scalingFactor *= nxt.scalingFactor;
+        }
     }
-    // should not be reached
-    return 0;
+
+    Real res = simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor);
+    return scalingFactor * res;
 }
 
+#if defined(ADAPTIVE_SAMPLING)
 // form a touch map before actual rendering
 // if a reversed ray touches an object then it's marked as true (touched)
 // otherwise it is marked as false
@@ -602,10 +600,11 @@ static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
 
     return touch;
 }
+#endif
 
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
 
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
 void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
                   int sampleThreshold) {
     bool *touchMap = newTouchMap(camera, vs, objects, sources);

@@ -161,9 +161,10 @@ static void *worker(void *para) {
     int rangeLength = width * height;
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
-
+#if defined(ADAPTIVE_SAMPLING)
     // the worker will update the status of pixels every (blockSize) times of loop
     int blockSize = 64;
+#endif
 
     while (*workerPara->exit == 0) {
         // here we get the data from the task queue
@@ -172,7 +173,7 @@ static void *worker(void *para) {
         int leftBoundary = range->leftBoundary;
         int rightBoundary = range->rightBoundary;
 
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
         for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
             for (int i = leftBoundary; i <= rightBoundary; i++) {
                 // in order to reduce cache miss rate we have but to do this :(
@@ -193,6 +194,10 @@ static void *worker(void *para) {
             }
         }
 #endif
+        for (int i = leftBoundary; i <= rightBoundary; i++) {
+            int x = getX(vs, i), y = getY(vs, i);
+            renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);
+        }
 
         TSQPush(taskQueue, range);
     }
@@ -216,7 +221,7 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
     *mul->exit = 0;
 
     int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
     // set render threshold for every pixel
     setThreshold(camera, vs, objects, sources, 64);
 #endif

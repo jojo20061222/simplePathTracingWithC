@@ -26,7 +26,7 @@ uint32_t getPixel(VirtualScreen *vs, int i);
 
 uint32_t *getBuffer(VirtualScreen *vs);
 
-#if defined(ADAPTIVE_RENDERING)
+#if defined(ADAPTIVE_SAMPLING)
 void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
                   int sampleThreshold);
 
