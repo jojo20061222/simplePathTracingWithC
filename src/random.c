@@ -76,14 +76,18 @@ uint32_t randomInt(MT19937 *mt, uint32_t n) {
     // this algorithm is essentially changing the division operation into multiplication to reduce
     // time
     /*
-     * The core idea is to see x as a float in [0, 1) and nx is uniformly distributed in [0, n - 1).
-     * However, the 
+     * When we calculate x % n we expect that every bucket has floor(x / n) numbers.
+     * However, the last r = x % n numbers will cause the first r bucket have one more numbers,
+     * which will cause error.
+     * So, to avoid that we calculate l, the lower 32 bit part of nx, to further verify the if it's
+     * in the range.
      */
-    uint64_t m = extractNumber(mt) * (uint64_t)n;
-    uint32_t l = (uint32_t)m;
+    uint64_t m = extractNumber(mt) * (uint64_t)n; // m = nx
+    uint32_t l = (uint32_t)m;                     //
 
-    if (l < n) {
-        uint32_t t = -n % n; // 2^32 - n % n
+    if (l < n) { // only when l is less then n it is possible to be out of range
+        // black magic. 2^32 - n === 2^32 mod n and it's faster than using 64-bit interger
+        uint32_t t = -n % n;
         while (l < t) {
             m = extractNumber(mt) * (uint64_t)n;
             l = (uint32_t)m;
