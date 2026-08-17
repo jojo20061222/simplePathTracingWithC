@@ -1,6 +1,7 @@
 #include "shapes.h"
 #include "base.h"
 #include "dynamicArray.h"
+#include "random.h"
 #include <assert.h>
 #include <math.h>
 #include <stdlib.h>
@@ -14,6 +15,7 @@
 typedef struct Shape {
     CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
     void (*destroySelf)(struct Shape *);
+    void (*randomPoint)(struct Shape *, Real *PDF, Point *point, MT19937 *mt);
 } Shape;
 
 typedef struct Triangle {
@@ -47,9 +49,10 @@ static inline CollideResult notCollide() {
     return (CollideResult){false, INFINITY, (Vector){0, 0, 0}};
 }
 
-static inline Shape getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *),
-                             void (*destroySelf)(Shape *)) {
-    return (Shape){detectCollide, destroySelf};
+static inline Shape
+getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *), void (*destroySelf)(Shape *),
+         void (*randomPoint)(struct Shape *, Real *PDF, Point *point, MT19937 *mt)) {
+    return (Shape){detectCollide, destroySelf, randomPoint};
 }
 
 static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
@@ -109,7 +112,7 @@ Shape *newTriangle(Point p1, Point p2, Point p3) {
         fprintf(stderr, "malloc tri failed\n");
         exit(1);
     }
-    tri->shape = getShape(detectTriangleCollide, destroyTriangle);
+    tri->shape = getShape(detectTriangleCollide, destroyTriangle, NULL);
     tri->p1 = p1;
     tri->p2 = p2;
     tri->p3 = p3;
@@ -153,13 +156,24 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
 
 static void destroySphere(Shape *self) { free(self); }
 
+// choose a ramdom point on sphere
+void randomPointOnSphere(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
+    Sphere *sph = (Sphere *)self;
+    Real u = randomReal(mt), v = randomReal(mt);
+    Real theta = 2 * M_PI * u;
+    Real z = 1 - 2 * v;
+    Real sinPhi = sqrt(1 - z * z);
+    Real x = sinPhi * rcos(theta), y = sinPhi * rsin(theta);
+    *point = (Point){x, y, z};
+}
+
 Shape *newSphere(Point center, Real radius) {
     Sphere *sph = malloc(sizeof(*sph));
     if (sph == NULL) {
         fprintf(stderr, "malloc sph failed\n");
         exit(1);
     }
-    sph->shape = getShape(detectSphereCollide, destroySphere);
+    sph->shape = getShape(detectSphereCollide, destroySphere, randomPointOnSphere);
     sph->center = center;
     sph->radius = radius;
     return (Shape *)sph;
@@ -226,7 +240,7 @@ Shape *newConvexPolygon(Point *vertexes) {
         fprintf(stderr, "malloc cp failed\n");
         exit(1);
     }
-    cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon);
+    cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon, NULL);
     cp->vertexes = newDynamicArray(getSize(vertexes), Point);
 
     int vertexesCount = getSize(cp->vertexes);
@@ -280,7 +294,7 @@ Shape *newGroup(Shape **elements) {
     }
     group->elements = newDynamicArray(getSize(elements), Shape *);
     memcpy(group->elements, elements, sizeof(Shape *) * getSize(elements));
-    group->shape = getShape(detectGroupCollide, destroyGroup);
+    group->shape = getShape(detectGroupCollide, destroyGroup, NULL);
     return (Shape *)group;
 }
 
