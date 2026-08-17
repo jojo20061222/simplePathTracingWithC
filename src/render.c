@@ -619,7 +619,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 
     // the light may comes from BRDF or diffusion branch
     Real BRDF = D * F * G / (4 * (NdotL) * (NdotV));
-    Real difussion
+    Real diffusion = NdotV; // the  
 
     return 0;
 }
