@@ -553,6 +553,13 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     return (NextSimulationData){scalingFactor, nxt.nxtRay};
 }
 
+static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
+                                       Object *firstCollideObject, LightSource **sources) {
+    int sourcesCount = getSize(sources);
+    
+    return 0;
+}
+
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
                                         bool directLight) {
@@ -587,7 +594,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // case 3: we collide with an object first
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
-            
+        
+
         scalingFactor *= BSDFnxt.scalingFactor;
         ray = BSDFnxt.nxtRay;
         directLight = false;
