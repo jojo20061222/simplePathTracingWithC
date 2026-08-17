@@ -78,7 +78,8 @@ build/render.o: src/render.c src/render.h src/base.h src/camera.h \
   src/dynamicArray.h src/lightSource.h src/object.h src/shapes.h \
   src/textures.h src/random.h
 	clang -o $@ -c $< -O2 -pthread -g -flto -DDOUBLE_AS_REAL
-build/shapes.o: src/shapes.c src/shapes.h src/base.h src/dynamicArray.h
+build/shapes.o: src/shapes.c src/shapes.h src/base.h src/dynamicArray.h \
+  src/random.h
 	clang -o $@ -c $< -O2 -pthread -g -flto -DDOUBLE_AS_REAL
 build/textures.o: src/textures.c src/textures.h src/base.h
 	clang -o $@ -c $< -O2 -pthread -g -flto -DDOUBLE_AS_REAL

@@ -399,10 +399,8 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
 }
 
 // calculate the F term
-static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta,
-                                  Object *firstCollideObject) {
+static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta, bool metallic) {
     Real cosThetaForF;
-    bool metallic = getmetallic(firstCollideObject);
 
     // check total internal reflection
     // if this is triggered, 100% goes into branch reflection
@@ -501,7 +499,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
     bool metallic = getmetallic(firstCollideObject);
-    Real F = getFresnelTerm(n1, n2, cosTheta, firstCollideObject);
+    Real F = getFresnelTerm(n1, n2, cosTheta, getmetallic(firstCollideObject));
 
     // here we implement BSDF
     NextSimulationData nxt;
@@ -553,10 +551,25 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     return (NextSimulationData){scalingFactor, nxt.nxtRay};
 }
 
+static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
+                        bool metallic, bool transparent) {
+    // we have to derive m by l, v
+    // first we need to check if this is reflection (or diffusion) or refraction
+
+    Vector m;
+    Real cosTheta = vecDot(m, v);
+    Real F = getFresnelTerm(n1, n2, cosTheta, metallic);
+
+    return 0;
+}
+
 static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
-                                       Object *firstCollideObject, LightSource **sources) {
+                                       Object *firstCollideObject, LightSource **sources,
+                                       MT19937 *mt) {
     int sourcesCount = getSize(sources);
-    
+    // randomly choose a light source in sources
+    LightSource *src = sources[randomInt(mt, sourcesCount)];
+
     return 0;
 }
 
@@ -592,9 +605,9 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
 
         // case 3: we collide with an object first
+
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
-        
 
         scalingFactor *= BSDFnxt.scalingFactor;
         ray = BSDFnxt.nxtRay;

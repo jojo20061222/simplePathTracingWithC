@@ -83,11 +83,12 @@ uint32_t randomInt(MT19937 *mt, uint32_t n) {
      * in the range.
      */
     uint64_t m = extractNumber(mt) * (uint64_t)n; // m = nx
-    uint32_t l = (uint32_t)m;                     //
+    uint32_t l = (uint32_t)m;                     // lower 32 bit of nx
 
     if (l < n) { // only when l is less then n it is possible to be out of range
-        // black magic. 2^32 - n === 2^32 mod n and it's faster than using 64-bit interger
-        uint32_t t = -n % n;
+        // black magic. -n is 2^32 - n in 32-bit unsigned number, and 2^32 - n === 2^32 mod n.
+        // it's faster than using 64-bit interger
+        uint32_t t = (-n) % n;
         while (l < t) {
             m = extractNumber(mt) * (uint64_t)n;
             l = (uint32_t)m;
