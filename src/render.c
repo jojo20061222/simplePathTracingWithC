@@ -456,7 +456,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Reversed
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth, Real extinctionFactor) {
+                                        MT19937 *mt, int maxDepth, Real extinctionFactor, bool directLight) {
     if (maxDepth == 0) return 0;
 
     // first we see if this light first touches a light source
@@ -574,7 +574,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
     }
 
-    Real res = simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor);
+    Real res = simulateSingleRay(nxt.nxtRay, objects, sources, mt, maxDepth - 1, extinctionFactor, false);
     return scalingFactor * res;
 }
 
@@ -662,7 +662,7 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
 
     initRay = getInitRay(camera, fixedX, fixedY, randomWavelength);
 
-    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth, 0);
+    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth, 0, true);
 
     if (!isfinite(intensityResult)) return;
 
