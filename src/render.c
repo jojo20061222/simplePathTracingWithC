@@ -74,6 +74,11 @@ void destroyScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->mean);
     free(screen->renderCount);
+#if defined(ADAPTIVE_SAMPLING)
+    free(screen->m2);
+    free(screen->convergent);
+    free(scaling->threshold);
+#endif
     free(screen);
     return;
 }
@@ -271,9 +276,9 @@ static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
             NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
 }
 
-static inline Real getGrometryTerm(Vector l, Vector v, Vector N, Real alpha) {
-    Real absNdotV = rabs(vecDot(N, v));
-    Real absNdotL = rabs(vecDot(N, l));
+static inline Real getGrometryTerm(Real NdotV, Real NdotL, Real alpha) {
+    Real absNdotV = rabs(NdotV);
+    Real absNdotL = rabs(NdotL);
     return 2 * absNdotV * absNdotL / getGeometryTermDenom(absNdotL, absNdotV, alpha);
 }
 
@@ -598,13 +603,11 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
         refract = true;
     }
 
-    Real cosTheta = vecDot(m, v);
-
     // F term
-    Real F = getFresnelTerm(n1, n2, cosTheta, metallic);
+    Real F = getFresnelTerm(n1, n2, MdotV, metallic);
 
     // G term
-    Real G = getGrometryTerm(l, v, N, alpha);
+    Real G = getGrometryTerm(NdotV, NdotL, alpha);
 
     // D term
     Real D = getNormalDistributionTerm(NdotM, alpha);
@@ -619,9 +622,10 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 
     // the light may comes from BRDF or diffusion branch
     Real BRDF = D * F * G / (4 * (NdotL) * (NdotV));
-    Real diffusion = NdotV; // the  
+    // the pdf of diffusion obeys cosine distribution so the overall f is cos(theta), or NdotV
+    Real diffusion = NdotV;
 
-    return 0;
+    return BRDF + diffusion * (1 - F);
 }
 
 static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
