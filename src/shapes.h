@@ -32,6 +32,6 @@ CollideResult detectCollide(Shape *shape, ReversedRay *ray);
 
 void destroyShape(Shape *shape);
 
-void randomPoint(Shape *shape, Real *PDF, Point *p, MT19937 *mt);
+void randomPoint(Shape *shape, Real *PDF, Point *p, Vector *normalVector, MT19937 *mt);
 
 #endif

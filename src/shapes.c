@@ -15,7 +15,7 @@
 typedef struct Shape {
     CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
     void (*destroySelf)(struct Shape *);
-    void (*randomPoint)(struct Shape *, Real *PDF, Point *point, MT19937 *mt);
+    void (*randomPoint)(struct Shape *, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt);
 } Shape;
 
 typedef struct Triangle {
@@ -51,7 +51,7 @@ static inline CollideResult notCollide() {
 
 static inline Shape
 getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *), void (*destroySelf)(Shape *),
-         void (*randomPoint)(struct Shape *, Real *PDF, Point *point, MT19937 *mt)) {
+         void (*randomPoint)(struct Shape *, Real *, Point *, Vector *, MT19937 *)) {
     return (Shape){detectCollide, destroySelf, randomPoint};
 }
 
@@ -157,7 +157,7 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
 static void destroySphere(Shape *self) { free(self); }
 
 // choose a ramdom point on sphere
-void randomPointOnSphere(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
+void randomPointOnSphere(Shape *self, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt) {
     Sphere *sph = (Sphere *)self;
     *PDF = 1 / (4 * M_PI * sph->radius * sph->radius); // 1 / (4 pi r^2)
     Real u = randomReal(mt), v = randomReal(mt);
@@ -165,7 +165,9 @@ void randomPointOnSphere(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
     Real z = 1 - 2 * v;
     Real sinPhi = sqrt(1 - z * z);
     Real x = sinPhi * rcos(theta), y = sinPhi * rsin(theta);
-    *point = (Point){x, y, z}; // <sqrt(1 - u^2) * cos(theta), sqrt(1 - u^2) * sin(theta), u>
+    Vector N = (Vector){x, y, z}; // <sqrt(1 - u^2) * cos(theta), sqrt(1 - u^2) * sin(theta), u>
+    *normalVector = N;
+    *point = vecAdd(sph->center, vecMultiply(sph->radius, N));
 }
 
 Shape *newSphere(Point center, Real radius) {
@@ -308,6 +310,6 @@ CollideResult detectCollide(Shape *self, ReversedRay *ray) {
 void destroyShape(Shape *self) { self->destroySelf(self); }
 
 // provide a uniform api to others to randomly choose a point on the surface
-void randomPoint(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
-    self -> randomPoint(self, PDF, point, mt);
+void randomPoint(Shape *self, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt) {
+    self->randomPoint(self, PDF, point, normalVector, mt);
 }

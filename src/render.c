@@ -660,9 +660,11 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
     Real randomPointPDF;
     Point point;
-    randomPoint(src->shape, &randomPointPDF, &point, mt);
+    Vector lightN;
+    
+    randomPoint(src->shape, &randomPointPDF, &point, &lightN, mt);
 
-    Vector v = ray.direction;
+    Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
     Vector N = firstCollideObjectResult->normalVector;
     Real roughness = getRoughness(firstCollideObject);
@@ -672,7 +674,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     if (distinguishRes == 0) { // invalid
         return 0;
     }
-    bool transmission = distinguishRes - 1;
+    bool transmission = distinguishRes - 1; // the light will transmission or not
 
     Point nxtStart = fixedNextStart(collidePoint, N, transmission);
     l = unitVector(vecMinus(point, nxtStart));
@@ -683,6 +685,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
     Real distance = lengthOf(vecMinus(point, nxtStart));
 
+    // visibility test
     for (int i = 0; i < getSize(objects); i++) {
         // any object on the path of light will block the ray
         if (collideObject(objects[i], &shadowRay).distance < distance - error) {
@@ -690,10 +693,9 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
         }
     }
 
-    Vector lightN;
     for (int i = 0; i < getSize(sources); i++) {
         if (sources[i] == src) {
-            lightN = collideLightSource(sources[i], &shadowRay).normalVector;
+            continue;
         }
         if (collideLightSource(sources[i], &shadowRay).distance < distance - error) {
             return 0;
@@ -701,8 +703,8 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     }
 
     // convert da to domega so that p(domega) = p(da) * jacobian
-    Real jacobian = distance * distance / vecDot(lightN, l); // |x|^2 / cos(theta)
-    return intensity * BSDFTerm / (randomPointPDF * jacobian) * vecDot(N, v);
+    Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
+    return intensity * BSDFTerm / (randomPointPDF * jacobian) * rabs(vecDot(N, l)) * scalingFactor;
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
@@ -737,7 +739,6 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
 
         // case 3: we collide with an object first
-        Real 
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
 
