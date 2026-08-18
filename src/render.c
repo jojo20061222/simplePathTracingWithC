@@ -594,7 +594,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 }
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
-                        bool metallic, bool transparent, bool refract) {
+                        bool metallic, bool transparent, bool transmission) {
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     Vector m;
@@ -602,7 +602,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Real NdotV = vecDot(N, v);
     Real NdotM, MdotL, MdotV;
 
-    if (refract) {                    // this means the light did not go through the surface
+    if (transmission) {                    // this means the light did not go through the surface
         m = unitVector(vecAdd(l, v)); // m is parallel to l + v
         NdotM = vecDot(N, m);
         MdotL = vecDot(m, l);
@@ -619,7 +619,6 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
         if (MdotL * MdotV >= -error || NdotM <= error) {
             return 0;
         }
-        refract = true;
     }
 
     // F term
@@ -631,7 +630,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     // D term
     Real D = getNormalDistributionTerm(NdotM, alpha);
 
-    if (refract) {
+    if (transmission) {
         // this means the ray must in the BTDF branch
         Real firstTerm = rabs(MdotL * MdotV / (NdotL * NdotV));
         Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (n2.R * MdotL + n1.R * MdotV);
@@ -671,23 +670,33 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     if (distinguishRes == 0) { // invalid
         return 0;
     }
-    bool refract = distinguishRes - 1;
+    bool transmission = distinguishRes - 1;
 
-    Point nxtStart = fixedNextStart(collidePoint, N, refract);
+    Point nxtStart = fixedNextStart(collidePoint, N, transmission);
     l = unitVector(vecMinus(point, nxtStart));
 
     Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, getmetallic(firstCollideObject),
-                         getTransparent(firstCollideObject), refract);
+                         getTransparent(firstCollideObject), transmission);
 
     ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
+    Real distance = lengthOf(vecMinus(point, nxtStart));
 
     for (int i = 0; i < getSize(objects); i++) {
-        if ()
+        // any object on the path of light will block the ray
+        if (collideObject(objects[i], &shadowRay).distance < distance - error) {
+            return 0;
+        }
     }
 
     for (int i = 0; i < getSize(sources); i++) {
-
+        if (sources[i] == src) continue;
+        if (collideLightSource(sources[i], &shadowRay).distance < distance - error) {
+            return 0;
+        }
     }
+    
+    Real jacobian = distance * distance;
+    
 
     return 0;
 }
