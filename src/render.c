@@ -331,7 +331,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
 static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, Point collidePoint,
                                                 ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
-    Vector nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    Vector nxtStart = fixedNextStart(collidePoint, N, false);
     ReversedRay nxtRay = getRay(nxtStart, l, currentRay.wavelength);
 
     return (NextSimulationData){F, nxtRay};
@@ -381,7 +381,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     // to multiply by 1 - F again.
     Real eta = n1R / n2R;
     Real scalingFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
-    Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
+    Point nxtStart = fixedNextStart(collidePoint, N, true);
     ReversedRay nxtRay = getRay(nxtStart, l, ray.wavelength);
 
     return (NextSimulationData){scalingFactor, nxtRay};
@@ -402,7 +402,7 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
 
     // we move a little bit from the surface so that the ray will not be captured by the same object
     // or surface again immediately
-    Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
+    Point nxtStart = fixedNextStart(collidePoint, N, true);
     ReversedRay nxtRay = getRay(nxtStart, l, ray.wavelength);
 
     Real eta = n1R / n2R;
@@ -673,16 +673,22 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     }
     bool refract = distinguishRes - 1;
 
-    Point nxtStart;
-    if (refract) {
-        nxtStart = vecAdd(collidePoint, vecMultiply(moveEpsilon, Vector a));
-    }
-    
+    Point nxtStart = fixedNextStart(collidePoint, N, refract);
+    l = unitVector(vecMinus(point, nxtStart));
 
     Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, getmetallic(firstCollideObject),
                          getTransparent(firstCollideObject), refract);
 
-    ReversedRay shadowRay = getRay(collidePoint, direction, ray.wavelength);
+    ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
+
+    for (int i = 0; i < getSize(objects); i++) {
+        if ()
+    }
+
+    for (int i = 0; i < getSize(sources); i++) {
+
+    }
+
     return 0;
 }
 
