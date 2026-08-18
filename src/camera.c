@@ -34,7 +34,7 @@ ReversedRay regularCameraMapFucntion(Camera *camera, Real x, Real y, Real wavele
     Real convertedX = lerp(0, data->width, x, data->startX, data->endX);
     Real convertedY = lerp(0, data->height, y, data->startY, data->endY);
     Point direction = vecMinus((Vector){convertedX, convertedY, data->z}, data->start);
-    return newRay(data->start, direction, wavelength);
+    return getRay(data->start, direction, wavelength);
 }
 
 /*

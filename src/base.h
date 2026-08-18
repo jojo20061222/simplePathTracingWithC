@@ -99,7 +99,7 @@ typedef struct {
     Real wavelength;
 } ReversedRay;
 
-static inline ReversedRay newRay(Point start, Vector direction, Real wavelength) {
+static inline ReversedRay getRay(Point start, Vector direction, Real wavelength) {
     return (ReversedRay){start, unitVector(direction), wavelength};
 }
 

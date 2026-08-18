@@ -3,6 +3,7 @@
 #include "lightSource.h"
 #include "object.h"
 #include "random.h"
+#include "shapes.h"
 #include <assert.h>
 #include <limits.h>
 #include <pthread.h>
@@ -313,7 +314,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     Vector nxtDirection = l;
     // to avoid collide with the same object again, we move a little from the collide point
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, currentRay.wavelength);
+    ReversedRay nxtRay = getRay(nxtStart, nxtDirection, currentRay.wavelength);
 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
@@ -325,7 +326,7 @@ static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, Poin
                                                 ReversedRay currentRay) {
     Vector l = vecMinus(vecMultiply(2 * vecDot(v, N), N), v);
     Vector nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, currentRay.wavelength);
+    ReversedRay nxtRay = getRay(nxtStart, l, currentRay.wavelength);
 
     return (NextSimulationData){F, nxtRay};
 }
@@ -375,7 +376,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     Real eta = n1R / n2R;
     Real scalingFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, ray.wavelength);
+    ReversedRay nxtRay = getRay(nxtStart, l, ray.wavelength);
 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
@@ -396,7 +397,7 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
     // we move a little bit from the surface so that the ray will not be captured by the same object
     // or surface again immediately
     Point nxtStart = vecAdd(collidePoint, vecMultiply(-1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, l, ray.wavelength);
+    ReversedRay nxtRay = getRay(nxtStart, l, ray.wavelength);
 
     Real eta = n1R / n2R;
 
@@ -451,7 +452,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Reversed
     Vector local = cosineVectorSample(mt);
     Vector nxtDirection = toWorld(local, N);
     Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
-    ReversedRay nxtRay = newRay(nxtStart, nxtDirection, ray.wavelength);
+    ReversedRay nxtRay = getRay(nxtStart, nxtDirection, ray.wavelength);
 
     // after diffusion the light should have the color of the material
     Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
@@ -622,27 +623,32 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 
     // the light may comes from BRDF or diffusion branch
     Real BRDF = D * F * G / (4 * (NdotL) * (NdotV));
-    // the pdf of diffusion obeys cosine distribution so the overall f is cos(theta), or NdotV
-    Real diffusion = NdotV;
+    // the pdf of diffusion obeys cosine distribution so the overall f is cos(theta) / pi
+    // or simply NdotV / pi
+    Real diffusion = NdotV / M_PI;
 
     return BRDF + diffusion * (1 - F);
 }
 
 static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
-                                       Object *firstCollideObject, LightSource **sources,
-                                       MT19937 *mt) {
+                                       Object *firstCollideObject, Point collidePoint, Object **objects,
+                                       LightSource **sources, MT19937 *mt, ReversedRay ray) {
     int sourcesCount = getSize(sources);
+    Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
     LightSource *src = sources[randomInt(mt, sourcesCount)];
+    Real randomPointPDF;
+    Point point;
+    randomPoint(src->shape, &randomPointPDF, &point, mt);
 
-    return 0;
+    ReversedRay shadowRay = getRay(collidePoint, direction, wavelength); return 0;
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
                                         bool directLight) {
     Real res = 0;
-    Real scalingFactor = 1;
+    Real BSDFFactor = 1;
 
     for (int i = 0; i < maxDepth; i++) {
         // first we see if this light first touches a light source
@@ -664,8 +670,8 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
             firstCollideSource != NULL) {
             Real travelingDistance = firstCollideSourceResult.distance;
-            scalingFactor *= rexp(-extinctionFactor * travelingDistance);
-            res = firstCollideSourceResult.intensity;
+            BSDFFactor *= rexp(-extinctionFactor * travelingDistance);
+            res += BSDFFactor * firstCollideSource->intensity(ray.wavelength);
             break;
         }
 
@@ -674,12 +680,12 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
 
-        scalingFactor *= BSDFnxt.scalingFactor;
+        BSDFFactor *= BSDFnxt.scalingFactor;
         ray = BSDFnxt.nxtRay;
         directLight = false;
     }
 
-    return scalingFactor * res;
+    return res;
 }
 
 #if defined(ADAPTIVE_SAMPLING)

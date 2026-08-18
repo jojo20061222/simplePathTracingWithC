@@ -304,5 +304,10 @@ CollideResult detectCollide(Shape *self, ReversedRay *ray) {
     return self->detectCollide(self, ray);
 }
 
-// provide a uniform apt to others to destroy a shape
+// provide a uniform api to others to destroy a shape
 void destroyShape(Shape *self) { self->destroySelf(self); }
+
+// provide a uniform api to others to randomly choose a point on the surface
+void randomPoint(Shape *self, Real *PDF, Point *point, MT19937 *mt) {
+    self -> randomPoint(self, PDF, point, mt);
+}
