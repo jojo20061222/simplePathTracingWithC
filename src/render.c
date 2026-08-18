@@ -600,7 +600,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 }
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
-                        Object *object, bool transmission) {
+                        Object *object, Real lambda, bool transmission) {
     bool metallic = getmetallic(object);
     bool transparent = getTransparent(object);
     // we have to derive m by l, v
@@ -636,11 +636,10 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
         if (MdotL * MdotV >= -error || NdotM <= error) {
             return 0;
         }
-        // check IOR
     }
 
-    // F term
-    Real F = getFresnelTerm(n1, n2, MdotV, metallic);
+    // F term (TIR is checked so no need to check again here)
+    Real F = getFresnelTerm(n1, n2, rabs(MdotV), metallic);
 
     // G term
     Real G = getGrometryTerm(NdotV, NdotL, alpha);
@@ -661,7 +660,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 
     if (!metallic && !transparent) {
         // the light may comes from BRDF or diffusion branch
-        Real diffusion = 1 / M_PI;
+        Real diffusion = getBaseColor(object, lambda) / M_PI;
         return BRDF + diffusion * (1 - F);
     }
 
@@ -719,8 +718,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Point nxtStart = fixedNextStart(collidePoint, N, transmission);
     l = unitVector(vecMinus(point, nxtStart));
 
-    Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, getmetallic(firstCollideObject),
-                         getTransparent(firstCollideObject), transmission);
+    Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, firstCollideObject, ray.wavelength, transmission);
 
     ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
     Real distance = lengthOf(vecMinus(point, nxtStart));
@@ -732,14 +730,25 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
 
-static inline Real NEE(ReversedRay *shadowRay, LightSource **sources) {
+static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources) {
     int sourcesSize = getSize(sources);
-    Real chooseTerm = sourcesSize; // PDF = 1 / n, 1 / PDF = n
+    Real selectSourceTerm =
+        sourcesSize; // PDF to select the specific source PDF = 1 / n, 1 / PDF = n
+
     SingleRayCollideSourceResult res = singleRayCollideSource(sources, shadowRay);
     Real distance = res.firstCollideSourceResult.distance;
+    Point collidePoint = vecAdd(shadowRay->start, vecMultiply(distance, shadowRay->direction));
+    LightSource *collideSource = res.firstCollideSource;
+
+    Vector lightN = NormalVectorOfPoint(collideSource->shape, collidePoint);
+    Real cosineTerm = rabs(1 / vecDot(lightN, shadowRay->direction));
+
+    Real surfaceTerm = PDFofPoint(collideSource->shape, collidePoint);
     
-    return 0;
+    return selectSourceTerm * distance * distance * surfaceTerm * cosineTerm;
 }
+
+static inline Real pBSDF() { return 0; }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
