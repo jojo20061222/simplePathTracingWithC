@@ -32,7 +32,7 @@ CollideResult detectCollide(Shape *shape, ReversedRay *ray);
 
 void destroyShape(Shape *shape);
 
-Point randomPoint(Shape *shape, MT19937*mt);
+Point randomPoint(Shape *shape, MT19937 *mt);
 
 Real PDFofPoint(Shape *self, Point point);
 

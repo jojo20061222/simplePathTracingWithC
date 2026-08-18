@@ -732,20 +732,24 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
 static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources) {
     int sourcesSize = getSize(sources);
-    Real selectSourceTerm =
-        sourcesSize; // PDF to select the specific source PDF = 1 / n, 1 / PDF = n
+    // PDF to select the specific source PDF = 1 / n
+    Real selectSourceTerm = 1.0 / (Real)sourcesSize;
 
     SingleRayCollideSourceResult res = singleRayCollideSource(sources, shadowRay);
+
+    LightSource *collideSource = res.firstCollideSource;
+    if (collideSource == NULL) return 0;
+
     Real distance = res.firstCollideSourceResult.distance;
     Point collidePoint = vecAdd(shadowRay->start, vecMultiply(distance, shadowRay->direction));
-    LightSource *collideSource = res.firstCollideSource;
 
     Vector lightN = NormalVectorOfPoint(collideSource->shape, collidePoint);
-    Real cosineTerm = rabs(1 / vecDot(lightN, shadowRay->direction));
+    Real cosineTerm = rabs(vecDot(lightN, shadowRay->direction));
+    if (cosineTerm < error) return 0;
 
     Real surfaceTerm = PDFofPoint(collideSource->shape, collidePoint);
-    
-    return selectSourceTerm * distance * distance * surfaceTerm * cosineTerm;
+
+    return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
 static inline Real pBSDF() { return 0; }
