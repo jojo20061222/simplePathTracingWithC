@@ -651,7 +651,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
                                        CollideResult *firstCollideObjectResult,
                                        Object *firstCollideObject, Point collidePoint,
                                        Object **objects, LightSource **sources, MT19937 *mt,
-                                       ReversedRay ray) {
+                                       ReversedRay ray, Real *pLight) {
     int sourcesCount = getSize(sources);
     Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
@@ -702,9 +702,10 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
         }
     }
 
-    // convert da to domega so that p(domega) = p(da) * jacobian
+    // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
     Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
-    return intensity * BSDFTerm / (randomPointPDF * jacobian) * rabs(vecDot(N, l)) * scalingFactor;
+    *pLight = randomPointPDF * jacobian / scalingFactor;
+    return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
