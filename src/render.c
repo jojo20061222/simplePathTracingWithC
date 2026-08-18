@@ -154,6 +154,13 @@ bool *accessConvergent(VirtualScreen *vs, int x, int y) {
 }
 #endif
 
+// to avoid collide with the same object again, we move a little from the collide point
+static inline Point fixedNextStart(Point curPoint, Vector N, bool transmission) {
+    static const Real moveEpsilon = 1e-4;
+    if (!transmission) return (Point)vecAdd(curPoint, vecMultiply(moveEpsilon, N));
+    return (Point)vecAdd(curPoint, vecMultiply(-moveEpsilon, N));
+}
+
 static inline Vector GGXVectorSample(MT19937 *mt, Real alpha) {
     Real u1 = randomReal(mt), u2 = randomReal(mt);
     Real theta = 2 * M_PI * u1;
@@ -312,8 +319,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     Real scalingFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
 
     Vector nxtDirection = l;
-    // to avoid collide with the same object again, we move a little from the collide point
-    Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    Point nxtStart = fixedNextStart(collidePoint, N, false);
     ReversedRay nxtRay = getRay(nxtStart, nxtDirection, currentRay.wavelength);
 
     return (NextSimulationData){scalingFactor, nxtRay};
@@ -446,12 +452,14 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta, bool me
     return F;
 }
 
+static const Real moveEpsilon = 1e-4;
+
 static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, ReversedRay ray,
                                                  Point collidePoint, Object *firstCollideObject) {
 
     Vector local = cosineVectorSample(mt);
     Vector nxtDirection = toWorld(local, N);
-    Point nxtStart = vecAdd(collidePoint, vecMultiply(1e-4, N));
+    Point nxtStart = vecAdd(collidePoint, vecMultiply(moveEpsilon, N));
     ReversedRay nxtRay = getRay(nxtStart, nxtDirection, ray.wavelength);
 
     // after diffusion the light should have the color of the material
@@ -568,20 +576,35 @@ static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
     return alpha2 / (M_PI * denomPart * denomPart);
 }
 
+/*
+ * A function that helps distinguish if this event is reflection or refraction, or, simply invalid
+ * Return 1 for reflection, 2 for refraction, 0 for invalid
+ */
+static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N, Real alpha) {
+    Real NdotL = vecDot(N, l);
+    Real NdotV = vecDot(N, v);
+    if (NdotL > error && NdotV > error) {
+        return 1; // reflection
+    }
+    else if (NdotL >= -error || NdotV <= error) { // check if light goes through the surface
+        return 0;                                 // invalid
+    }
+
+    return 2; // refraction
+}
+
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
-                        bool metallic, bool transparent) {
+                        bool metallic, bool transparent, bool refract) {
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     Vector m;
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
     Real NdotM, MdotL, MdotV;
-    bool refract;
 
-    if (NdotL > 0 && NdotV > 0) {     // this means the light did not go through the surface
+    if (refract) {                    // this means the light did not go through the surface
         m = unitVector(vecAdd(l, v)); // m is parallel to l + v
         NdotM = vecDot(N, m);
-        refract = false;
         MdotL = vecDot(m, l);
         MdotV = vecDot(m, v);
     }
@@ -590,15 +613,10 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
         Vector n2l = vecMultiply(n2.R, l);
         m = vecNegative(unitVector(vecAdd(n1v, n2l)));
         NdotM = vecDot(N, m);
-        // check if light goes through the surface
-        if (NdotL >= -error || NdotV <= error || NdotM <= error) {
-            return 0;
-        }
-
         MdotL = vecDot(m, l);
         MdotV = vecDot(m, v);
 
-        if (MdotL * MdotV >= -error) {
+        if (MdotL * MdotV >= -error || NdotM <= error) {
             return 0;
         }
         refract = true;
@@ -630,9 +648,11 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     return BRDF + diffusion * (1 - F);
 }
 
-static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
-                                       Object *firstCollideObject, Point collidePoint, Object **objects,
-                                       LightSource **sources, MT19937 *mt, ReversedRay ray) {
+static inline LightIntensity sampleNEE(Complex n1, Complex n2,
+                                       CollideResult *firstCollideObjectResult,
+                                       Object *firstCollideObject, Point collidePoint,
+                                       Object **objects, LightSource **sources, MT19937 *mt,
+                                       ReversedRay ray) {
     int sourcesCount = getSize(sources);
     Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
@@ -641,7 +661,29 @@ static inline LightIntensity sampleNEE(CollideResult *firstCollideObjectResult,
     Point point;
     randomPoint(src->shape, &randomPointPDF, &point, mt);
 
-    ReversedRay shadowRay = getRay(collidePoint, direction, wavelength); return 0;
+    Vector v = ray.direction;
+    Vector l = unitVector(vecMinus(point, collidePoint));
+    Vector N = firstCollideObjectResult->normalVector;
+    Real roughness = getRoughness(firstCollideObject);
+    Real alpha = roughness * roughness;
+
+    int distinguishRes = distinguishReflectionOrRefraction(l, v, N, alpha);
+    if (distinguishRes == 0) { // invalid
+        return 0;
+    }
+    bool refract = distinguishRes - 1;
+
+    Point nxtStart;
+    if (refract) {
+        nxtStart = vecAdd(collidePoint, vecMultiply(moveEpsilon, Vector a));
+    }
+    
+
+    Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, getmetallic(firstCollideObject),
+                         getTransparent(firstCollideObject), refract);
+
+    ReversedRay shadowRay = getRay(collidePoint, direction, ray.wavelength);
+    return 0;
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
