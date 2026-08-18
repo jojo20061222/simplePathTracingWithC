@@ -202,15 +202,12 @@ static inline Vector toWorld(Vector local, Vector N) {
 typedef struct {
     CollideResult firstCollideObjectResult;
     Object *firstCollideObject;
-    CollideLightSourceResult firstCollideSourceResult;
-    LightSource *firstCollideSource;
-} SingleRayCollideResult;
+} SingleRayCollideObjectResult;
 
-static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSource **sources,
-                                                      ReversedRay ray) {
+static inline SingleRayCollideObjectResult singleRayCollideObject(Object **objects,
+                                                                  ReversedRay ray) {
     // test the first object to touch, ignore light source
     int objectsCount = getSize(objects);
-    int sourcesCount = getSize(sources);
 
     CollideResult firstCollideObjectResult = {false, INFINITY};
     Object *firstCollideObject = NULL;
@@ -223,6 +220,17 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
         }
     }
 
+    return (SingleRayCollideObjectResult){firstCollideObjectResult, firstCollideObject};
+}
+
+typedef struct {
+    CollideLightSourceResult firstCollideSourceResult;
+    LightSource *firstCollideSource;
+} SingleRayCollideSourceResult;
+
+static inline SingleRayCollideSourceResult singleRayCollideSource(LightSource **sources,
+                                                                  ReversedRay ray) {
+    int sourcesCount = getSize(sources);
     // then we do the same on light source
     CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, 0};
     LightSource *firstCollideSource = NULL;
@@ -234,9 +242,7 @@ static inline SingleRayCollideResult singleRayCollide(Object **objects, LightSou
             firstCollideSource = sources[i];
         }
     }
-
-    return (SingleRayCollideResult){firstCollideObjectResult, firstCollideObject,
-                                    firstCollideSourceResult, firstCollideSource};
+    return (SingleRayCollideSourceResult){firstCollideSourceResult, firstCollideSource};
 }
 
 static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, Vector I,
@@ -647,6 +653,27 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     return BRDF + diffusion * (1 - F);
 }
 
+static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object **objects,
+                                  LightSource **sources, LightSource *src) {
+    // visibility test
+    for (int i = 0; i < getSize(objects); i++) {
+        // any object on the path of light will block the ray
+        if (collideObject(objects[i], shadowRay).distance < distance - error) {
+            return false;
+        }
+    }
+
+    for (int i = 0; i < getSize(sources); i++) {
+        if (sources[i] == src) {
+            continue;
+        }
+        if (collideLightSource(sources[i], shadowRay).distance < distance - error) {
+            return false;
+        }
+    }
+    return true;
+}
+
 static inline LightIntensity sampleNEE(Complex n1, Complex n2,
                                        CollideResult *firstCollideObjectResult,
                                        Object *firstCollideObject, Point collidePoint,
@@ -661,7 +688,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real randomPointPDF;
     Point point;
     Vector lightN;
-    
+
     randomPoint(src->shape, &randomPointPDF, &point, &lightN, mt);
 
     Vector v = vecNegative(ray.direction);
@@ -684,29 +711,15 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
     ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
     Real distance = lengthOf(vecMinus(point, nxtStart));
-
-    // visibility test
-    for (int i = 0; i < getSize(objects); i++) {
-        // any object on the path of light will block the ray
-        if (collideObject(objects[i], &shadowRay).distance < distance - error) {
-            return 0;
-        }
-    }
-
-    for (int i = 0; i < getSize(sources); i++) {
-        if (sources[i] == src) {
-            continue;
-        }
-        if (collideLightSource(sources[i], &shadowRay).distance < distance - error) {
-            return 0;
-        }
-    }
-
+    bool reach = visibilityTest(&shadowRay, distance, objects, sources, src);
+    if (!reach) return 0;
     // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
     Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
     *pLight = randomPointPDF * jacobian / scalingFactor;
     return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
+
+static inline Real NEE(Vector l, LightSource **sources) { int sourcesCount = getSize(sources); }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
@@ -719,11 +732,14 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // to attain that, we need to simulate both collide with sources and objects to decide which
         // is touched first.
 
-        SingleRayCollideResult collideResult = singleRayCollide(objects, sources, ray);
-        CollideResult firstCollideObjectResult = collideResult.firstCollideObjectResult;
-        Object *firstCollideObject = collideResult.firstCollideObject;
-        CollideLightSourceResult firstCollideSourceResult = collideResult.firstCollideSourceResult;
-        LightSource *firstCollideSource = collideResult.firstCollideSource;
+        SingleRayCollideObjectResult collideObjectResult = singleRayCollideObject(objects, ray);
+        CollideResult firstCollideObjectResult = collideObjectResult.firstCollideObjectResult;
+        Object *firstCollideObject = collideObjectResult.firstCollideObject;
+
+        SingleRayCollideSourceResult collideSourceResult = singleRayCollideSource(sources, ray);
+        CollideLightSourceResult firstCollideSourceResult =
+            collideSourceResult.firstCollideSourceResult;
+        LightSource *firstCollideSource = collideSourceResult.firstCollideSource;
 
         // case 1: collide with nothing.
         if (firstCollideObject == NULL && firstCollideSource == NULL) {
