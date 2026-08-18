@@ -600,7 +600,9 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 }
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
-                        bool metallic, bool transparent, bool transmission) {
+                        Object *object, bool transmission) {
+    bool metallic = getmetallic(object);
+    bool transparent = getTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     Vector m;
@@ -608,16 +610,25 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Real NdotV = vecDot(N, v);
     Real NdotM, MdotL, MdotV;
 
-    if (transmission) {               // this means the light did not go through the surface
+    if (!transmission) { // this means the light did not go through the surface
+        if (NdotL * NdotV <= error) return 0;
         m = unitVector(vecAdd(l, v)); // m is parallel to l + v
         NdotM = vecDot(N, m);
         MdotL = vecDot(m, l);
         MdotV = vecDot(m, v);
+
+        if (MdotL * MdotV <= error || NdotM <= error) {
+            return 0;
+        }
     }
     else {
+        if (NdotL * NdotV >= -error) return 0;
         Vector n1v = vecMultiply(n1.R, v);
         Vector n2l = vecMultiply(n2.R, l);
-        m = vecNegative(unitVector(vecAdd(n1v, n2l)));
+        m = unitVector(vecAdd(n1v, n2l));
+        if (vecDot(N, m) < 0) {
+            m = vecNegative(m);
+        }
         NdotM = vecDot(N, m);
         MdotL = vecDot(m, l);
         MdotV = vecDot(m, v);
@@ -625,6 +636,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
         if (MdotL * MdotV >= -error || NdotM <= error) {
             return 0;
         }
+        // check IOR
     }
 
     // F term
@@ -639,18 +651,21 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     if (transmission) {
         // this means the ray must in the BTDF branch
         Real firstTerm = rabs(MdotL * MdotV / (NdotL * NdotV));
-        Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (n2.R * MdotL + n1.R * MdotV);
+        Real secondTermDenom = n2.R * MdotL + n1.R * MdotV;
+        Real secondTerm = (n1.R * n1.R * D * (1 - F) * G) / (secondTermDenom * secondTermDenom);
         Real BTDF = firstTerm * secondTerm;
         return BTDF;
     }
 
-    // the light may comes from BRDF or diffusion branch
-    Real BRDF = D * F * G / (4 * (NdotL) * (NdotV));
-    // the pdf of diffusion obeys cosine distribution so the overall f is cos(theta) / pi
-    // or simply NdotV / pi
-    Real diffusion = NdotV / M_PI;
+    Real BRDF = D * F * G / rabs(4 * (NdotL) * (NdotV));
 
-    return BRDF + diffusion * (1 - F);
+    if (!metallic && !transparent) {
+        // the light may comes from BRDF or diffusion branch
+        Real diffusion = 1 / M_PI;
+        return BRDF + diffusion * (1 - F);
+    }
+
+    return BRDF;
 }
 
 static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object **objects,
@@ -719,8 +734,10 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
 static inline Real NEE(ReversedRay *shadowRay, LightSource **sources) {
     int sourcesSize = getSize(sources);
-    Real choosePDF = sourcesSize; // PDF = 1 / n, 1/PDF = n
+    Real chooseTerm = sourcesSize; // PDF = 1 / n, 1 / PDF = n
     SingleRayCollideSourceResult res = singleRayCollideSource(sources, shadowRay);
+    Real distance = res.firstCollideSourceResult.distance;
+    
     return 0;
 }
 
