@@ -48,6 +48,7 @@ Object 是一道光線真正互動的對象。使用 `newObject(...)`  方法創
 
 ### LightSource
 使用 `newLightSource(...)` 獲得一個新的光源。這個函數需要光源的形狀以及光源在各個頻段的強度（預設在 [lightSource.c](src/lightSource.h) 裡面有不同色溫的黑體輻射光譜強度）。
+1.7 版本追記
 
 如果你不喜歡預設的強度也可以像 [example.c](example.c) 裡面一樣創建一個新的光譜函數。
 

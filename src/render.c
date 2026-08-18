@@ -205,14 +205,14 @@ typedef struct {
 } SingleRayCollideObjectResult;
 
 static inline SingleRayCollideObjectResult singleRayCollideObject(Object **objects,
-                                                                  ReversedRay ray) {
+                                                                  ReversedRay *ray) {
     // test the first object to touch, ignore light source
     int objectsCount = getSize(objects);
 
     CollideResult firstCollideObjectResult = {false, INFINITY};
     Object *firstCollideObject = NULL;
     for (int i = 0; i < objectsCount; i++) {
-        CollideResult collideResult = collideObject(objects[i], &ray);
+        CollideResult collideResult = collideObject(objects[i], ray);
         if (!collideResult.collide) continue;
         if (collideResult.distance <= firstCollideObjectResult.distance) {
             firstCollideObjectResult = collideResult;
@@ -229,13 +229,13 @@ typedef struct {
 } SingleRayCollideSourceResult;
 
 static inline SingleRayCollideSourceResult singleRayCollideSource(LightSource **sources,
-                                                                  ReversedRay ray) {
+                                                                  ReversedRay *ray) {
     int sourcesCount = getSize(sources);
     // then we do the same on light source
     CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, 0};
     LightSource *firstCollideSource = NULL;
     for (int i = 0; i < sourcesCount; i++) {
-        CollideLightSourceResult collideResult = collideLightSource(sources[i], &ray);
+        CollideLightSourceResult collideResult = collideLightSource(sources[i], ray);
         if (!collideResult.collide) continue;
         if (collideResult.distance <= firstCollideSourceResult.distance) {
             firstCollideSourceResult = collideResult;
@@ -685,11 +685,9 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     LightSource *src = sources[randomInt(mt, sourcesCount)];
     LightIntensity intensity = src->intensity(ray.wavelength);
 
-    Real randomPointPDF;
-    Point point;
-    Vector lightN;
-
-    randomPoint(src->shape, &randomPointPDF, &point, &lightN, mt);
+    Point point = randomPoint(src->shape, mt);
+    Real randomPointPDF = PDFofPoint(src->shape, point);
+    Vector lightN = NormalVectorOfPoint(src->shape, point);
 
     Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
@@ -715,11 +713,16 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     if (!reach) return 0;
     // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
     Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
-    *pLight = randomPointPDF * jacobian / scalingFactor;
+    *pLight = randomPointPDF * jacobian / scalingFactor; // prevent multiple times of calculation
     return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
 
-static inline Real NEE(Vector l, LightSource **sources) { int sourcesCount = getSize(sources); }
+static inline Real NEE(ReversedRay *shadowRay, LightSource **sources) {
+    int sourcesSize = getSize(sources);
+    Real choosePDF = sourcesSize; // PDF = 1 / n, 1/PDF = n
+    SingleRayCollideSourceResult res = singleRayCollideSource(sources, shadowRay);
+    return 0;
+}
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
@@ -732,11 +735,11 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         // to attain that, we need to simulate both collide with sources and objects to decide which
         // is touched first.
 
-        SingleRayCollideObjectResult collideObjectResult = singleRayCollideObject(objects, ray);
+        SingleRayCollideObjectResult collideObjectResult = singleRayCollideObject(objects, &ray);
         CollideResult firstCollideObjectResult = collideObjectResult.firstCollideObjectResult;
         Object *firstCollideObject = collideObjectResult.firstCollideObject;
 
-        SingleRayCollideSourceResult collideSourceResult = singleRayCollideSource(sources, ray);
+        SingleRayCollideSourceResult collideSourceResult = singleRayCollideSource(sources, &ray);
         CollideLightSourceResult firstCollideSourceResult =
             collideSourceResult.firstCollideSourceResult;
         LightSource *firstCollideSource = collideSourceResult.firstCollideSource;

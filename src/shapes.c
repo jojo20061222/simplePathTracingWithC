@@ -15,7 +15,9 @@
 typedef struct Shape {
     CollideResult (*detectCollide)(struct Shape *, ReversedRay *);
     void (*destroySelf)(struct Shape *);
-    void (*randomPoint)(struct Shape *, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt);
+    Point (*randomPoint)(struct Shape *, MT19937 *mt);
+    Real (*PDFofPoint)(struct Shape *, Point point);
+    Vector (*NormalVectorOfPoint)(struct Shape *, Point point);
 } Shape;
 
 typedef struct Triangle {
@@ -49,10 +51,11 @@ static inline CollideResult notCollide() {
     return (CollideResult){false, INFINITY, (Vector){0, 0, 0}};
 }
 
-static inline Shape
-getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *), void (*destroySelf)(Shape *),
-         void (*randomPoint)(struct Shape *, Real *, Point *, Vector *, MT19937 *)) {
-    return (Shape){detectCollide, destroySelf, randomPoint};
+static inline Shape getShape(CollideResult (*detectCollide)(Shape *, ReversedRay *),
+                             void (*destroySelf)(Shape *), Point (*randomPoint)(Shape *, MT19937 *),
+                             Real (*PDFofPoint)(Shape *, Point),
+                             Vector (*NormalVectorOfPoint)(Shape *, Point)) {
+    return (Shape){detectCollide, destroySelf, randomPoint, PDFofPoint, NormalVectorOfPoint};
 }
 
 static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
@@ -106,13 +109,14 @@ static CollideResult detectTriangleCollide(Shape *self, ReversedRay *ray) {
 
 static void destroyTriangle(Shape *self) { free(self); }
 
+// Triangle cannot be used as light source
 Shape *newTriangle(Point p1, Point p2, Point p3) {
     Triangle *tri = malloc(sizeof(*tri));
     if (tri == NULL) {
         fprintf(stderr, "malloc tri failed\n");
         exit(1);
     }
-    tri->shape = getShape(detectTriangleCollide, destroyTriangle, NULL);
+    tri->shape = getShape(detectTriangleCollide, destroyTriangle, NULL, NULL, NULL);
     tri->p1 = p1;
     tri->p2 = p2;
     tri->p3 = p3;
@@ -157,26 +161,26 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
 static void destroySphere(Shape *self) { free(self); }
 
 // choose a ramdom point on sphere
-void randomPointOnSphere(Shape *self, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt) {
+Point randomPointOnSphere(Shape *self, MT19937 *mt) {
     Sphere *sph = (Sphere *)self;
-    *PDF = 1 / (4 * M_PI * sph->radius * sph->radius); // 1 / (4 pi r^2)
     Real u = randomReal(mt), v = randomReal(mt);
     Real theta = 2 * M_PI * u;
     Real z = 1 - 2 * v;
     Real sinPhi = sqrt(1 - z * z);
     Real x = sinPhi * rcos(theta), y = sinPhi * rsin(theta);
-    Vector N = (Vector){x, y, z}; // <sqrt(1 - u^2) * cos(theta), sqrt(1 - u^2) * sin(theta), u>
-    *normalVector = N;
-    *point = vecAdd(sph->center, vecMultiply(sph->radius, N));
+    Vector N = (Vector){x, y, z};
+    return vecAdd(sph->center, vecMultiply(sph->radius, N));
 }
 
+// sphere can be used in light source
 Shape *newSphere(Point center, Real radius) {
     Sphere *sph = malloc(sizeof(*sph));
     if (sph == NULL) {
         fprintf(stderr, "malloc sph failed\n");
         exit(1);
     }
-    sph->shape = getShape(detectSphereCollide, destroySphere, randomPointOnSphere);
+    // TODO: replace NULL here
+    sph->shape = getShape(detectSphereCollide, destroySphere, randomPointOnSphere, NULL, NULL);
     sph->center = center;
     sph->radius = radius;
     return (Shape *)sph;
@@ -237,13 +241,14 @@ static void destroyConvexPolygon(Shape *self) {
     free(self);
 }
 
+// convex polygon cannot be used in light source
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
     if (cp == NULL) {
         fprintf(stderr, "malloc cp failed\n");
         exit(1);
     }
-    cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon, NULL);
+    cp->shape = getShape(detectConvexPolygonCollide, destroyConvexPolygon, NULL, NULL, NULL);
     cp->vertexes = newDynamicArray(getSize(vertexes), Point);
 
     int vertexesCount = getSize(cp->vertexes);
@@ -289,6 +294,7 @@ void destroyGroup(Shape *self) {
     free(group);
 }
 
+// group cannot be used in light source
 Shape *newGroup(Shape **elements) {
     Group *group = malloc(sizeof(*group));
     if (group == NULL) {
@@ -297,7 +303,7 @@ Shape *newGroup(Shape **elements) {
     }
     group->elements = newDynamicArray(getSize(elements), Shape *);
     memcpy(group->elements, elements, sizeof(Shape *) * getSize(elements));
-    group->shape = getShape(detectGroupCollide, destroyGroup, NULL);
+    group->shape = getShape(detectGroupCollide, destroyGroup, NULL, NULL, NULL);
     return (Shape *)group;
 }
 
@@ -310,6 +316,12 @@ CollideResult detectCollide(Shape *self, ReversedRay *ray) {
 void destroyShape(Shape *self) { self->destroySelf(self); }
 
 // provide a uniform api to others to randomly choose a point on the surface
-void randomPoint(Shape *self, Real *PDF, Point *point, Vector *normalVector, MT19937 *mt) {
-    self->randomPoint(self, PDF, point, normalVector, mt);
+Point randomPoint(Shape *self, MT19937 *mt) { return self->randomPoint(self, mt); }
+
+// provide a uniform api to others to get pdf of a point on surface from the shape
+Real PDFofPoint(Shape *self, Point point) { return self->PDFofPoint(self, point); }
+
+// provide a uniform api to others to get normal vector of a point on surface from the shape
+Vector NormalVectorOfPoint(Shape *self, Point point) {
+    return self->NormalVectorOfPoint(self, point);
 }
