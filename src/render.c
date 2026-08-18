@@ -602,7 +602,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Real NdotV = vecDot(N, v);
     Real NdotM, MdotL, MdotV;
 
-    if (transmission) {                    // this means the light did not go through the surface
+    if (transmission) {               // this means the light did not go through the surface
         m = unitVector(vecAdd(l, v)); // m is parallel to l + v
         NdotM = vecDot(N, m);
         MdotL = vecDot(m, l);
@@ -656,6 +656,8 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
     LightSource *src = sources[randomInt(mt, sourcesCount)];
+    LightIntensity intensity = src->intensity(ray.wavelength);
+
     Real randomPointPDF;
     Point point;
     randomPoint(src->shape, &randomPointPDF, &point, mt);
@@ -688,17 +690,19 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
         }
     }
 
+    Vector lightN;
     for (int i = 0; i < getSize(sources); i++) {
-        if (sources[i] == src) continue;
+        if (sources[i] == src) {
+            lightN = collideLightSource(sources[i], &shadowRay).normalVector;
+        }
         if (collideLightSource(sources[i], &shadowRay).distance < distance - error) {
             return 0;
         }
     }
-    
-    Real jacobian = distance * distance;
-    
 
-    return 0;
+    // convert da to domega so that p(domega) = p(da) * jacobian
+    Real jacobian = distance * distance / vecDot(lightN, l); // |x|^2 / cos(theta)
+    return intensity * BSDFTerm / (randomPointPDF * jacobian) * vecDot(N, v);
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
@@ -733,7 +737,7 @@ static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, Light
         }
 
         // case 3: we collide with an object first
-
+        Real 
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
 

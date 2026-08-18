@@ -5,9 +5,9 @@
 #include "random.h"
 
 typedef struct {
-    bool collide;
-    Real distance;
-    Vector normalVector;
+    bool collide;        // if the ray collide the shape
+    Real distance;       // the distance between the start of the ray and the collide point
+    Vector normalVector; // the normal vector of the surface on the collide point
 } CollideResult;
 
 typedef struct Shape Shape;
