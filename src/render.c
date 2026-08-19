@@ -525,6 +525,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     NextSimulationData nxt;
 
     if (metallic || randomReal(mt) <= F) {
+        // to prevent dividing by 0 error when divided by branch PDF
+        if (F < error) return notCollideData;
         if (roughness < error) {
             nxt = sampleSpecular(N, v, F, collidePoint, ray);
         }
@@ -540,6 +542,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     }
     else {
         // the left branch is 1 - F
+        // to prevent dividing by 0 error when divided by branch PDF
+        if (1 - F < error) return notCollideData; // 
         bool transparent = getTransparent(firstCollideObject);
 
         if (transparent) {
@@ -585,18 +589,15 @@ static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
  * Return 1 for reflection, 2 for refraction, 0 for invalid
  */
 static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N) {
-    if (vecDot(N, l) < 0) {
-        N = vecNegative(N);
-    }
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
-    if (NdotL > error && NdotV > error) {
+    if (NdotL * NdotV > error) {
         return 1; // reflection
     }
-    else if (NdotL >= -error || NdotV <= error) {
-        return 0; // invalid if the light and the surface is near parallel
+    else if (NdotL * NdotV < error) {
+        return 2; 
     }
-    return 2; // refraction
+    return 0; // invalid if the light and the surface are too close
 }
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
@@ -735,6 +736,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
 
+// PDF of NEE on every direction, will be called by sample BSDF
 static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
                         SingleRayCollideSourceResult *res) {
     int sourcesSize = getSize(sources);
@@ -756,6 +758,7 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
+// PDF of BSDF on every direction, will be called by sample NEE
 static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
                          Vector N, Real lambda) {
 
