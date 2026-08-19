@@ -758,8 +758,26 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
-static inline Real pBSDF(Object *collideObject, Vector N, Vector l, Vector v) {
-    
+static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
+                         Vector N) {
+    int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
+    if (distinguishRes == 0) return 0; // invalid
+    bool transmission = distinguishRes - 1;
+    Vector m;
+    if (transmission) {
+        Vector n1v = vecMultiply(n1.R, v);
+        Vector n2l = vecMultiply(n2.R, l);
+        m = unitVector(vecAdd(n1v, n2l));
+    }
+    else {
+        m = unitVector(vecAdd(v, l));
+    }
+    Real MdotL = vecDot(m, l);
+    Real MdotV = vecDot(m, v);
+    Real NdotM = vecDot(m, N);
+    if (NdotM < error || MdotV > -error || MdotL < error) {
+        
+    }
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
