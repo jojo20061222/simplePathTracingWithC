@@ -43,3 +43,5 @@ bool getmetallic(Object *self) { return getTexturemetallic(self->texture); }
 bool getTransparent(Object *self) { return getTextureTransparent(self->texture); }
 
 Real getBaseColor(Object *self, Real lambda) { return getTextureBaseColor(self->texture, lambda); }
+
+Vector getNormalVector(Object *self, Point p) { return NormalVectorOfPoint(self->shape, p); }

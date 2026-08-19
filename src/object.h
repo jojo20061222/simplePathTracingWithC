@@ -26,4 +26,6 @@ bool getTransparent(Object *self);
 
 Real getBaseColor(Object *self, Real lambda);
 
+Vector getNormalVector(Object *self, Point p);
+
 #endif

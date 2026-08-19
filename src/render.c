@@ -587,6 +587,9 @@ static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
  * Return 1 for reflection, 2 for refraction, 0 for invalid
  */
 static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N) {
+    if (vecDot(N, l) < 0) {
+        N = vecNegative(N);
+    }
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
     if (NdotL > error && NdotV > error) {
@@ -707,7 +710,8 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
     Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
-    // in BSDF the function will flip the normal vector based on (N dot l) so no need to flip here
+    // in BSDF and distinguishReclectionOrRefraction the functions will flip the normal vector based
+    // on (N dot l) so no need to flip here
     Vector N = firstCollideObjectResult->normalVector;
     Real roughness = getRoughness(firstCollideObject);
     Real alpha = roughness * roughness;
@@ -754,7 +758,9 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
-static inline Real pBSDF(ReversedRay *shadowRay, Object *firstCollideObject) { Vector N; }
+static inline Real pBSDF(Object *collideObject, Vector N, Vector l, Vector v) {
+    
+}
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
