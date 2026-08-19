@@ -322,7 +322,7 @@ static inline NextSimulationData sampleBRDF(Vector m, Vector v, Vector N, Real a
     // calculating 4 * Fterm * Vterm * (N dot L) * (V dot H) / (N dot H)
     // Using highly-correlated Smith's model
     Real denom = getGeometryTermDenom(NdotL, NdotV, alpha);
-    Real scalingFactor = (2.0 * NdotL * MdotV) / (denom * NdotM);
+    Real scalingFactor = F * (2.0 * NdotL * MdotV) / (denom * NdotM);
 
     Vector nxtDirection = l;
     Point nxtStart = fixedNextStart(collidePoint, N, false);
@@ -343,7 +343,7 @@ static inline NextSimulationData sampleSpecular(Vector N, Vector v, Real F, Poin
     return (NextSimulationData){F, nxtRay};
 }
 
-static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real alpha,
+static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real alpha, Real F,
                                             Point collidePoint, ReversedRay ray, Complex n1,
                                             Complex n2) {
     // BTDF
@@ -382,11 +382,9 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     Real GTermDenom = getGeometryTermDenom(absNdotL, NdotV, alpha);
     Real GTerm = (2 * NdotV * absNdotL) / GTermDenom;
 
-    // final factor is (m dot v)G(1-F) / (n dot v * n dot m), however we have times 1 - F by simply
-    // throwing a dice that has opportunity of 1 - F to get in to this branch. So, there is no need
-    // to multiply by 1 - F again.
+    // final factor is (m dot v)G(1-F) / (n dot v * n dot m)
     Real eta = n1R / n2R;
-    Real scalingFactor = eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
+    Real scalingFactor = (1 - F) * eta * eta * (absMdotV * GTerm) / (NdotV * NdotM);
     Point nxtStart = fixedNextStart(collidePoint, N, true);
     ReversedRay nxtRay = getRay(nxtStart, l, ray.wavelength);
 
@@ -432,7 +430,7 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta) {
         Real n2R2 = n2.R * n2.R;
         Real sin2Theta = 1 - cosTheta * cosTheta;
         if (n1R2 * sin2Theta >= n2R2) {
-            cosThetaForF = 0;
+            return 1; // TIR means 100% of light reflects
         }
         else {
             // use angle of refraction instead
@@ -460,7 +458,7 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta) {
 
 static const Real moveEpsilon = 1e-4;
 
-static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, ReversedRay ray,
+static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, ReversedRay ray,
                                                  Point collidePoint, Object *firstCollideObject) {
 
     Vector local = cosineVectorSample(mt);
@@ -470,7 +468,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Reversed
 
     // after diffusion the light should have the color of the material
     Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
-    Real scalingFactor = baseColor;
+    Real scalingFactor = baseColor * (1 - F);
 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
@@ -538,7 +536,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
         scalingFactor *= nxt.scalingFactor;
         // since metallic texture won't go into the 1 - F branch so we do have to * F
-        if (metallic) scalingFactor *= F;
+        if (!metallic) scalingFactor /= F;
     }
     else {
         // the left branch is 1 - F
@@ -552,12 +550,12 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
                 nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
             }
             else {
-                nxt = sampleBTDF(N, v, m, alpha, collidePoint, ray, n1, n2);
+                nxt = sampleBTDF(N, v, m, alpha, F, collidePoint, ray, n1, n2);
             }
 
             if (nxt.scalingFactor == 0) return notCollideData;
 
-            scalingFactor *= nxt.scalingFactor;
+            scalingFactor *= nxt.scalingFactor / (1 - F);
 
             // calculate the extinction factor for next ray
             // Beer-Lembert's Law
@@ -567,8 +565,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
         else {
             // Branch Diffusion, only non-transparent materials need to do this
-            nxt = sampleDiffusion(mt, N, ray, collidePoint, firstCollideObject);
-            scalingFactor *= nxt.scalingFactor;
+            nxt = sampleDiffusion(mt, N, F, ray, collidePoint, firstCollideObject);
+            scalingFactor *= nxt.scalingFactor / (1 - F);
         }
     }
 
@@ -812,7 +810,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
         Real denom = 4 * rabs(MdotL);
         Real pdfSpecular = nom / denom;
 
-        // for dieletic matirials 
+        // for dieletic matirials
         if (!getmetallic(collideObject) && !transparent) {
             Real pdfDiffuse = rabs(vecDot(N, l)) / M_PI;
             // PDF(branch specular) + PDF(branch diffuse)
