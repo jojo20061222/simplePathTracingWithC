@@ -586,16 +586,15 @@ static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
  * A function that helps distinguish if this event is reflection or refraction, or, simply invalid
  * Return 1 for reflection, 2 for refraction, 0 for invalid
  */
-static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N, Real alpha) {
+static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N) {
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
     if (NdotL > error && NdotV > error) {
         return 1; // reflection
     }
-    else if (NdotL >= -error || NdotV <= error) { // check if light goes through the surface
-        return 0;                                 // invalid
+    else if (NdotL >= -error || NdotV <= error) {
+        return 0; // invalid if the light and the surface is near parallel
     }
-
     return 2; // refraction
 }
 
@@ -605,6 +604,9 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     bool transparent = getTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
+    if (vecDot(N, l) < 0) {
+        N = vecNegative(N);
+    }
     Vector m;
     Real NdotL = vecDot(N, l);
     Real NdotV = vecDot(N, v);
@@ -705,11 +707,12 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
     Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
+    // in BSDF the function will flip the normal vector based on (N dot l) so no need to flip here
     Vector N = firstCollideObjectResult->normalVector;
     Real roughness = getRoughness(firstCollideObject);
     Real alpha = roughness * roughness;
 
-    int distinguishRes = distinguishReflectionOrRefraction(l, v, N, alpha);
+    int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) { // invalid
         return 0;
     }
@@ -730,17 +733,16 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
 }
 
-static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources) {
+static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
+                        SingleRayCollideSourceResult *res) {
     int sourcesSize = getSize(sources);
     // PDF to select the specific source PDF = 1 / n
     Real selectSourceTerm = 1.0 / (Real)sourcesSize;
 
-    SingleRayCollideSourceResult res = singleRayCollideSource(sources, shadowRay);
-
-    LightSource *collideSource = res.firstCollideSource;
+    LightSource *collideSource = res->firstCollideSource;
     if (collideSource == NULL) return 0;
 
-    Real distance = res.firstCollideSourceResult.distance;
+    Real distance = res->firstCollideSourceResult.distance;
     Point collidePoint = vecAdd(shadowRay->start, vecMultiply(distance, shadowRay->direction));
 
     Vector lightN = NormalVectorOfPoint(collideSource->shape, collidePoint);
@@ -752,9 +754,7 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources) {
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
-static inline Real pBSDF() {
-    
-}
+static inline Real pBSDF(ReversedRay *shadowRay, Object *firstCollideObject) { Vector N; }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
