@@ -759,14 +759,16 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
 }
 
 static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
-                         Vector N) {
+                         Vector N, Real lambda) {
 
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
+    bool transparent = getTransparent(collideObject);
+    bool metallic = getmetallic(collideObject);
     Vector m;
     if (transmission) {
-        if (!getTransparent(collideObject)) {
+        if (!transparent) {
             // if the object is not transparent, then tranmission is not possible
             return 0;
         }
@@ -777,6 +779,10 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     else {
         m = unitVector(vecAdd(v, l));
     }
+    if (vecDot(N, m) < 0) {
+        m = vecNegative(m);
+    }
+
     Real MdotL = vecDot(m, l);
     Real MdotV = vecDot(m, v);
     Real NdotM = vecDot(m, N);
@@ -791,7 +797,9 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
             // if it did not, then reject
             return 0;
         }
-        return D 
+        Real nom = (1 - F) * D * rabs(NdotM) * n2.R * n2.R * rabs(MdotL);
+        Real denomPart = (n1.R * MdotV + n2.R * MdotL);
+        return nom / (denomPart * denomPart);
     }
     else {
         // check if the light goes through the microfacet
@@ -799,7 +807,22 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
             // if it did, then reject
             return 0;
         }
+        Real pdfBranch = metallic ? 1 : F;
+        Real nom = D * rabs(NdotM);
+        Real denom = 4 * rabs(MdotL);
+        Real pdfSpecular = nom / denom;
+
+        // for dieletic matirials 
+        if (!getmetallic(collideObject) && !transparent) {
+            Real pdfDiffuse = rabs(vecDot(N, l)) / M_PI;
+            // PDF(branch specular) + PDF(branch diffuse)
+            return pdfBranch * pdfSpecular + (1 - F) * pdfDiffuse;
+        }
+
+        return pdfBranch * pdfSpecular;
     }
+
+    return 0; // should not be reached
 }
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
