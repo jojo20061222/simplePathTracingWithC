@@ -419,13 +419,13 @@ static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point coll
 }
 
 // calculate the F term
-static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta, bool metallic) {
+static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta) {
     Real cosThetaForF;
 
     // check total internal reflection
     // if this is triggered, 100% goes into branch reflection
     // metal is neglected since metals won't refract or diffuse
-    if (!metallic && n1.R > n2.R) {
+    if (n1.R > n2.R) {
         // TIR need n1 sinTheta >= n2
         // or squared n1^2 sin^2Theta >= n2^2
         Real n1R2 = n1.R * n1.R;
@@ -521,7 +521,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
     bool metallic = getmetallic(firstCollideObject);
-    Real F = getFresnelTerm(n1, n2, cosTheta, getmetallic(firstCollideObject));
+    Real F = getFresnelTerm(n1, n2, cosTheta);
 
     // here we implement BSDF
     NextSimulationData nxt;
@@ -644,7 +644,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     }
 
     // F term (TIR is checked so no need to check again here)
-    Real F = getFresnelTerm(n1, n2, rabs(MdotV), metallic);
+    Real F = getFresnelTerm(n1, n2, rabs(MdotV));
 
     // G term
     Real G = getGrometryTerm(NdotV, NdotL, alpha);
@@ -760,11 +760,16 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
 
 static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
                          Vector N) {
+
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
     Vector m;
     if (transmission) {
+        if (!getTransparent(collideObject)) {
+            // if the object is not transparent, then tranmission is not possible
+            return 0;
+        }
         Vector n1v = vecMultiply(n1.R, v);
         Vector n2l = vecMultiply(n2.R, l);
         m = unitVector(vecAdd(n1v, n2l));
@@ -775,8 +780,25 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     Real MdotL = vecDot(m, l);
     Real MdotV = vecDot(m, v);
     Real NdotM = vecDot(m, N);
-    if (NdotM < error || MdotV > -error || MdotL < error) {
-        
+    Real roughness = getRoughness(collideObject);
+    Real alpha = roughness * roughness;
+    Real D = getNormalDistributionTerm(NdotM, alpha);
+    Real F = getFresnelTerm(n1, n2, rabs(MdotV));
+
+    if (transmission) {
+        // check if the light goes through the microfacet
+        if (MdotL * MdotV > -error || NdotM < error) {
+            // if it did not, then reject
+            return 0;
+        }
+        return D 
+    }
+    else {
+        // check if the light goes through the microfacet
+        if (MdotL * MdotV < error || NdotM < error) {
+            // if it did, then reject
+            return 0;
+        }
     }
 }
 
