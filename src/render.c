@@ -752,7 +752,9 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources) {
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
-static inline Real pBSDF() { return 0; }
+static inline Real pBSDF() {
+    
+}
 
 static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
