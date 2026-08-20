@@ -46,6 +46,22 @@ static inline Real rcos(Real x) {
 #endif
 }
 
+static inline Real rmin(Real a, Real b) {
+#ifdef DOUBLE_AS_REAL
+    return fmin(a, b);
+#else
+    return fminf(a, b);
+#endif
+}
+
+static inline Real rmax(Real a, Real b) {
+#ifdef DOUBLE_AS_REAL
+    return fmax(a, b);
+#else
+    return fmaxf(a, b);
+#endif
+}
+
 typedef union {
     struct {
         uint8_t R, G, B, A;

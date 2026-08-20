@@ -459,14 +459,12 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta) {
     return F;
 }
 
-static const Real moveEpsilon = 1e-4;
-
 static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, ReversedRay ray,
                                                  Point collidePoint, Object *firstCollideObject) {
 
     Vector local = cosineVectorSample(mt);
     Vector nxtDirection = toWorld(local, N);
-    Point nxtStart = vecAdd(collidePoint, vecMultiply(moveEpsilon, N));
+    Point nxtStart = fixedNextStart(collidePoint, N, false);
     ReversedRay nxtRay = getRay(nxtStart, nxtDirection, ray.wavelength);
 
     // after diffusion the light should have the color of the material
@@ -482,7 +480,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     static const NextSimulationData notCollideData = {0};
 
     Real travelingDistance = firstCollideObjectResult->distance;
-    Real scalingFactor = rexp(-*extinctionFactor * travelingDistance);
+    Real scalingFactor = 1;
     Vector d = ray.direction;
     Vector l = vecNegative(d);
 
@@ -774,7 +772,8 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     int sourcesCount = getSize(sources);
     Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
-    LightSource *src = sources[randomInt(mt, sourcesCount)];
+    uint32_t randomIndex = randomInt(mt, sourcesCount);
+    LightSource *src = sources[randomIndex];
     LightIntensity intensity = src->intensity(ray.wavelength);
 
     Point point = randomPoint(src->shape, mt);
@@ -841,8 +840,7 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
 }
 
 static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSource **sources,
-                                MT19937 *mt, int maxDepth, Real extinctionFactor,
-                                bool directLight) {
+                                MT19937 *mt, int maxDepth, Real extinctionFactor) {
     Real intensity = 0;
     Real throughput = 1;
 
@@ -853,6 +851,8 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
     Complex preN2;
     Object *preCollideObject = NULL;
     Vector preL, preV, preN;
+    // record specular or not in previous round
+    bool isSpecular = true; // direct light or specular light should not apply NEE
 
     for (int i = 0; i < maxDepth; i++) {
         // first we see if this light first touches a light source
@@ -868,6 +868,11 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             collideSourceResult.firstCollideSourceResult;
         LightSource *firstCollideSource = collideSourceResult.firstCollideSource;
 
+        // Beer's Law
+        Real travelingDistance =
+            rmin(firstCollideSourceResult.distance, firstCollideObjectResult.distance);
+        throughput *= rexp(-extinctionFactor * travelingDistance);
+
         // case 1: collide with nothing.
         if (firstCollideObject == NULL && firstCollideSource == NULL) {
             return 0.0;
@@ -878,9 +883,15 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
             firstCollideSource != NULL;
         if (collideLightFirst) {
-            // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed for efficiency
+            LightIntensity sourceIntensity = firstCollideSource->intensity(curRay.wavelength);
 
+            if (isSpecular) {
+                intensity += sourceIntensity;
+                break;
+            }
+            // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed for efficiency
             Real pNEE_BSDF = pNEE(&preRay, sources, &preSourceCollideRes);
+
             Real pBSDF_BSDF =
                 pBSDF(preN1, preN2, preCollideObject, preL, preV, preN, preRay.wavelength);
 
@@ -888,28 +899,23 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             Real pBSDF_BSDF2 = pBSDF_BSDF * pBSDF_BSDF;
             Real weightBSDF = pBSDF_BSDF2 / (pNEE_BSDF2 + pBSDF_BSDF2);
 
-            Real travelingDistance = firstCollideSourceResult.distance;
-            throughput *= rexp(-extinctionFactor * travelingDistance);
-            
-
-            intensity += throughput * weightBSDF * firstCollideSource->intensity(curRay.wavelength);
+            intensity += throughput * weightBSDF * sourceIntensity;
             break;
         }
+
+        isSpecular = getRoughness(firstCollideObject) < error;
 
         // case 3: we collide with an object first
         NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
                                                 &extinctionFactor, curRay, mt);
 
-        
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
         Point collidePoint = BSDFnxt.collidePoint;
-        // we have multiply the result in sampleNEE by MIS weight
-        
-        
+        // we have multiplied the result in sampleNEE by MIS weight
         LightIntensity NEEres = sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject,
                                           collidePoint, objects, sources, mt, curRay);
         intensity += throughput * NEEres;
-        
+
         throughput *= BSDFnxt.scalingFactor;
         preRay = curRay;
         curRay = BSDFnxt.nxtRay;
@@ -920,10 +926,6 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         preL = BSDFnxt.l;
         preV = BSDFnxt.v;
         preN = BSDFnxt.N;
-        
-
-        directLight = false;
-        
     }
 
     return intensity;
@@ -1013,7 +1015,7 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
 
     initRay = getInitRay(camera, fixedX, fixedY, randomWavelength);
 
-    intensityResult = tracePath(initRay, objects, sources, mt, maxDepth, 0, true);
+    intensityResult = tracePath(initRay, objects, sources, mt, maxDepth, 0);
 
     if (!isfinite(intensityResult)) return;
 

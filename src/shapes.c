@@ -172,6 +172,16 @@ Point randomPointOnSphere(Shape *self, MT19937 *mt) {
     return vecAdd(sph->center, vecMultiply(sph->radius, N));
 }
 
+Real PDFofPointOnSphere(Shape *self, Point _) {
+    Sphere *sph = (Sphere *)self;
+    return 1 / (4 * M_PI * sph->radius * sph->radius);
+}
+
+Vector normalVectorOfPointOnSphere(Shape *self, Point p) {
+    Sphere *sph = (Sphere *)self;
+    return unitVector(vecMinus(p, sph->center));
+}
+
 // sphere can be used in light source
 Shape *newSphere(Point center, Real radius) {
     Sphere *sph = malloc(sizeof(*sph));
@@ -179,8 +189,8 @@ Shape *newSphere(Point center, Real radius) {
         fprintf(stderr, "malloc sph failed\n");
         exit(1);
     }
-    // TODO: replace NULL here
-    sph->shape = getShape(detectSphereCollide, destroySphere, randomPointOnSphere, NULL, NULL);
+    sph->shape = getShape(detectSphereCollide, destroySphere, randomPointOnSphere,
+                          PDFofPointOnSphere, normalVectorOfPointOnSphere);
     sph->center = center;
     sph->radius = radius;
     return (Shape *)sph;
