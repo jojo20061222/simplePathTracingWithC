@@ -826,7 +826,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     return 0; // should not be reached
 }
 
-static LightIntensity simulateSingleRay(ReversedRay ray, Object **objects, LightSource **sources,
+static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource **sources,
                                         MT19937 *mt, int maxDepth, Real extinctionFactor,
                                         bool directLight) {
     Real res = 0;
@@ -956,7 +956,7 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
 
     initRay = getInitRay(camera, fixedX, fixedY, randomWavelength);
 
-    intensityResult = simulateSingleRay(initRay, objects, sources, mt, maxDepth, 0, true);
+    intensityResult = tracePath(initRay, objects, sources, mt, maxDepth, 0, true);
 
     if (!isfinite(intensityResult)) return;
 
