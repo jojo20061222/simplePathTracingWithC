@@ -687,7 +687,8 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
     // visibility test
     for (int i = 0; i < getSize(objects); i++) {
         // any object on the path of light will block the ray
-        if (collideObject(objects[i], shadowRay).distance < distance - error) {
+        Real collideObjectDistance = collideObject(objects[i], shadowRay).distance;
+        if (collideObjectDistance < distance - error) {
             return false;
         }
     }
@@ -790,7 +791,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
     Vector N = firstCollideObjectResult->normalVector;
-    if (vecDot(N, v) > 0) {
+    if (vecDot(N, v) < 0) {
         N = vecNegative(N);
     }
     Real roughness = getRoughness(firstCollideObject);
@@ -812,7 +813,6 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     bool reach = visibilityTest(&shadowRay, distance, objects, sources, src);
     if (!reach) return 0;
     // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
-    printf("hello\n");
 
     Real lightCos = rabs(vecDot(lightN, l));
     if (lightCos < error) return 0;
@@ -933,7 +933,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             // we have multiplied the result in sampleNEE by MIS weight
             LightIntensity NEEres =
                 sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject, collidePoint,
-                          objects, sources, mt, curRay, extinctionFactor);
+                          objects, sources, mt, curRay, extinctionFactor); 
             intensity += throughput * NEEres;
         }
 
@@ -946,6 +946,16 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         preL = BSDFnxt.l;
         preV = BSDFnxt.v;
         preN = BSDFnxt.N;
+
+        // Russian Roulette
+        if (i > 3) {
+            Real chanceToLive = rmax(0.05, fmin(1, throughput));
+            if (randomReal(mt) > chanceToLive) {
+                // die
+                break;
+            }
+            throughput /= chanceToLive;
+        }
     }
 
     return intensity;
