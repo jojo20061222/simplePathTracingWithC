@@ -588,6 +588,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 }
 
 static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
+    if (alpha < error) return 0;
     Real alpha2 = alpha * alpha;
     Real NdotM2 = NdotM * NdotM;
     Real denomPart = (NdotM2 * (alpha2 - 1) + 1);
@@ -811,6 +812,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     bool reach = visibilityTest(&shadowRay, distance, objects, sources, src);
     if (!reach) return 0;
     // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
+    printf("hello\n");
 
     Real lightCos = rabs(vecDot(lightN, l));
     if (lightCos < error) return 0;
@@ -826,7 +828,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real NEEextinction = transmission ? (4 * M_PI * n2.I / ray.wavelength * 1e5) : extinctionFactor;
     Real beersLawExtinction = rexp(-NEEextinction * distance);
 
-    return weightNEE * beersLawExtinction * intensity * BSDFTerm / (pLightNEE)*rabs(vecDot(N, l));
+    return weightNEE * beersLawExtinction * intensity * BSDFTerm / pLightNEE * rabs(vecDot(N, l));
 }
 
 // PDF of NEE on every direction, will be called by trace path in next round
@@ -919,10 +921,11 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
                                                 &extinctionFactor, curRay, mt);
         if (BSDFnxt.scalingFactor < error) break;
 
+        // this is used to inform the next loop to not calculate MIS
         isSpecularBounce = BSDFnxt.isSpecularBounce;
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
 
-        // only smooth metal and transparent texture need to do NEE
+        // only smooth metal and transparent texture need not to do NEE
         bool isPureDelta = getRoughness(firstCollideObject) < error &&
                            (getTransparent(firstCollideObject) || getmetallic(firstCollideObject));
         if (!isPureDelta) {
