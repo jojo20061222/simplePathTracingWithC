@@ -299,6 +299,9 @@ static inline Real getGrometryTerm(Real NdotV, Real NdotL, Real alpha) {
 typedef struct {
     Real scalingFactor;
     ReversedRay nxtRay;
+    Complex n1, n2;
+    Vector l, v, N;
+    Point collidePoint;
 } NextSimulationData;
 
 // Sample through BRDF
@@ -481,7 +484,10 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     Real travelingDistance = firstCollideObjectResult->distance;
     Real scalingFactor = rexp(-*extinctionFactor * travelingDistance);
     Vector d = ray.direction;
+    Vector l = vecNegative(d);
+
     Point collidePoint = vecAdd(ray.start, vecMultiply(travelingDistance, d));
+
     // Now the normal vector is still point toward outside
     Vector N = firstCollideObjectResult->normalVector;
 
@@ -574,7 +580,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         }
     }
 
-    return (NextSimulationData){scalingFactor, nxt.nxtRay};
+    return (NextSimulationData){scalingFactor, nxt.nxtRay, n1, n2, l, v, N, collidePoint};
 }
 
 static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
@@ -809,7 +815,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real pLightBSDF2 = pLightBSDF * pLightBSDF;
     Real weightNEE = pLightNEE2 / (pLightNEE2 + pLightBSDF2);
 
-    return weightNEE * intensity * BSDFTerm / (pLightNEE) * rabs(vecDot(N, l));
+    return weightNEE * intensity * BSDFTerm / (pLightNEE)*rabs(vecDot(N, l));
 }
 
 // PDF of NEE on every direction, will be called by trace path in next round
@@ -834,24 +840,30 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
     return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
 }
 
-static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource **sources,
+static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSource **sources,
                                 MT19937 *mt, int maxDepth, Real extinctionFactor,
                                 bool directLight) {
     Real intensity = 0;
     Real throughput = 1;
 
-
+    ReversedRay preRay;
+    ReversedRay curRay = initRay;
+    SingleRayCollideSourceResult preSourceCollideRes;
+    Complex preN1;
+    Complex preN2;
+    Object *preCollideObject = NULL;
+    Vector preL, preV, preN;
 
     for (int i = 0; i < maxDepth; i++) {
         // first we see if this light first touches a light source
         // to attain that, we need to simulate both collide with sources and objects to decide which
         // is touched first.
 
-        SingleRayCollideObjectResult collideObjectResult = singleRayCollideObject(objects, &ray);
+        SingleRayCollideObjectResult collideObjectResult = singleRayCollideObject(objects, &curRay);
         CollideResult firstCollideObjectResult = collideObjectResult.firstCollideObjectResult;
         Object *firstCollideObject = collideObjectResult.firstCollideObject;
 
-        SingleRayCollideSourceResult collideSourceResult = singleRayCollideSource(sources, &ray);
+        SingleRayCollideSourceResult collideSourceResult = singleRayCollideSource(sources, &curRay);
         CollideLightSourceResult firstCollideSourceResult =
             collideSourceResult.firstCollideSourceResult;
         LightSource *firstCollideSource = collideSourceResult.firstCollideSource;
@@ -862,24 +874,56 @@ static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource *
         }
 
         // case 2: first collide with source, so we return the intensity of light source directly
-        if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
-            firstCollideSource != NULL) {
-            // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed
+        bool collideLightFirst =
+            firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
+            firstCollideSource != NULL;
+        if (collideLightFirst) {
+            // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed for efficiency
 
-            
+            Real pNEE_BSDF = pNEE(&preRay, sources, &preSourceCollideRes);
+            Real pBSDF_BSDF =
+                pBSDF(preN1, preN2, preCollideObject, preL, preV, preN, preRay.wavelength);
+
+            Real pNEE_BSDF2 = pNEE_BSDF * pNEE_BSDF;
+            Real pBSDF_BSDF2 = pBSDF_BSDF * pBSDF_BSDF;
+            Real weightBSDF = pBSDF_BSDF2 / (pNEE_BSDF2 + pBSDF_BSDF2);
+
             Real travelingDistance = firstCollideSourceResult.distance;
             throughput *= rexp(-extinctionFactor * travelingDistance);
-            intensity += throughput * firstCollideSource->intensity(ray.wavelength);
+            
+
+            intensity += throughput * weightBSDF * firstCollideSource->intensity(curRay.wavelength);
             break;
         }
 
         // case 3: we collide with an object first
-        NextSimulationData BSDFnxt =
-            sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
+        NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
+                                                &extinctionFactor, curRay, mt);
 
+        
+        Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
+        Point collidePoint = BSDFnxt.collidePoint;
+        // we have multiply the result in sampleNEE by MIS weight
+        
+        
+        LightIntensity NEEres = sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject,
+                                          collidePoint, objects, sources, mt, curRay);
+        intensity += throughput * NEEres;
+        
         throughput *= BSDFnxt.scalingFactor;
-        ray = BSDFnxt.nxtRay;
+        preRay = curRay;
+        curRay = BSDFnxt.nxtRay;
+        preN1 = n1;
+        preN2 = n2;
+        preCollideObject = firstCollideObject;
+        preSourceCollideRes = collideSourceResult;
+        preL = BSDFnxt.l;
+        preV = BSDFnxt.v;
+        preN = BSDFnxt.N;
+        
+
         directLight = false;
+        
     }
 
     return intensity;
