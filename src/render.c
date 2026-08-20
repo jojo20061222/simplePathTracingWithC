@@ -302,6 +302,7 @@ typedef struct {
     Complex n1, n2;
     Vector l, v, N;
     Point collidePoint;
+    bool isSpecularBounce;
 } NextSimulationData;
 
 // Sample through BRDF
@@ -482,7 +483,6 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     Real travelingDistance = firstCollideObjectResult->distance;
     Real scalingFactor = 1;
     Vector d = ray.direction;
-    Vector l = vecNegative(d);
 
     Point collidePoint = vecAdd(ray.start, vecMultiply(travelingDistance, d));
 
@@ -527,11 +527,13 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     // here we implement BSDF
     NextSimulationData nxt;
+    bool isSpecularBounce = false;
 
     if (metallic || randomReal(mt) <= F) {
         // to prevent dividing by 0 error when divided by branch PDF
         if (F < error) return notCollideData;
         if (roughness < error) {
+            isSpecularBounce = true;
             nxt = sampleSpecular(N, v, F, collidePoint, ray);
         }
         else {
@@ -555,6 +557,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // this branch is 1 - F There is no need to * (1 - F) in the result
 
             if (roughness < error) {
+                isSpecularBounce = true;
                 nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
             }
             else {
@@ -578,7 +581,9 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         }
     }
 
-    return (NextSimulationData){scalingFactor, nxt.nxtRay, n1, n2, l, v, N, collidePoint};
+    ReversedRay nxtRay = nxt.nxtRay;
+    Vector l = nxtRay.direction;
+    return (NextSimulationData){scalingFactor, nxtRay, n1, n2, l, v, N, collidePoint, isSpecularBounce};
 }
 
 static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
@@ -598,7 +603,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
     if (NdotL * NdotV > error) {
         return 1; // reflection
     }
-    else if (NdotL * NdotV < error) {
+    else if (NdotL * NdotV < -error) {
         return 2;
     }
     return 0; // invalid if the light and the surface are too close
@@ -768,7 +773,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
                                        CollideResult *firstCollideObjectResult,
                                        Object *firstCollideObject, Point collidePoint,
                                        Object **objects, LightSource **sources, MT19937 *mt,
-                                       ReversedRay ray) {
+                                       ReversedRay ray, Real extinctionFactor) {
     int sourcesCount = getSize(sources);
     Real scalingFactor = sourcesCount;
     // randomly choose a light source in sources
@@ -814,7 +819,9 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real pLightBSDF2 = pLightBSDF * pLightBSDF;
     Real weightNEE = pLightNEE2 / (pLightNEE2 + pLightBSDF2);
 
-    return weightNEE * intensity * BSDFTerm / (pLightNEE)*rabs(vecDot(N, l));
+    Real beersLawExtinction = rexp(-extinctionFactor * distance);
+
+    return weightNEE * beersLawExtinction * intensity * BSDFTerm / (pLightNEE)*rabs(vecDot(N, l));
 }
 
 // PDF of NEE on every direction, will be called by trace path in next round
@@ -846,13 +853,12 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
 
     ReversedRay preRay;
     ReversedRay curRay = initRay;
-    SingleRayCollideSourceResult preSourceCollideRes;
     Complex preN1;
     Complex preN2;
     Object *preCollideObject = NULL;
     Vector preL, preV, preN;
     // record specular or not in previous round
-    bool isSpecular = true; // direct light or specular light should not apply NEE
+    bool isSpecularBounce = true; // direct light or specular light should not apply NEE
 
     for (int i = 0; i < maxDepth; i++) {
         // first we see if this light first touches a light source
@@ -885,12 +891,12 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         if (collideLightFirst) {
             LightIntensity sourceIntensity = firstCollideSource->intensity(curRay.wavelength);
 
-            if (isSpecular) {
-                intensity += sourceIntensity;
+            if (isSpecularBounce) {
+                intensity += throughput * sourceIntensity;
                 break;
             }
             // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed for efficiency
-            Real pNEE_BSDF = pNEE(&preRay, sources, &preSourceCollideRes);
+            Real pNEE_BSDF = pNEE(&curRay, sources, &collideSourceResult);
 
             Real pBSDF_BSDF =
                 pBSDF(preN1, preN2, preCollideObject, preL, preV, preN, preRay.wavelength);
@@ -903,18 +909,22 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             break;
         }
 
-        isSpecular = getRoughness(firstCollideObject) < error;
 
         // case 3: we collide with an object first
         NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
                                                 &extinctionFactor, curRay, mt);
-
+        isSpecularBounce = BSDFnxt.isSpecularBounce;
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
-        Point collidePoint = BSDFnxt.collidePoint;
-        // we have multiplied the result in sampleNEE by MIS weight
-        LightIntensity NEEres = sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject,
-                                          collidePoint, objects, sources, mt, curRay);
-        intensity += throughput * NEEres;
+
+
+        if (!isSpecularBounce) {
+            Point collidePoint = BSDFnxt.collidePoint;
+            // we have multiplied the result in sampleNEE by MIS weight
+            LightIntensity NEEres =
+                sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject, collidePoint,
+                          objects, sources, mt, curRay, extinctionFactor);
+            intensity += throughput * NEEres;
+        }
 
         throughput *= BSDFnxt.scalingFactor;
         preRay = curRay;
@@ -922,7 +932,6 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         preN1 = n1;
         preN2 = n2;
         preCollideObject = firstCollideObject;
-        preSourceCollideRes = collideSourceResult;
         preL = BSDFnxt.l;
         preV = BSDFnxt.v;
         preN = BSDFnxt.N;
