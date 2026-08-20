@@ -583,7 +583,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     ReversedRay nxtRay = nxt.nxtRay;
     Vector l = nxtRay.direction;
-    return (NextSimulationData){scalingFactor, nxtRay, n1, n2, l, v, N, collidePoint, isSpecularBounce};
+    return (NextSimulationData){scalingFactor, nxtRay,          n1, n2, l, v, N,
+                                collidePoint,  isSpecularBounce};
 }
 
 static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
@@ -787,9 +788,10 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
 
     Vector v = vecNegative(ray.direction);
     Vector l = unitVector(vecMinus(point, collidePoint));
-    // in BSDF and distinguishReclectionOrRefraction the functions will flip the normal vector based
-    // on (N dot l) so no need to flip here
     Vector N = firstCollideObjectResult->normalVector;
+    if (vecDot(N, v) > 0) {
+        N = vecNegative(N);
+    }
     Real roughness = getRoughness(firstCollideObject);
     Real alpha = roughness * roughness;
 
@@ -810,7 +812,9 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     if (!reach) return 0;
     // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
 
-    Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
+    Real lightCos = rabs(vecDot(lightN, l));
+    if (lightCos < error) return 0;
+    Real jacobian = distance * distance / lightCos; // |x|^2 / cos(theta)
 
     // calculate the weight of MIS in NEE branch
     Real pLightNEE = randomPointPDF * jacobian / scalingFactor;
@@ -819,7 +823,8 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     Real pLightBSDF2 = pLightBSDF * pLightBSDF;
     Real weightNEE = pLightNEE2 / (pLightNEE2 + pLightBSDF2);
 
-    Real beersLawExtinction = rexp(-extinctionFactor * distance);
+    Real NEEextinction = transmission ? (4 * M_PI * n2.I / ray.wavelength * 1e5) : extinctionFactor;
+    Real beersLawExtinction = rexp(-NEEextinction * distance);
 
     return weightNEE * beersLawExtinction * intensity * BSDFTerm / (pLightNEE)*rabs(vecDot(N, l));
 }
@@ -909,15 +914,18 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             break;
         }
 
-
         // case 3: we collide with an object first
         NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
                                                 &extinctionFactor, curRay, mt);
+        if (BSDFnxt.scalingFactor < error) break;
+
         isSpecularBounce = BSDFnxt.isSpecularBounce;
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
 
-
-        if (!isSpecularBounce) {
+        // only smooth metal and transparent texture need to do NEE
+        bool isPureDelta = getRoughness(firstCollideObject) < error &&
+                           (getTransparent(firstCollideObject) || getmetallic(firstCollideObject));
+        if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
             // we have multiplied the result in sampleNEE by MIS weight
             LightIntensity NEEres =
