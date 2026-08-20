@@ -299,7 +299,6 @@ static inline Real getGrometryTerm(Real NdotV, Real NdotL, Real alpha) {
 typedef struct {
     Real scalingFactor;
     ReversedRay nxtRay;
-    
 } NextSimulationData;
 
 // Sample through BRDF
