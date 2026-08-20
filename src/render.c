@@ -933,7 +933,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             // we have multiplied the result in sampleNEE by MIS weight
             LightIntensity NEEres =
                 sampleNEE(n1, n2, &firstCollideObjectResult, firstCollideObject, collidePoint,
-                          objects, sources, mt, curRay, extinctionFactor); 
+                          objects, sources, mt, curRay, extinctionFactor);
             intensity += throughput * NEEres;
         }
 
@@ -948,7 +948,11 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         preN = BSDFnxt.N;
 
         // Russian Roulette
-        if (i > 3) {
+        // for specular bounces, they are simple and does not cause too much computation
+        // however, for textures like diamond need that bounce depth to gain its beauty
+        // so what we do here is to ignore the specular bounce and let it works since it won't cause
+        // that much efficiency
+        if (i > 3 && !isSpecularBounce) {
             Real chanceToLive = rmax(0.05, fmin(1, throughput));
             if (randomReal(mt) > chanceToLive) {
                 // die

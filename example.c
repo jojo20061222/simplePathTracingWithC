@@ -3,8 +3,8 @@
 Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
 
 int main() {
-    static const int width = 540;
-    static const int height = 360;
+    static const int width = 3024;
+    static const int height = 1964;
     Camera *camera =
         newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
                          (Real)height * 0.65, -1.0 / 3.0 * (Real)height, width);
@@ -85,7 +85,7 @@ int main() {
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    renderToWindow("Example diamond showing", objects, sources, camera, width, height, 11);
+    renderToPictures("outputImg", objects, sources, camera, width, height, 30);
 
     destroyRegularCamera(camera);
 

@@ -5,6 +5,7 @@
 #include <SDL2/SDL.h>
 #endif
 
+#include <string.h>
 /*
  * @author seaofvoices
  * @brief This file provides two default method for the users to render.
