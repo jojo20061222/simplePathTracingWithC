@@ -812,7 +812,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     return weightNEE * intensity * BSDFTerm / (pLightNEE) * rabs(vecDot(N, l));
 }
 
-// PDF of NEE on every direction, will be called by sample BSDF
+// PDF of NEE on every direction, will be called by trace path in next round
 static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
                         SingleRayCollideSourceResult *res) {
     int sourcesSize = getSize(sources);
@@ -837,8 +837,10 @@ static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
 static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource **sources,
                                 MT19937 *mt, int maxDepth, Real extinctionFactor,
                                 bool directLight) {
-    Real res = 0;
-    Real BSDFFactor = 1;
+    Real intensity = 0;
+    Real throughput = 1;
+
+
 
     for (int i = 0; i < maxDepth; i++) {
         // first we see if this light first touches a light source
@@ -862,9 +864,12 @@ static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource *
         // case 2: first collide with source, so we return the intensity of light source directly
         if (firstCollideSourceResult.distance <= firstCollideObjectResult.distance &&
             firstCollideSource != NULL) {
+            // the calculation of pNEE_BSDF and pBSDF_BSDF is postponed
+
+            
             Real travelingDistance = firstCollideSourceResult.distance;
-            BSDFFactor *= rexp(-extinctionFactor * travelingDistance);
-            res += BSDFFactor * firstCollideSource->intensity(ray.wavelength);
+            throughput *= rexp(-extinctionFactor * travelingDistance);
+            intensity += throughput * firstCollideSource->intensity(ray.wavelength);
             break;
         }
 
@@ -872,12 +877,12 @@ static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource *
         NextSimulationData BSDFnxt =
             sampleBSDF(&firstCollideObjectResult, firstCollideObject, &extinctionFactor, ray, mt);
 
-        BSDFFactor *= BSDFnxt.scalingFactor;
+        throughput *= BSDFnxt.scalingFactor;
         ray = BSDFnxt.nxtRay;
         directLight = false;
     }
 
-    return res;
+    return intensity;
 }
 
 #if defined(ADAPTIVE_SAMPLING)
