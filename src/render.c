@@ -299,6 +299,7 @@ static inline Real getGrometryTerm(Real NdotV, Real NdotL, Real alpha) {
 typedef struct {
     Real scalingFactor;
     ReversedRay nxtRay;
+    
 } NextSimulationData;
 
 // Sample through BRDF
@@ -543,7 +544,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     else {
         // the left branch is 1 - F
         // to prevent dividing by 0 error when divided by branch PDF
-        if (1 - F < error) return notCollideData; // 
+        if (1 - F < error) return notCollideData; //
         bool transparent = getTransparent(firstCollideObject);
 
         if (transparent) {
@@ -595,7 +596,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
         return 1; // reflection
     }
     else if (NdotL * NdotV < error) {
-        return 2; 
+        return 2;
     }
     return 0; // invalid if the light and the surface are too close
 }
@@ -692,72 +693,6 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
     return true;
 }
 
-static inline LightIntensity sampleNEE(Complex n1, Complex n2,
-                                       CollideResult *firstCollideObjectResult,
-                                       Object *firstCollideObject, Point collidePoint,
-                                       Object **objects, LightSource **sources, MT19937 *mt,
-                                       ReversedRay ray, Real *pLight) {
-    int sourcesCount = getSize(sources);
-    Real scalingFactor = sourcesCount;
-    // randomly choose a light source in sources
-    LightSource *src = sources[randomInt(mt, sourcesCount)];
-    LightIntensity intensity = src->intensity(ray.wavelength);
-
-    Point point = randomPoint(src->shape, mt);
-    Real randomPointPDF = PDFofPoint(src->shape, point);
-    Vector lightN = NormalVectorOfPoint(src->shape, point);
-
-    Vector v = vecNegative(ray.direction);
-    Vector l = unitVector(vecMinus(point, collidePoint));
-    // in BSDF and distinguishReclectionOrRefraction the functions will flip the normal vector based
-    // on (N dot l) so no need to flip here
-    Vector N = firstCollideObjectResult->normalVector;
-    Real roughness = getRoughness(firstCollideObject);
-    Real alpha = roughness * roughness;
-
-    int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
-    if (distinguishRes == 0) { // invalid
-        return 0;
-    }
-    bool transmission = distinguishRes - 1; // the light will transmission or not
-
-    Point nxtStart = fixedNextStart(collidePoint, N, transmission);
-    l = unitVector(vecMinus(point, nxtStart));
-
-    Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, firstCollideObject, ray.wavelength, transmission);
-
-    ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
-    Real distance = lengthOf(vecMinus(point, nxtStart));
-    bool reach = visibilityTest(&shadowRay, distance, objects, sources, src);
-    if (!reach) return 0;
-    // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
-    Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
-    *pLight = randomPointPDF * jacobian / scalingFactor; // prevent multiple times of calculation
-    return intensity * BSDFTerm / (*pLight) * rabs(vecDot(N, l));
-}
-
-// PDF of NEE on every direction, will be called by sample BSDF
-static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
-                        SingleRayCollideSourceResult *res) {
-    int sourcesSize = getSize(sources);
-    // PDF to select the specific source PDF = 1 / n
-    Real selectSourceTerm = 1.0 / (Real)sourcesSize;
-
-    LightSource *collideSource = res->firstCollideSource;
-    if (collideSource == NULL) return 0;
-
-    Real distance = res->firstCollideSourceResult.distance;
-    Point collidePoint = vecAdd(shadowRay->start, vecMultiply(distance, shadowRay->direction));
-
-    Vector lightN = NormalVectorOfPoint(collideSource->shape, collidePoint);
-    Real cosineTerm = rabs(vecDot(lightN, shadowRay->direction));
-    if (cosineTerm < error) return 0;
-
-    Real surfaceTerm = PDFofPoint(collideSource->shape, collidePoint);
-
-    return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
-}
-
 // PDF of BSDF on every direction, will be called by sample NEE
 static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
                          Vector N, Real lambda) {
@@ -826,9 +761,83 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     return 0; // should not be reached
 }
 
+static inline LightIntensity sampleNEE(Complex n1, Complex n2,
+                                       CollideResult *firstCollideObjectResult,
+                                       Object *firstCollideObject, Point collidePoint,
+                                       Object **objects, LightSource **sources, MT19937 *mt,
+                                       ReversedRay ray) {
+    int sourcesCount = getSize(sources);
+    Real scalingFactor = sourcesCount;
+    // randomly choose a light source in sources
+    LightSource *src = sources[randomInt(mt, sourcesCount)];
+    LightIntensity intensity = src->intensity(ray.wavelength);
+
+    Point point = randomPoint(src->shape, mt);
+    Real randomPointPDF = PDFofPoint(src->shape, point);
+    Vector lightN = NormalVectorOfPoint(src->shape, point);
+
+    Vector v = vecNegative(ray.direction);
+    Vector l = unitVector(vecMinus(point, collidePoint));
+    // in BSDF and distinguishReclectionOrRefraction the functions will flip the normal vector based
+    // on (N dot l) so no need to flip here
+    Vector N = firstCollideObjectResult->normalVector;
+    Real roughness = getRoughness(firstCollideObject);
+    Real alpha = roughness * roughness;
+
+    int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
+    if (distinguishRes == 0) { // invalid
+        return 0;
+    }
+    bool transmission = distinguishRes - 1; // the light will transmission or not
+
+    Point nxtStart = fixedNextStart(collidePoint, N, transmission);
+    l = unitVector(vecMinus(point, nxtStart));
+
+    Real BSDFTerm = BSDF(n1, n2, l, v, N, alpha, firstCollideObject, ray.wavelength, transmission);
+
+    ReversedRay shadowRay = getRay(nxtStart, l, ray.wavelength);
+    Real distance = lengthOf(vecMinus(point, nxtStart));
+    bool reach = visibilityTest(&shadowRay, distance, objects, sources, src);
+    if (!reach) return 0;
+    // convert dA to d(omega) so that p(d(omega)) = p(dA) * jacobian
+
+    Real jacobian = distance * distance / rabs(vecDot(lightN, l)); // |x|^2 / cos(theta)
+
+    // calculate the weight of MIS in NEE branch
+    Real pLightNEE = randomPointPDF * jacobian / scalingFactor;
+    Real pLightNEE2 = pLightNEE * pLightNEE;
+    Real pLightBSDF = pBSDF(n1, n2, firstCollideObject, l, v, N, ray.wavelength);
+    Real pLightBSDF2 = pLightBSDF * pLightBSDF;
+    Real weightNEE = pLightNEE2 / (pLightNEE2 + pLightBSDF2);
+
+    return weightNEE * intensity * BSDFTerm / (pLightNEE) * rabs(vecDot(N, l));
+}
+
+// PDF of NEE on every direction, will be called by sample BSDF
+static inline Real pNEE(ReversedRay *shadowRay, LightSource **sources,
+                        SingleRayCollideSourceResult *res) {
+    int sourcesSize = getSize(sources);
+    // PDF to select the specific source PDF = 1 / n
+    Real selectSourceTerm = 1.0 / (Real)sourcesSize;
+
+    LightSource *collideSource = res->firstCollideSource;
+    if (collideSource == NULL) return 0;
+
+    Real distance = res->firstCollideSourceResult.distance;
+    Point collidePoint = vecAdd(shadowRay->start, vecMultiply(distance, shadowRay->direction));
+
+    Vector lightN = NormalVectorOfPoint(collideSource->shape, collidePoint);
+    Real cosineTerm = rabs(vecDot(lightN, shadowRay->direction));
+    if (cosineTerm < error) return 0;
+
+    Real surfaceTerm = PDFofPoint(collideSource->shape, collidePoint);
+
+    return selectSourceTerm * distance * distance * surfaceTerm / cosineTerm;
+}
+
 static LightIntensity tracePath(ReversedRay ray, Object **objects, LightSource **sources,
-                                        MT19937 *mt, int maxDepth, Real extinctionFactor,
-                                        bool directLight) {
+                                MT19937 *mt, int maxDepth, Real extinctionFactor,
+                                bool directLight) {
     Real res = 0;
     Real BSDFFactor = 1;
 
