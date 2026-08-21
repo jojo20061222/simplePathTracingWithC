@@ -78,7 +78,7 @@ void destroyScreen(VirtualScreen *screen) {
 #if defined(ADAPTIVE_SAMPLING)
     free(screen->m2);
     free(screen->convergent);
-    free(scaling->threshold);
+    free(screen->threshold);
 #endif
     free(screen);
     return;
@@ -290,7 +290,7 @@ static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
             NdotV * sqrt(alpha2 + (1 - alpha2) * NdotL2));
 }
 
-static inline Real getGrometryTerm(Real NdotV, Real NdotL, Real alpha) {
+static inline Real getGeometryTerm(Real NdotV, Real NdotL, Real alpha) {
     Real absNdotV = rabs(NdotV);
     Real absNdotL = rabs(NdotL);
     return 2 * absNdotV * absNdotL / getGeometryTermDenom(absNdotL, absNdotV, alpha);
@@ -399,7 +399,7 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
 // accuracy error in ggx and BTDF
 // if roughness is exactly 0 then pdf at N = M will approaches infinity, which is the main reason we
 // cannot use that method
-static inline NextSimulationData sampleRefraction(Vector N, Vector v, Point collidePoint,
+static inline NextSimulationData sampleRefraction(Vector N, Vector v, Real F, Point collidePoint,
                                                   ReversedRay ray, Complex n1, Complex n2) {
     // get the direction of refraction ray
     Real n1R = n1.R;
@@ -522,7 +522,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
-    bool metallic = getmetallic(firstCollideObject);
+    bool metallic = getMetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta);
 
     // here we implement BSDF
@@ -532,7 +532,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     if (metallic || randomReal(mt) <= F) {
         // to prevent dividing by 0 error when divided by branch PDF
         if (F < error) return notCollideData;
-        if (roughness < error) {
+        if (alpha < error) {
             isSpecularBounce = true;
             nxt = sampleSpecular(N, v, F, collidePoint, ray);
         }
@@ -556,9 +556,9 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // Note that we have returned a value in reflection branch so the proabability of
             // this branch is 1 - F There is no need to * (1 - F) in the result
 
-            if (roughness < error) {
+            if (alpha < error) {
                 isSpecularBounce = true;
-                nxt = sampleRefraction(N, v, collidePoint, ray, n1, n2);
+                nxt = sampleRefraction(N, v, F, collidePoint, ray, n1, n2);
             }
             else {
                 nxt = sampleBTDF(N, v, m, alpha, F, collidePoint, ray, n1, n2);
@@ -613,7 +613,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
-    bool metallic = getmetallic(object);
+    bool metallic = getMetallic(object);
     bool transparent = getTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
@@ -657,7 +657,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     Real F = getFresnelTerm(n1, n2, rabs(MdotV));
 
     // G term
-    Real G = getGrometryTerm(NdotV, NdotL, alpha);
+    Real G = getGeometryTerm(NdotV, NdotL, alpha);
 
     // D term
     Real D = getNormalDistributionTerm(NdotM, alpha);
@@ -712,7 +712,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
     bool transparent = getTransparent(collideObject);
-    bool metallic = getmetallic(collideObject);
+    bool metallic = getMetallic(collideObject);
     Vector m;
     if (transmission) {
         if (!transparent) {
@@ -760,7 +760,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
         Real pdfSpecular = nom / denom;
 
         // for dieletic matirials
-        if (!getmetallic(collideObject) && !transparent) {
+        if (!getMetallic(collideObject) && !transparent) {
             Real pdfDiffuse = rabs(vecDot(N, l)) / M_PI;
             // PDF(branch specular) + PDF(branch diffuse)
             return pdfBranch * pdfSpecular + (1 - F) * pdfDiffuse;
@@ -908,9 +908,13 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             Real pBSDF_BSDF =
                 pBSDF(preN1, preN2, preCollideObject, preL, preV, preN, preRay.wavelength);
 
+            // A^2 / (A^2 + B^2) = (A/M)^2 / ((A/M)^2 + (B/M)^2)
+            // which garantee the range of numbers to avoid INF and NAN
+            Real M = rmax(pNEE_BSDF)
             Real pNEE_BSDF2 = pNEE_BSDF * pNEE_BSDF;
             Real pBSDF_BSDF2 = pBSDF_BSDF * pBSDF_BSDF;
-            Real weightBSDF = pBSDF_BSDF2 / (pNEE_BSDF2 + pBSDF_BSDF2);
+            // plus an error to prevent NAN
+            Real weightBSDF = pBSDF_BSDF2 / (pNEE_BSDF2 + pBSDF_BSDF2 + error);
 
             intensity += throughput * weightBSDF * sourceIntensity;
             break;
@@ -926,8 +930,10 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
 
         // only smooth metal and transparent texture need not to do NEE
-        bool isPureDelta = getRoughness(firstCollideObject) < error &&
-                           (getTransparent(firstCollideObject) || getmetallic(firstCollideObject));
+        Real roughness = getRoughness(firstCollideObject);
+        Real alpha = roughness * roughness;
+        bool isPureDelta = alpha < error &&
+                           (getTransparent(firstCollideObject) || getMetallic(firstCollideObject));
         if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
             // we have multiplied the result in sampleNEE by MIS weight
