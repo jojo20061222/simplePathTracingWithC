@@ -588,7 +588,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 }
 
 static inline Real getNormalDistributionTerm(Real NdotM, Real alpha) {
-    if (alpha < error) return 0;
+    alpha = fmax(alpha, error);
     Real alpha2 = alpha * alpha;
     Real NdotM2 = NdotM * NdotM;
     Real denomPart = (NdotM2 * (alpha2 - 1) + 1);
@@ -910,11 +910,15 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
 
             // A^2 / (A^2 + B^2) = (A/M)^2 / ((A/M)^2 + (B/M)^2)
             // which garantee the range of numbers to avoid INF and NAN
-            Real M = rmax(pNEE_BSDF)
-            Real pNEE_BSDF2 = pNEE_BSDF * pNEE_BSDF;
-            Real pBSDF_BSDF2 = pBSDF_BSDF * pBSDF_BSDF;
-            // plus an error to prevent NAN
-            Real weightBSDF = pBSDF_BSDF2 / (pNEE_BSDF2 + pBSDF_BSDF2 + error);
+            Real M = rmax(pNEE_BSDF, pBSDF_BSDF);
+            Real A = pBSDF_BSDF;
+            Real B = pNEE_BSDF;
+            Real AM = A / M;
+            Real BM = B / M;
+            Real AM2 = AM * AM;
+            Real BM2 = BM * BM;
+            
+            Real weightBSDF = AM2 / (AM2 + BM2);
 
             intensity += throughput * weightBSDF * sourceIntensity;
             break;

@@ -5,9 +5,7 @@ Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); 
 int main() {
     static const int width = 720;
     static const int height = 540;
-    Camera *camera =
-        newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
-                         (Real)height * 0.65, -1.0 / 3.0 * (Real)height, width);
+    Camera *camera = newRegularCamera(width, height, 0, (Real)width, 0, (Real)height, 0, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
     Texture **textures = newDynamicArray(0, Texture *);
