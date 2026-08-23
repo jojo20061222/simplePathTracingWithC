@@ -1,6 +1,7 @@
 #include "textures.h"
 #include "base.h"
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -12,11 +13,23 @@
  * http://minerals.gps.caltech.edu/FILES/Index.html
  */
 
+/*
+ * 1st bit: metallic
+ * 2nd bit: transparent
+ * 3rd bit: opaque
+ */
+typedef enum {
+    DIELETRIC = 0x0U,
+    METALLIC = 0x1U,
+    FULLY_TRANSPARENT = 0x2U,
+    OPAQUE = 0x4U,
+    HALF_TRANSPARENT = 0x6U
+} TextureAttributes;
+
 typedef struct Texture {
     Complex (*refractiveIndexInside)(Texture *self, Real lambda);
     Complex (*refractiveIndexOutside)(Texture *self, Real lambda);
-    bool transparent;
-    bool metallic;
+    TextureAttributes tags;
     Real roughness;
     void *data; // for those data that are not common for all textures
 } Texture;
@@ -36,8 +49,8 @@ Texture *newOpaqueDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
         mallocFailed();
     }
 
-    *tex = (Texture){
-        refractiveIndexInside, refractiveIndexOutside, false, false, roughness, baseColor};
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | OPAQUE, roughness,
+                     baseColor};
     return tex;
 }
 
@@ -49,7 +62,8 @@ Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Rea
         mallocFailed();
     }
 
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, true, false, roughness};
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | FULLY_TRANSPARENT,
+                     roughness};
     tex->data = malloc(sizeof(Real));
     if (tex->data == NULL) {
         mallocFailed();
@@ -64,7 +78,8 @@ Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
     if (tex == NULL) {
         mallocFailed();
     }
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, false, true, roughness, NULL};
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, METALLIC | OPAQUE, roughness,
+                     NULL};
     return tex;
 }
 
@@ -285,12 +300,15 @@ Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda) {
     return texture->refractiveIndexOutside(texture, lambda);
 }
 
-bool getTexturemetallic(Texture *texture) { return texture->metallic; }
-bool getTextureTransparent(Texture *texture) { return texture->transparent; }
+bool isTexturemetallic(Texture *texture) { return texture->tags & METALLIC; }
+bool isTextureFullyTransparent(Texture *texture) {
+    static const uint32_t transparent_mask = HALF_TRANSPARENT;
+    return (texture->tags & HALF_TRANSPARENT) == FULLY_TRANSPARENT;
+}
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
 void destroyTexture(Texture *tex) {
-    if (tex->transparent) {
+    if (isTextureFullyTransparent(tex)) {
         // for opaque materials, data is a function
         // they shall not be freed
         free(tex->data);

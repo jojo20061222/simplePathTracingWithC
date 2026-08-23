@@ -38,9 +38,9 @@ Complex getRefractiveIndexInside(Object *self, Real lambda) {
 
 Real getRoughness(Object *self) { return getTextureRoughness(self->texture); }
 
-bool getMetallic(Object *self) { return getTexturemetallic(self->texture); }
+bool isObjectMetallic(Object *self) { return isTexturemetallic(self->texture); }
 
-bool getTransparent(Object *self) { return getTextureTransparent(self->texture); }
+bool isObjectFullyTransparent(Object *self) { return isTextureFullyTransparent(self->texture); }
 
 Real getBaseColor(Object *self, Real lambda) { return getTextureBaseColor(self->texture, lambda); }
 

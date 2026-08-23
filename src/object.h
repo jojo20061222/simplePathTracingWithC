@@ -20,9 +20,9 @@ Complex getRefractiveIndexOutside(Object *self, Real lambda);
 
 Real getRoughness(Object *self);
 
-bool getMetallic(Object *self);
+bool isObjectMetallic(Object *self);
 
-bool getTransparent(Object *self);
+bool isObjectFullyTransparent(Object *self);
 
 Real getBaseColor(Object *self, Real lambda);
 

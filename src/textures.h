@@ -9,8 +9,8 @@ typedef struct Texture Texture;
 Real getTextureBaseColor(Texture *texture, Real lambda);
 Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda);
 Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda);
-bool getTexturemetallic(Texture *texture);
-bool getTextureTransparent(Texture *texture);
+bool isTexturemetallic(Texture *texture);
+bool isTextureFullyTransparent(Texture *texture);
 Real getTextureRoughness(Texture *texture);
 
 void destroyTexture(Texture *tex);
@@ -38,7 +38,7 @@ Complex getPlasticRefractivity(Texture *, Real);
 Complex getAirRefractivity(Texture *, Real);
 Complex getSilverRefractivity(Texture *, Real lambda);
 Complex getGoldRefractivity(Texture *, Real lambda);
-Complex getCopperRefractivity(Texture*, Real lambda);
+Complex getCopperRefractivity(Texture *, Real lambda);
 Complex getIronRefractivity(Texture *, Real lambda);
 Complex getDiamondRefractivity(Texture *, Real lambda);
 

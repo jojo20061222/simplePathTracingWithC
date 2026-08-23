@@ -522,7 +522,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
-    bool metallic = getMetallic(firstCollideObject);
+    bool metallic = isObjectMetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta);
 
     // here we implement BSDF
@@ -550,7 +550,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         // the left branch is 1 - F
         // to prevent dividing by 0 error when divided by branch PDF
         if (1 - F < error) return notCollideData; //
-        bool transparent = getTransparent(firstCollideObject);
+        bool transparent = isObjectFullyTransparent(firstCollideObject);
 
         if (transparent) {
             // Note that we have returned a value in reflection branch so the proabability of
@@ -613,8 +613,8 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
-    bool metallic = getMetallic(object);
-    bool transparent = getTransparent(object);
+    bool metallic = isObjectMetallic(object);
+    bool transparent = isObjectFullyTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     if (vecDot(N, l) < 0) {
@@ -711,8 +711,8 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
-    bool transparent = getTransparent(collideObject);
-    bool metallic = getMetallic(collideObject);
+    bool transparent = isObjectFullyTransparent(collideObject);
+    bool metallic = isObjectFullyTransparent(collideObject);
     Vector m;
     if (transmission) {
         if (!transparent) {
@@ -760,7 +760,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
         Real pdfSpecular = nom / denom;
 
         // for dieletic matirials
-        if (!getMetallic(collideObject) && !transparent) {
+        if (!isObjectMetallic(collideObject) && !transparent) {
             Real pdfDiffuse = rabs(vecDot(N, l)) / M_PI;
             // PDF(branch specular) + PDF(branch diffuse)
             return pdfBranch * pdfSpecular + (1 - F) * pdfDiffuse;
@@ -937,7 +937,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         Real roughness = getRoughness(firstCollideObject);
         Real alpha = roughness * roughness;
         bool isPureDelta = alpha < error &&
-                           (getTransparent(firstCollideObject) || getMetallic(firstCollideObject));
+                           (isObjectFullyTransparent(firstCollideObject) || isObjectMetallic(firstCollideObject));
         if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
             // we have multiplied the result in sampleNEE by MIS weight
