@@ -11,6 +11,7 @@ Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda);
 Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda);
 bool isTexturemetallic(Texture *texture);
 bool isTextureFullyTransparent(Texture *texture);
+bool isTextureHalfTransparent(Texture *texture);
 Real getTextureRoughness(Texture *texture);
 
 void destroyTexture(Texture *tex);

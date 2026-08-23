@@ -305,6 +305,10 @@ bool isTextureFullyTransparent(Texture *texture) {
     static const uint32_t transparent_mask = HALF_TRANSPARENT;
     return (texture->tags & HALF_TRANSPARENT) == FULLY_TRANSPARENT;
 }
+bool isTextureHalfTransparent(Texture *texture) {
+    return (texture->tags & HALF_TRANSPARENT) == HALF_TRANSPARENT;
+}
+
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
 void destroyTexture(Texture *tex) {
