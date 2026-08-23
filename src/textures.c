@@ -85,17 +85,18 @@ Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
 
 typedef struct {
     Real (*sigmaS)(Real);
-    Real (*g)(Real);
+    Vector (*sampleNextDirection)(Vector); // sample next direction through phase function
 } HalfTransparentTextureData;
 
 Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
                                      Complex (*refractiveIndexOutside)(Texture *, Real),
-                                     Real roughness, Real (*sigmaS)(Real), Real (*g)(Real)) {
+                                     Real roughness, Real (*sigmaS)(Real),
+                                     Vector (*sampleNextDirection)(Vector)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) mallocFailed();
     HalfTransparentTextureData *data = malloc(sizeof(*data));
     if (data == NULL) mallocFailed();
-    data->g = g;
+    data->sampleNextDirection = sampleNextDirection;
     data->sigmaS = sigmaS;
     *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | HALF_TRANSPARENT,
                      roughness, data};
