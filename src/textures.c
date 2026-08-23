@@ -83,6 +83,25 @@ Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
     return tex;
 }
 
+typedef struct {
+    Real (*sigmaS)(Real);
+    Real (*g)(Real);
+} HalfTransparentTextureData;
+
+Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
+                                     Complex (*refractiveIndexOutside)(Texture *, Real),
+                                     Real roughness, Real (*sigmaS)(Real), Real (*g)(Real)) {
+    Texture *tex = malloc(sizeof(*tex));
+    if (tex == NULL) mallocFailed();
+    HalfTransparentTextureData *data = malloc(sizeof(*data));
+    if (data == NULL) mallocFailed();
+    data->g = g;
+    data->sigmaS = sigmaS;
+    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | HALF_TRANSPARENT,
+                     roughness, data};
+    return tex;
+}
+
 #define AG_LINE_COUNT 446
 static Complex AgEta[AG_LINE_COUNT];
 static const char AG_PATH_N[] = "src/static/ag_n.csv";
@@ -312,7 +331,7 @@ bool isTextureHalfTransparent(Texture *texture) {
 Real getTextureRoughness(Texture *texture) { return texture->roughness; }
 
 void destroyTexture(Texture *tex) {
-    if (isTextureFullyTransparent(tex)) {
+    if (isTextureFullyTransparent(tex) || isTextureHalfTransparent(tex)) {
         // for opaque materials, data is a function
         // they shall not be freed
         free(tex->data);
