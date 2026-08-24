@@ -14,6 +14,10 @@ void destroyObject(Object *obj);
 
 CollideResult collideObject(Object *, ReversedRay *);
 
+Real getObjectSgimaS(Object *self, Real lambda);
+
+Vector sampleObjectNextDirection(Object *self, Vector currentDirection);
+
 Complex getRefractiveIndexInside(Object *self, Real lambda);
 
 Complex getRefractiveIndexOutside(Object *self, Real lambda);

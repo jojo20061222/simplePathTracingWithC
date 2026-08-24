@@ -477,7 +477,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, 
 
 static inline NextSimulationData sampleSSS(Object **objects, LightSource **sources, MT19937 *mt,
                                            NextSimulationData *cur) {
-                                            
+    
     return (NextSimulationData){0};
 }
 

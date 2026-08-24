@@ -312,6 +312,17 @@ Real getTextureBaseColor(Texture *texture, Real lambda) {
     Real (*baseColor)(Real) = texture->data;
     return baseColor(lambda);
 }
+
+Real getTextureSigmaS(Texture *texture, Real lambda) {
+    HalfTransparentTextureData *data = texture->data;
+    return data->sigmaS(lambda);
+}
+
+Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection) {
+    HalfTransparentTextureData *data = texture->data;
+    return data->sampleNextDirection(currentDirection);
+}
+
 Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda) {
     return texture->refractiveIndexInside(texture, lambda);
 }
