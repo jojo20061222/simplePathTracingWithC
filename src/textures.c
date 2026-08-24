@@ -269,7 +269,7 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
 
     Real epsilon = (EperpC + EparaC) / 2;
     Real concentration = *(Real *)self->data;
-    Real alpha = log(10) * epsilon * concentration * 1e-4; // convert alpha to micrometer^(-1)
+    Real alpha = rlog(10) * epsilon * concentration * 1e-4; // convert alpha to micrometer^(-1)
     Real k = alpha * lambda / (4 * M_PI);
 
     return (Complex){n, k};

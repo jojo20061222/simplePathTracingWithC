@@ -475,10 +475,45 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
 
-static inline NextSimulationData sampleSSS(Object **objects, LightSource **sources, MT19937 *mt,
-                                           NextSimulationData *cur) {
-    
-    return (NextSimulationData){0};
+// Originally this is used in NEE but I found that I can reuse it in sample SSS
+// This function detects if anything collides before the given distance
+// If so, return true, vice versa.
+static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object **objects,
+                                  LightSource **sources, LightSource *src) {
+    // visibility test
+    for (int i = 0; i < getSize(objects); i++) {
+        // any object on the path of light will block the ray
+        Real collideObjectDistance = collideObject(objects[i], shadowRay).distance;
+        if (collideObjectDistance < distance - error) {
+            return false;
+        }
+    }
+
+    for (int i = 0; i < getSize(sources); i++) {
+        if (sources[i] == src) {
+            continue;
+        }
+        if (collideLightSource(sources[i], shadowRay).distance < distance - error) {
+            return false;
+        }
+    }
+    return true;
+}
+
+static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **objects,
+                                           LightSource **sources, MT19937 *mt, ReversedRay *nxtRay,
+                                           int maxDepth) {
+    Real sigmaS = getObjectSigmaS(obj, nxtRay->wavelength);
+    Real k = n2.I;
+    Real lambda = nxtRay->wavelength;
+    Real sigmaA = (4 * M_PI * k / lambda) * 1e5; // we also convert sigma_a into 0.1 mm as unit
+    Real sigmaT = sigmaA + sigmaS;
+
+    Real epsilon = fmax(error, randomReal(mt));
+    Real s = -rlog(epsilon) / 
+    for (int i = 0; i < maxDepth; i++) {
+    }
+    return (NextSimulationData){};
 }
 
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
@@ -692,28 +727,6 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
     }
 
     return BRDF;
-}
-
-static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object **objects,
-                                  LightSource **sources, LightSource *src) {
-    // visibility test
-    for (int i = 0; i < getSize(objects); i++) {
-        // any object on the path of light will block the ray
-        Real collideObjectDistance = collideObject(objects[i], shadowRay).distance;
-        if (collideObjectDistance < distance - error) {
-            return false;
-        }
-    }
-
-    for (int i = 0; i < getSize(sources); i++) {
-        if (sources[i] == src) {
-            continue;
-        }
-        if (collideLightSource(sources[i], shadowRay).distance < distance - error) {
-            return false;
-        }
-    }
-    return true;
 }
 
 // PDF of BSDF on every direction, will be called by sample NEE

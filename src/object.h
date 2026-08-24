@@ -14,7 +14,7 @@ void destroyObject(Object *obj);
 
 CollideResult collideObject(Object *, ReversedRay *);
 
-Real getObjectSgimaS(Object *self, Real lambda);
+Real getObjectSigmaS(Object *self, Real lambda);
 
 Vector sampleObjectNextDirection(Object *self, Vector currentDirection);
 

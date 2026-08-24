@@ -62,6 +62,14 @@ static inline Real rmax(Real a, Real b) {
 #endif
 }
 
+static inline Real rlog(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return log(x);
+#else
+    return logf(x);
+#endif
+}
+
 typedef union {
     struct {
         uint8_t R, G, B, A;

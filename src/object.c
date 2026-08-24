@@ -28,7 +28,7 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
 
-Real getObjectSgimaS(Object *self, Real lambda) { return getTextureSigmaS(self->texture, lambda); }
+Real getObjectSigmaS(Object *self, Real lambda) { return getTextureSigmaS(self->texture, lambda); }
 
 Vector sampleObjectNextDirection(Object *self, Vector currentDirection) {
     return sampleTextureNextDirection(self->texture, currentDirection);
