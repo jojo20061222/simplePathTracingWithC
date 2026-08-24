@@ -188,17 +188,6 @@ static inline Vector cosineVectorSample(MT19937 *mt) {
     return local;
 }
 
-static inline Vector toWorld(Vector local, Vector N) {
-    Vector helper = (rabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
-    Vector T = unitVector(vecCross(helper, N));
-    Vector B = vecCross(N, T);
-    // project the unturned to turned
-    Vector nxtDirection = (Vector){local.x * T.x + local.y * B.x + local.z * N.x,
-                                   local.x * T.y + local.y * B.y + local.z * N.y,
-                                   local.x * T.z + local.y * B.z + local.z * N.z};
-    return nxtDirection;
-}
-
 typedef struct {
     CollideResult firstCollideObjectResult;
     Object *firstCollideObject;
@@ -534,7 +523,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
         }
 
         // sample next direction through current direction by phase function
-        Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction);
+        Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction, mt);
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }

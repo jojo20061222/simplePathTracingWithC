@@ -30,8 +30,8 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
 
 Real getObjectSigmaS(Object *self, Real lambda) { return getTextureSigmaS(self->texture, lambda); }
 
-Vector sampleObjectNextDirection(Object *self, Vector currentDirection) {
-    return sampleTextureNextDirection(self->texture, currentDirection);
+Vector sampleObjectNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
+    return sampleTextureNextDirection(self->texture, currentDirection, mt);
 }
 
 Complex getRefractiveIndexOutside(Object *self, Real lambda) {

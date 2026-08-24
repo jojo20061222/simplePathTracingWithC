@@ -104,8 +104,16 @@ Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *,
     return tex;
 }
 
-Vector sampleHenyeyGreenstein(Vector input) {
+Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
+    Real u = randomReal(mt), v = randomReal(mt);
+    Real theta = 2 * M_PI * u;
+    Real g2 = g * g;
+    Real temp = (1 - g2) / (1 + g - 2 * g * v);
+    Real cosPhi = (1 + g2 - temp * temp) / (2 * g);
+    Real sinPhi = sqrt(1 - cosPhi * cosPhi);
+    Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 
+    return toWorld(local, input);
 }
 
 

@@ -181,4 +181,16 @@ static inline Real lerp(Real x1, Real x2, Real x, Real y1, Real y2) {
     return (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1);
 }
 
+
+static inline Vector toWorld(Vector local, Vector N) {
+    Vector helper = (rabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});
+    Vector T = unitVector(vecCross(helper, N));
+    Vector B = vecCross(N, T);
+    // project the unturned to turned
+    Vector nxtDirection = (Vector){local.x * T.x + local.y * B.x + local.z * N.x,
+                                   local.x * T.y + local.y * B.y + local.z * N.y,
+                                   local.x * T.z + local.y * B.z + local.z * N.z};
+    return nxtDirection;
+}
+
 #endif
