@@ -490,7 +490,7 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
     }
 
     for (int i = 0; i < getSize(sources); i++) {
-        if (sources[i] == src) {
+        if (sources[i] == src) { // to prevent collide with source
             continue;
         }
         if (collideLightSource(sources[i], shadowRay).distance < distance - error) {
@@ -508,12 +508,37 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
     Real lambda = nxtRay->wavelength;
     Real sigmaA = (4 * M_PI * k / lambda) * 1e5; // we also convert sigma_a into 0.1 mm as unit
     Real sigmaT = sigmaA + sigmaS;
+    Real albedo = sigmaS / sigmaT;
+    ReversedRay ray = *nxtRay;
 
-    Real epsilon = fmax(error, randomReal(mt));
-    Real s = -rlog(epsilon) / 
+    Real scalingFactor = 1;
+
     for (int i = 0; i < maxDepth; i++) {
+        // sample walk distance by sigma_t
+        Real xi = fmax(error, randomReal(mt)); // to prevent log(0)
+        Real walkDistance = sigmaT < error ? INFINITY : (-rlog(xi) / sigmaT);
+
+        // test if this walk collides with something
+        bool collideWithSomething = visibilityTest(&ray, walkDistance, objects, sources, NULL);
+        if (collideWithSomething) {
+            // if collide with something then hand it back to the main loop and et it finishes its
+            // work
+            break;
+        }
+
+        // not collide with anything, so we decide if this ray should be killed by albedo
+        if (randomReal(mt) < albedo) {
+            scalingFactor = 0;
+            break;
+        }
+
+        // sample next direction through current direction by phase function
+        Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction);
+        Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
+        ray = getRay(nxtStart, nxtDirection, lambda);
     }
-    return (NextSimulationData){};
+
+    return (NextSimulationData){scalingFactor, ray};
 }
 
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
