@@ -48,7 +48,7 @@ bool isObjectMetallic(Object *self) { return isTexturemetallic(self->texture); }
 
 bool isObjectFullyTransparent(Object *self) { return isTextureFullyTransparent(self->texture); }
 
-bool isObejctHalfTransparent(Object *self) { return isTextureHalfTransparent(self->texture); }
+bool isObjectHalfTransparent(Object *self) { return isTextureHalfTransparent(self->texture); }
 
 Real getBaseColor(Object *self, Real lambda) { return getTextureBaseColor(self->texture, lambda); }
 

@@ -103,6 +103,9 @@ Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *,
     return tex;
 }
 
+
+
+
 #define AG_LINE_COUNT 446
 static Complex AgEta[AG_LINE_COUNT];
 static const char AG_PATH_N[] = "src/static/ag_n.csv";
