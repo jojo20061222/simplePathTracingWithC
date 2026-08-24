@@ -475,7 +475,6 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
 
-// Originally this is used in NEE but I found that I can reuse it in sample SSS
 // This function detects if anything collides before the given distance
 // If so, return true, vice versa.
 static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object **objects,
@@ -501,35 +500,37 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
 }
 
 static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **objects,
-                                           LightSource **sources, MT19937 *mt, ReversedRay *nxtRay,
+                                           LightSource **sources, MT19937 *mt, ReversedRay *curRay,
                                            int maxDepth) {
-    Real sigmaS = getObjectSigmaS(obj, nxtRay->wavelength);
+    Real sigmaS = getObjectSigmaS(obj, curRay->wavelength);
     Real k = n2.I;
-    Real lambda = nxtRay->wavelength;
+    Real lambda = curRay->wavelength;
     Real sigmaA = (4 * M_PI * k / lambda) * 1e5; // we also convert sigma_a into 0.1 mm as unit
     Real sigmaT = sigmaA + sigmaS;
-    Real albedo = sigmaS / sigmaT;
-    ReversedRay ray = *nxtRay;
-
-    Real scalingFactor = 1;
+    Real albedo = sigmaT > error ? sigmaS / sigmaT : 1.0;
+    ReversedRay ray = *curRay;
 
     for (int i = 0; i < maxDepth; i++) {
+        CollideResult result = collideObject(obj, &ray);
+        Real boundaryDistance = result.distance;
+
         // sample walk distance by sigma_t
         Real xi = fmax(error, randomReal(mt)); // to prevent log(0)
         Real walkDistance = sigmaT < error ? INFINITY : (-rlog(xi) / sigmaT);
 
         // test if this walk collides with something
-        bool collideWithSomething = visibilityTest(&ray, walkDistance, objects, sources, NULL);
-        if (collideWithSomething) {
-            // if collide with something then hand it back to the main loop and et it finishes its
+        bool collideWithBoundary = walkDistance >= boundaryDistance;
+        if (collideWithBoundary) {
+            // if collide with something then hand it back to the main loop and let it finishes its
             // work
-            break;
+            // to prevent the ray just directly goes out the object, we minus it by an error
+            ray.start = vecAdd(ray.start, vecMultiply(boundaryDistance - error, ray.direction));
+            return (NextSimulationData){1, ray};
         }
 
         // not collide with anything, so we decide if this ray should be killed by albedo
-        if (randomReal(mt) < albedo) {
-            scalingFactor = 0;
-            break;
+        if (randomReal(mt) > albedo) {
+            return (NextSimulationData){0};
         }
 
         // sample next direction through current direction by phase function
@@ -537,13 +538,13 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }
-
-    return (NextSimulationData){scalingFactor, ray};
+    return (NextSimulationData){0}; // after bouncing maxDepth times, we could ignore that
 }
 
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
-                                            Object *firstCollideObject, Real *extinctionFactor,
-                                            ReversedRay ray, MT19937 *mt) {
+                                            Object *firstCollideObject, Object **objects,
+                                            LightSource **sources, Real *extinctionFactor,
+                                            ReversedRay ray, MT19937 *mt, int maxDepth) {
     static const NextSimulationData notCollideData = {0};
 
     Real travelingDistance = firstCollideObjectResult->distance;
@@ -644,6 +645,11 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
             // however, for half transparent objects, we need to do random walk SSS
             if (halfTransparent) {
+                nxt =
+                    sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
+
+                if (nxt.scalingFactor == 0) return notCollideData;
+                scalingFactor *= nxt.scalingFactor;
             }
         }
         else {
@@ -975,8 +981,9 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         }
 
         // case 3: we collide with an object first
-        NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
-                                                &extinctionFactor, curRay, mt);
+        NextSimulationData BSDFnxt =
+            sampleBSDF(&firstCollideObjectResult, firstCollideObject, objects, sources,
+                       &extinctionFactor, curRay, mt, maxDepth);
         if (BSDFnxt.scalingFactor < error) break;
 
         // this is used to inform the next loop to not calculate MIS
