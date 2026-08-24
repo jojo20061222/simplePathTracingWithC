@@ -550,9 +550,12 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         // the left branch is 1 - F
         // to prevent dividing by 0 error when divided by branch PDF
         if (1 - F < error) return notCollideData; //
-        bool transparent = isObjectFullyTransparent(firstCollideObject);
+        bool fullyTransparent = isObjectFullyTransparent(firstCollideObject);
+        bool halfTransparent = isObjectHalfTransparent(firstCollideObject);
 
-        if (transparent) {
+        // both fully transparent and half transparent obejcts need to take BTDF once so they should
+        // in the same branch
+        if (fullyTransparent || halfTransparent) {
             // Note that we have returned a value in reflection branch so the proabability of
             // this branch is 1 - F There is no need to * (1 - F) in the result
 
@@ -572,8 +575,11 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // Beer-Lembert's Law
             // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
             *extinctionFactor = 4 * M_PI * n2.I / ray.wavelength * 1e5;
-        }
 
+
+            // however, 
+            
+        }
         else {
             // Branch Diffusion, only non-transparent materials need to do this
             nxt = sampleDiffusion(mt, N, F, ray, collidePoint, firstCollideObject);
@@ -917,7 +923,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
             Real BM = B / M;
             Real AM2 = AM * AM;
             Real BM2 = BM * BM;
-            
+
             Real weightBSDF = AM2 / (AM2 + BM2);
 
             intensity += throughput * weightBSDF * sourceIntensity;
@@ -936,8 +942,8 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         // only smooth metal and transparent texture need not to do NEE
         Real roughness = getRoughness(firstCollideObject);
         Real alpha = roughness * roughness;
-        bool isPureDelta = alpha < error &&
-                           (isObjectFullyTransparent(firstCollideObject) || isObjectMetallic(firstCollideObject));
+        bool isPureDelta = alpha < error && (isObjectFullyTransparent(firstCollideObject) ||
+                                             isObjectMetallic(firstCollideObject));
         if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
             // we have multiplied the result in sampleNEE by MIS weight

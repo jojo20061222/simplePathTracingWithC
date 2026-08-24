@@ -24,8 +24,11 @@ bool isObjectMetallic(Object *self);
 
 bool isObjectFullyTransparent(Object *self);
 
+bool isObjectHalfTransparent(Object *self);
+
 Real getBaseColor(Object *self, Real lambda);
 
 Vector getNormalVector(Object *self, Point p);
+
 
 #endif
