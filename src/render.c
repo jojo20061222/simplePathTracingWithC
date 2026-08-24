@@ -475,6 +475,12 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, 
     return (NextSimulationData){scalingFactor, nxtRay};
 }
 
+static inline NextSimulationData sampleSSS(Object **objects, LightSource **sources, MT19937 *mt,
+                                           NextSimulationData *cur) {
+                                            
+    return (NextSimulationData){0};
+}
+
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
                                             Object *firstCollideObject, Real *extinctionFactor,
                                             ReversedRay ray, MT19937 *mt) {
@@ -576,9 +582,9 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
             *extinctionFactor = 4 * M_PI * n2.I / ray.wavelength * 1e5;
 
-
-            // however, 
-            
+            // however, for half transparent objects, we need to do random walk SSS
+            if (halfTransparent) {
+            }
         }
         else {
             // Branch Diffusion, only non-transparent materials need to do this
