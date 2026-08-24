@@ -1,6 +1,7 @@
 #ifndef TEXTURES_H
 #define TEXTURES_H
 #include "base.h"
+#include "random.h"
 #include <stdbool.h>
 
 typedef struct Texture Texture;
@@ -8,7 +9,7 @@ typedef struct Texture Texture;
 // wrappers for the internal structure
 Real getTextureBaseColor(Texture *texture, Real lambda);
 Real getTextureSigmaS(Texture *texture, Real lambda);
-Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection);
+Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection, MT19937 *mt);
 Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda);
 Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda);
 bool isTexturemetallic(Texture *texture);

@@ -1,4 +1,5 @@
 #include "textures.h"
+#include "random.h"
 #include "base.h"
 #include <math.h>
 #include <stdint.h>
@@ -85,13 +86,13 @@ Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
 
 typedef struct {
     Real (*sigmaS)(Real);
-    Vector (*sampleNextDirection)(Vector); // sample next direction through phase function
+    Vector (*sampleNextDirection)(Vector, MT19937 *); // sample next direction through phase function
 } HalfTransparentTextureData;
 
 Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
                                      Complex (*refractiveIndexOutside)(Texture *, Real),
                                      Real roughness, Real (*sigmaS)(Real),
-                                     Vector (*sampleNextDirection)(Vector)) {
+                                     Vector (*sampleNextDirection)(Vector, MT19937*)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) mallocFailed();
     HalfTransparentTextureData *data = malloc(sizeof(*data));
@@ -103,7 +104,9 @@ Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *,
     return tex;
 }
 
+Vector sampleHenyeyGreenstein(Vector input) {
 
+}
 
 
 #define AG_LINE_COUNT 446
@@ -321,9 +324,9 @@ Real getTextureSigmaS(Texture *texture, Real lambda) {
     return data->sigmaS(lambda);
 }
 
-Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection) {
+Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection, MT19937 *mt) {
     HalfTransparentTextureData *data = texture->data;
-    return data->sampleNextDirection(currentDirection);
+    return data->sampleNextDirection(currentDirection, mt);
 }
 
 Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda) {
