@@ -427,9 +427,9 @@ void destroyTexture(Texture *tex) {
     free(tex);
 }
 
-Interface *newInterface(Texture *in, Texture *out) {
+Interface *newInterface(Texture *in, Texture *out, Real roughness) {
     Interface *interface = malloc(sizeof(*interface));
-    *interface = (Interface){in, out};
+    *interface = (Interface){in, out, roughness};
     return interface;
 }
 

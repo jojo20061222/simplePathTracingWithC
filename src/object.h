@@ -16,7 +16,11 @@ CollideResult collideObject(Object *, ReversedRay *);
 
 Real getObjectInsideSigmaS(Object *self, Real lambda);
 
+Real getObjectOutsideSigmaS(Object *self, Real lambda);
+
 Vector sampleObjectInsideNextDirection(Object *self, Vector currentDirection, MT19937 *mt);
+
+Vector sampleObjectOutSideNextDirection(Object *self, Vector currentDirection, MT19937 *mt);
 
 Complex getObjectInsideRefractiveIndex(Object *self, Real lambda);
 

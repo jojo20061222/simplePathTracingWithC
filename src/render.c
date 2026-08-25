@@ -489,10 +489,11 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
 }
 
 static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **objects,
-                                           LightSource **sources, MT19937 *mt,
-                                           ReversedRay *curRay) {
+                                           LightSource **sources, MT19937 *mt, ReversedRay *curRay,
+                                           bool insideObject) {
     static const int maxDepth = 1e7;
-    Real sigmaS = getObjectInsideSigmaS(obj, curRay->wavelength);
+    Real sigmaS = insideObject ? getObjectInsideSigmaS(obj, curRay->wavelength)
+                               : getObjectOutsideSigmaS(obj, curRay->wavelength);
     Real k = n2.I;
     Real lambda = curRay->wavelength;
     Real sigmaA = (4 * M_PI * k / lambda) * 1e5; // we also convert sigma_a into 0.1 mm as unit
@@ -531,7 +532,9 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
         scalingFactor *= (albedo / q);
 
         // sample next direction through current direction by phase function
-        Vector nxtDirection = sampleObjectInsideNextDirection(obj, ray.direction, mt);
+        Vector nxtDirection = insideObject
+                                  ? sampleObjectInsideNextDirection(obj, ray.direction, mt)
+                                  : sampleObjectOutSideNextDirection(obj, ray.direction, mt);
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }
@@ -659,7 +662,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     bool halfTransparent = transmission ? isNextHalfTransparent : isCurrentHalfTransparent;
 
     if (halfTransparent) {
-        nxt = sampleSSS(firstCollideObject, IOR, objects, sources, mt, &nxt.nxtRay);
+        bool endupInside = transmission ? (!hitFromInside) : hitFromInside;
+        nxt = sampleSSS(firstCollideObject, IOR, objects, sources, mt, &nxt.nxtRay, endupInside);
 
         if (nxt.scalingFactor == 0) return notCollideData;
         scalingFactor *= nxt.scalingFactor;

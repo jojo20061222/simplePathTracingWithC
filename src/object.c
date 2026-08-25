@@ -32,8 +32,16 @@ Real getObjectInsideSigmaS(Object *self, Real lambda) {
     return getInterfaceInsideSigmaS(self->interface, lambda);
 }
 
+Real getObjectOutsideSigmaS(Object *self, Real lambda) {
+    return getInterfaceOutsideSigmaS(self->interface, lambda);
+}
+
 Vector sampleObjectInsideNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
     return sampleInterfaceInsideNextDirection(self->interface, currentDirection, mt);
+}
+
+Vector sampleObjectOutSideNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
+    return sampleInterfaceOutsideNextDirection(self->interface, currentDirection, mt);
 }
 
 Complex getObjectInsideRefractiveIndex(Object *self, Real lambda) {

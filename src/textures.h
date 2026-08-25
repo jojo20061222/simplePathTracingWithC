@@ -10,7 +10,7 @@ typedef struct Interface Interface;
 
 // wrappers for Interface
 void destroyInterface(Interface *interface);
-Interface *newInterface(Texture *in, Texture *out);
+Interface *newInterface(Texture *in, Texture *out, Real roughness);
 void destroyTexture(Texture *tex);
 Real getInterfaceRoughness(Interface *interface);
 bool isInterfaceInsideHalfTransparent(Interface *interface);

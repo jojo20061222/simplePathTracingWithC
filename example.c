@@ -6,7 +6,7 @@ Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
 }
 
-Real sigmaSforMarble(Real _) { return 0.2; }
+Real sigmaSforMarble(Real _) { return 0.05; }
 
 Complex getMarbleRefractivity(Texture *__, Real _) { return (Complex){1.65, 0}; }
 
@@ -46,7 +46,7 @@ int main() {
     Shape *groundShape = newConvexPolygon(groundPoints);
     pushBack(&shapes, groundShape, Shape *);
     freeDynamicArray(groundPoints);
-    Interface *groundInterface = newInterface(whiteReflector, air);
+    Interface *groundInterface = newInterface(whiteReflector, air, 1);
     Object *ground = newObject(groundShape, groundInterface);
     pushBack(&objects, ground, Object *);
 
@@ -66,7 +66,7 @@ int main() {
 
     Shape *marbleSph = newSphere(showing, radius);
     pushBack(&shapes, marbleSph, Shape *);
-    Interface *marbleInterface = newInterface(marble, air);
+    Interface *marbleInterface = newInterface(marble, air, 0);
     Object *marbleBall = newObject(marbleSph, marbleInterface);
     pushBack(&objects, marbleBall, Object *);
 
@@ -92,7 +92,7 @@ int main() {
                   lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
-    pushBack(&sources, &light3, LightSource *);
+    // pushBack(&sources, &light3, LightSource *);
 
     renderToWindow("Diamond showing frame", objects, sources, camera, width, height, 11);
 
