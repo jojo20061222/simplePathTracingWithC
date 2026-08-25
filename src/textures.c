@@ -28,12 +28,15 @@ typedef enum {
 } TextureAttributes;
 
 typedef struct Texture {
-    Complex (*refractiveIndexInside)(Texture *self, Real lambda);
-    Complex (*refractiveIndexOutside)(Texture *self, Real lambda);
+    Complex (*refractiveIndex)(Texture *self, Real lambda);
     TextureAttributes tags;
     Real roughness;
     void *data; // for those data that are not common for all textures
 } Texture;
+
+typedef struct Interface{
+    Texture in, out;
+} Interface;
 
 static void mallocFailed() {
     fprintf(stderr, "malloc tex failed\n");
@@ -42,15 +45,14 @@ static void mallocFailed() {
 
 // to make sure the data of diffrent textures won't confuse anyone we have to seperate the original
 // "newTexture" into different functions
-Texture *newOpaqueDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                            Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
+Texture *newOpaqueDieletric(Complex (*refractiveIndex)(Texture *, Real), Real roughness,
                             Real (*baseColor)(Real)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
         mallocFailed();
     }
 
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | OPAQUE, roughness,
+    *tex = (Texture){refractiveIndex, DIELETRIC | OPAQUE, roughness,
                      baseColor};
     return tex;
 }
