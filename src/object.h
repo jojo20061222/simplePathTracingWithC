@@ -38,4 +38,6 @@ Real getObjectInsideBaseColor(Object *self, Real lambda);
 
 Vector getNormalVector(Object *self, Point p);
 
+void swapInterface(Object *self);
+
 #endif

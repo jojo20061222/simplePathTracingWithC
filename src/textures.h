@@ -25,7 +25,7 @@ Complex getInterfaceInsideRefractiveIndex(Interface *interface, Real lambda);
 Complex getInterfaceOutsideRefractiveIndex(Interface *interface, Real lambda);
 Vector sampleInterfaceInsideNextDirection(Interface *interface, Vector currentDirection,
                                           MT19937 *mt);
-Vector sampelInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
+Vector sampleInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
                                            MT19937 *mt);
 Real getInterfaceInsideSigmaS(Interface *interface, Real lambda);
 Real getInterfaceOutsideSigmaS(Interface *interface, Real lambda);

@@ -356,7 +356,7 @@ Vector sampleInterfaceInsideNextDirection(Interface *interface, Vector currentDi
     return sampleTextureNextDirection(interface->in, currentDirection, mt);
 }
 
-Vector sampelInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
+Vector sampleInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
                                            MT19937 *mt) {
     return sampleTextureNextDirection(interface->out, currentDirection, mt);
 }
