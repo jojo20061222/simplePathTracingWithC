@@ -556,16 +556,23 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // n1 symbolizes the refractivity of the material the reversed ray is currently in
     // n2 symbolizes the refractivity of material on the other side
     Complex n1, n2;
-    if (vecDot(N, d) > 0) {
+    bool hitFromInside = vecDot(N, d) > 0;
+    bool isCurrentTextureHalfTransparent;
+    bool isNextTextureHalfTransparent;
+    if (hitFromInside) {
         // N vecDot d < 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
-        N = (Vector){-N.x, -N.y, -N.z};
+        N = vecNegative(N);
         n1 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
         n2 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        isCurrentTextureHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
+        isNextTextureHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
     }
     else {
         n1 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
         n2 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        isCurrentTextureHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
+        isNextTextureHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
     }
     // after the operations above, the normal vector should point on the side where reversed
     // rays come from
@@ -592,7 +599,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // here we implement BSDF
     NextSimulationData nxt;
     bool isSpecularBounce = false;
-    bool isCurrentTextureHalfTransparent;
+    bool isCurrentRayInside = false;
 
     if (metallic || randomReal(mt) <= F) {
         // to prevent dividing by 0 error when divided by branch PDF
@@ -605,13 +612,9 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             nxt = sampleBRDF(m, v, N, alpha, F, collidePoint, ray);
         }
 
-        if (nxt.scalingFactor == 0) return notCollideData;
-
         scalingFactor *= nxt.scalingFactor;
         // since metallic texture won't go into the 1 - F branch so we do have to * F
         if (!metallic) scalingFactor /= F;
-
-        isCurrentTextureHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
     }
     else {
         // the left branch is 1 - F
@@ -619,7 +622,6 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         if (1 - F < error) return notCollideData; //
         bool fullyTransparent = isObjectInsideFullyTransparent(firstCollideObject);
         bool halfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
-        isCurrentTextureHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
 
         // both fully transparent and half transparent obejcts need to take BTDF once so they should
         // in the same branch
@@ -635,14 +637,9 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
                 nxt = sampleBTDF(N, v, m, alpha, F, collidePoint, ray, n1, n2);
             }
 
-            if (nxt.scalingFactor == 0) return notCollideData;
-
             scalingFactor *= nxt.scalingFactor / (1 - F);
 
-            // calculate the extinction factor for next ray
-            // Beer-Lembert's Law
-            // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
-            *extinctionFactor = 4 * M_PI * n2.I / ray.wavelength * 1e5;
+            isCurrentRayInside = vecDot(nxt.nxtRay.direction, ray.direction) > 0;
         }
         else {
             // Branch Diffusion, only non-transparent materials need to do this
@@ -650,10 +647,18 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             scalingFactor *= nxt.scalingFactor / (1 - F);
         }
     }
+    if (nxt.scalingFactor == 0) return notCollideData;
 
-    // for half transparent objects, we need to do random walk SSS
-    if (isCurrentTextureHalfTransparent) {
-        nxt = sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay);
+    
+    Complex currentRefractiveIndex = isCurrentRayInside ? n2 : n1;
+    // calculate the extinction factor for next ray
+    // Beer-Lembert's Law
+    // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
+    *extinctionFactor = 4 * M_PI * currentRefractiveIndex.I / ray.wavelength * 1e5;
+
+    if () {
+        nxt = sampleSSS(firstCollideObject, currentRefractiveIndex, objects, sources, mt,
+                        &nxt.nxtRay);
 
         if (nxt.scalingFactor == 0) return notCollideData;
         scalingFactor *= nxt.scalingFactor;

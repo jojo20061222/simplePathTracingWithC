@@ -56,10 +56,12 @@ bool isObjectInsideTransparent(Object *self) {
     return isInterfaceInsideTransparent(self->interface);
 }
 
-bool isObjectOutsideHalfTransparent()
-
 bool isObjectInsideHalfTransparent(Object *self) {
     return isInterfaceInsideHalfTransparent(self->interface);
+}
+
+bool isObjectOutsideHalfTransparent(Object *self) {
+    return isInterfaceOutsideHalfTransparent(self->interface);
 }
 
 Real getObjectInsideBaseColor(Object *self, Real lambda) {
