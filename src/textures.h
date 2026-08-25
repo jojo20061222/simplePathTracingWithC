@@ -9,10 +9,31 @@ typedef struct Texture Texture;
 typedef struct Interface Interface;
 
 // wrappers for Interface
+void destroyInterface(Interface *interface);
+Interface *newInterface(Texture *in, Texture *out);
+void destroyTexture(Texture *tex);
+Real getInterfaceRoughness(Interface *interface);
+bool isInterfaceInsideHalfTransparent(Interface *interface);
+bool isInterfaceOutsideHalfTransparent(Interface *interface);
+bool isInterfaceInsideFullyTransparent(Interface *interface);
+bool isInterfaceOutsideFullyTransparent(Interface *interface);
+bool isInterfaceInsideTransparent(Interface *interface);
+bool isInterfaceOutsideTransparent(Interface *interface);
+bool isInterfaceInsideMetallic(Interface *interface);
+bool isInterfaceOutsideMetallic(Interface *interface);
+Complex getInterfaceInsideRefractiveIndex(Interface *interface, Real lambda);
+Complex getInterfaceOutsideRefractiveIndex(Interface *interface, Real lambda);
+Vector sampleInterfaceInsideNextDirection(Interface *interface, Vector currentDirection,
+                                          MT19937 *mt);
+Vector sampelInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
+                                           MT19937 *mt);
+Real getInterfaceInsideSigmaS(Interface *interface, Real lambda);
+Real getInterfaceOutsideSigmaS(Interface *interface, Real lambda);
+Real getInterfaceInsideBaseColor(Interface *interface, Real lambda);
+Real getInterfaceOutsideBaseColor(Interface *interface, Real lambda);
 
 // read refractivity data
 void initTexture();
-
 
 // new Textures
 Texture *newOpaqueDieletric(Complex (*refractiveIndex)(Texture *, Real), Real (*baseColor)(Real));
@@ -47,7 +68,6 @@ Texture *newSapphire(Real roughness, Real concentration);
 
 // base h-G sample
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);
-
 
 // Wrappers for textures
 Real getInterfaceRoughness(Interface *interface);

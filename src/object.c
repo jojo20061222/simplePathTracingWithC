@@ -28,28 +28,36 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
 
-Real getObjectSigmaS(Object *self, Real lambda) { return getTextureSigmaS(self->interface, lambda); }
+Real getObjectSigmaS(Object *self, Real lambda) {
+    return getInterfaceInsideSigmaS(self->interface, lambda);
+}
 
 Vector sampleObjectNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
-    return sampleTextureNextDirection(self->texture, currentDirection, mt);
+    return sampleInterfaceInsideNextDirection(self->interface, currentDirection, mt);
 }
 
 Complex getRefractiveIndex(Object *self, Real lambda) {
-    return getTextureRefractiveIndexOutside(self->texture, lambda);
+    return getInterfaceInsideRefractiveIndex(self->interface, lambda);
 }
 
 Complex getRefractiveIndexInside(Object *self, Real lambda) {
-    return getTextureRefractiveIndexInside(self->texture, lambda);
+    return getInterfaceInsideRefractiveIndex(self->interface, lambda);
 }
 
-Real getRoughness(Object *self) { return getTextureRoughness(self->texture); }
+Real getRoughness(Object *self) { return getInterfaceRoughness(self->interface); }
 
-bool isObjectMetallic(Object *self) { return isTexturemetallic(self->texture); }
+bool isObjectMetallic(Object *self) { return isInterfaceInsideMetallic(self->interface); }
 
-bool isObjectFullyTransparent(Object *self) { return isTextureFullyTransparent(self->texture); }
+bool isObjectFullyTransparent(Object *self) {
+    return isInterfaceInsideFullyTransparent(self->interface);
+}
 
-bool isObjectHalfTransparent(Object *self) { return isTextureHalfTransparent(self->texture); }
+bool isObjectHalfTransparent(Object *self) {
+    return isInterfaceInsideHalfTransparent(self->interface);
+}
 
-Real getBaseColor(Object *self, Real lambda) { return getTextureBaseColor(self->texture, lambda); }
+Real getBaseColor(Object *self, Real lambda) {
+    return getInterfaceInsideBaseColor(self->interface, lambda);
+}
 
 Vector getNormalVector(Object *self, Point p) { return NormalVectorOfPoint(self->shape, p); }

@@ -322,11 +322,21 @@ Real getInterfaceInsideBaseColor(Interface *interface, Real lambda) {
     return getTextureBaseColor(interface->in, lambda);
 }
 
-Real getInterfaceOutsideBaseColor
+Real getInterfaceOutsideBaseColor(Interface *interface, Real lambda) {
+    return getTextureBaseColor(interface->out, lambda);
+}
 
 static inline Real getTextureSigmaS(Texture *texture, Real lambda) {
     HalfTransparentTextureData *data = texture->data;
     return data->sigmaS(lambda);
+}
+
+Real getInterfaceInsideSigmaS(Interface *interface, Real lambda) {
+    return getTextureSigmaS(interface->in, lambda);
+}
+
+Real getInterfaceOutsideSigmaS(Interface *interface, Real lambda) {
+    return getTextureSigmaS(interface->out, lambda);
 }
 
 static inline Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection,
@@ -335,25 +345,74 @@ static inline Vector sampleTextureNextDirection(Texture *texture, Vector current
     return data->sampleNextDirection(currentDirection, mt);
 }
 
+Vector sampleInterfaceInsideNextDirection(Interface *interface, Vector currentDirection,
+                                          MT19937 *mt) {
+    return sampleTextureNextDirection(interface->in, currentDirection, mt);
+}
+
+Vector sampelInterfaceOutsideNextDirection(Interface *interface, Vector currentDirection,
+                                           MT19937 *mt) {
+    return sampleTextureNextDirection(interface->out, currentDirection, mt);
+}
+
 static inline Complex getTextureRefractiveIndex(Texture *texture, Real lambda) {
     return texture->refractiveIndex(texture, lambda);
 }
 
+Complex getInterfaceInsideRefractiveIndex(Interface *interface, Real lambda) {
+    return getTextureRefractiveIndex(interface->in, lambda);
+}
+
+Complex getInterfaceOutsideRefractiveIndex(Interface *interface, Real lambda) {
+    return getTextureRefractiveIndex(interface->out, lambda);
+}
+
 static inline bool isTextureMetallic(Texture *texture) { return texture->tags & METALLIC; }
+
+bool isInterfaceInsideMetallic(Interface *interface) { return isTextureMetallic(interface->in); }
+
+bool isInterfaceOutsideMetallic(Interface *interface) { return isTextureMetallic(interface->out); }
+
 static inline bool isTextureTransparent(Texture *texture) {
     return (texture->tags & HALF_TRANSPARENT) > 0;
 }
+
+bool isInterfaceInsideTransparent(Interface *interface) {
+    return isTextureTransparent(interface->in);
+}
+
+bool isInterfaceOutsideTransparent(Interface *interface) {
+    return isTextureTransparent(interface->out);
+}
+
 static inline bool isTextureFullyTransparent(Texture *texture) {
     static const uint32_t transparent_mask = HALF_TRANSPARENT;
     return (texture->tags & HALF_TRANSPARENT) == FULLY_TRANSPARENT;
 }
-bool isTextureHalfTransparent(Texture *texture) {
+
+bool isInterfaceInsideFullyTransparent(Interface *interface) {
+    return isTextureFullyTransparent(interface->in);
+}
+
+bool isInterfaceOutsideFullyTransparent(Interface *interface) {
+    return isTextureFullyTransparent(interface->out);
+}
+
+static inline bool isTextureHalfTransparent(Texture *texture) {
     return (texture->tags & HALF_TRANSPARENT) == HALF_TRANSPARENT;
+}
+
+bool isInterfaceInsideHalfTransparent(Interface *interface) {
+    return isTextureHalfTransparent(interface->in);
+}
+
+bool isInterfaceOutsideHalfTransparent(Interface *interface) {
+    return isTextureHalfTransparent(interface->out);
 }
 
 Real getInterfaceRoughness(Interface *interface) { return interface->roughness; }
 
-static void destroyTexture(Texture *tex) {
+void destroyTexture(Texture *tex) {
     if (isTextureFullyTransparent(tex) || isTextureHalfTransparent(tex)) {
         // for opaque materials, data is a function
         // they shall not be freed
