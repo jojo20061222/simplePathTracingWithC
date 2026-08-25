@@ -1,6 +1,6 @@
 #include "include/pathTracing.h"
 
-Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
+Real strongWhiteLight(Real wavelength) { return 1 * whiteLightBase(wavelength); }
 
 Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
@@ -81,7 +81,7 @@ int main() {
     Object *marbleBall = newObject(marbleSph, marbleInterface);
     pushBack(&objects, marbleBall, Object *);
 
-    Real lightRadius = (Real)width / 40;
+    Real lightRadius = (Real)width / 10;
 
     // light 1: upper-left behind the marble
     Shape *lightSph1 =
@@ -103,7 +103,7 @@ int main() {
                   lightRadius * 2);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
-    pushBack(&sources, &light3, LightSource *);
+    // pushBack(&sources, &light3, LightSource *);
 
     renderToWindow("Pink marble showing frame", objects, sources, camera, width, height, 11);
 
