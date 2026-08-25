@@ -30,12 +30,12 @@ typedef enum {
 typedef struct Texture {
     Complex (*refractiveIndex)(Texture *self, Real lambda);
     TextureAttributes tags;
-    Real roughness;
     void *data; // for those data that are not common for all textures
 } Texture;
 
-typedef struct Interface{
-    Texture in, out;
+typedef struct Interface {
+    Texture *in, *out;
+    Real roughness;
 } Interface;
 
 static void mallocFailed() {
@@ -45,28 +45,23 @@ static void mallocFailed() {
 
 // to make sure the data of diffrent textures won't confuse anyone we have to seperate the original
 // "newTexture" into different functions
-Texture *newOpaqueDieletric(Complex (*refractiveIndex)(Texture *, Real), Real roughness,
-                            Real (*baseColor)(Real)) {
+Texture *newOpaqueDieletric(Complex (*refractiveIndex)(Texture *, Real), Real (*baseColor)(Real)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
         mallocFailed();
     }
 
-    *tex = (Texture){refractiveIndex, DIELETRIC | OPAQUE, roughness,
-                     baseColor};
+    *tex = (Texture){refractiveIndex, DIELETRIC | OPAQUE, baseColor};
     return tex;
 }
 
-Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                                 Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
-                                 Real concentration) {
+Texture *newTransparentDieletric(Complex (*refractiveIndex)(Texture *, Real), Real concentration) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
         mallocFailed();
     }
 
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | FULLY_TRANSPARENT,
-                     roughness};
+    *tex = (Texture){refractiveIndex, DIELETRIC | FULLY_TRANSPARENT};
     tex->data = malloc(sizeof(Real));
     if (tex->data == NULL) {
         mallocFailed();
@@ -75,14 +70,12 @@ Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Rea
     return tex;
 }
 
-Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
-                  Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness) {
+Texture *newMetal(Complex (*refractiveIndex)(Texture *, Real)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) {
         mallocFailed();
     }
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, METALLIC | OPAQUE, roughness,
-                     NULL};
+    *tex = (Texture){refractiveIndex, METALLIC | OPAQUE, NULL};
     return tex;
 }
 
@@ -92,9 +85,8 @@ typedef struct {
                                   MT19937 *); // sample next direction through phase function
 } HalfTransparentTextureData;
 
-Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                                     Complex (*refractiveIndexOutside)(Texture *, Real),
-                                     Real roughness, Real (*sigmaS)(Real),
+Texture *newHalfTransparentDieletric(Complex (*refractiveIndex)(Texture *, Real),
+                                     Real (*sigmaS)(Real),
                                      Vector (*sampleNextDirection)(Vector, MT19937 *)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) mallocFailed();
@@ -102,8 +94,7 @@ Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *,
     if (data == NULL) mallocFailed();
     data->sampleNextDirection = sampleNextDirection;
     data->sigmaS = sigmaS;
-    *tex = (Texture){refractiveIndexInside, refractiveIndexOutside, DIELETRIC | HALF_TRANSPARENT,
-                     roughness, data};
+    *tex = (Texture){refractiveIndex, DIELETRIC | HALF_TRANSPARENT, data};
     return tex;
 }
 
@@ -299,63 +290,60 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
 }
 
 Texture *newSapphire(Real roughness, Real concentration) {
-    return newTransparentDieletric(getSapphireRefractivity, getAirRefractivity, roughness,
-                                   concentration);
+    return newTransparentDieletric(getSapphireRefractivity, concentration);
 }
 
-Texture *newGold(Real roughness) {
-    return newMetal(getGoldRefractivity, getAirRefractivity, roughness);
-}
+Texture *newGold(Real roughness) { return newMetal(getGoldRefractivity); }
 
-Texture *newSilver(Real roughness) {
-    return newMetal(getSilverRefractivity, getAirRefractivity, roughness);
-}
+Texture *newSilver(Real roughness) { return newMetal(getSilverRefractivity); }
 
-Texture *newCopper(Real roughness) {
-    return newMetal(getCopperRefractivity, getAirRefractivity, roughness);
-}
+Texture *newCopper(Real roughness) { return newMetal(getCopperRefractivity); }
 
-Texture *newIron(Real roughness) {
-    return newMetal(getIronRefractivity, getAirRefractivity, roughness);
-}
+Texture *newIron(Real roughness) { return newMetal(getIronRefractivity); }
 
 Texture *newGlass(Real roughness) {
     // for glass we don't care about its color (it has a fixed extinction coefficient), so
     // concentration remains 0
-    return newTransparentDieletric(getGlassRefractivity, getAirRefractivity, roughness, 0);
+    return newTransparentDieletric(getGlassRefractivity, 0);
 }
 
 Texture *newDiamond(Real roughness) {
     // for the same reason as glass, so concentration remains 0
-    return newTransparentDieletric(getDiamondRefractivity, getAirRefractivity, roughness, 0);
+    return newTransparentDieletric(getDiamondRefractivity, 0);
 }
 
 // Wrappers
-Real getTextureBaseColor(Texture *texture, Real lambda) {
+static inline Real getTextureBaseColor(Texture *texture, Real lambda) {
     Real (*baseColor)(Real) = texture->data;
     return baseColor(lambda);
 }
 
-Real getTextureSigmaS(Texture *texture, Real lambda) {
+Real getInterfaceInsideBaseColor(Interface *interface, Real lambda) {
+    return getTextureBaseColor(interface->in, lambda);
+}
+
+Real getInterfaceOutsideBaseColor
+
+static inline Real getTextureSigmaS(Texture *texture, Real lambda) {
     HalfTransparentTextureData *data = texture->data;
     return data->sigmaS(lambda);
 }
 
-Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection, MT19937 *mt) {
+static inline Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection,
+                                                MT19937 *mt) {
     HalfTransparentTextureData *data = texture->data;
     return data->sampleNextDirection(currentDirection, mt);
 }
 
-Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda) {
-    return texture->refractiveIndexInside(texture, lambda);
+static inline Complex getTextureRefractiveIndex(Texture *texture, Real lambda) {
+    return texture->refractiveIndex(texture, lambda);
 }
 
-Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda) {
-    return texture->refractiveIndexOutside(texture, lambda);
+static inline bool isTextureMetallic(Texture *texture) { return texture->tags & METALLIC; }
+static inline bool isTextureTransparent(Texture *texture) {
+    return (texture->tags & HALF_TRANSPARENT) > 0;
 }
-
-bool isTexturemetallic(Texture *texture) { return texture->tags & METALLIC; }
-bool isTextureFullyTransparent(Texture *texture) {
+static inline bool isTextureFullyTransparent(Texture *texture) {
     static const uint32_t transparent_mask = HALF_TRANSPARENT;
     return (texture->tags & HALF_TRANSPARENT) == FULLY_TRANSPARENT;
 }
@@ -363,15 +351,26 @@ bool isTextureHalfTransparent(Texture *texture) {
     return (texture->tags & HALF_TRANSPARENT) == HALF_TRANSPARENT;
 }
 
-Real getTextureRoughness(Texture *texture) { return texture->roughness; }
+Real getInterfaceRoughness(Interface *interface) { return interface->roughness; }
 
-void destroyTexture(Texture *tex) {
+static void destroyTexture(Texture *tex) {
     if (isTextureFullyTransparent(tex) || isTextureHalfTransparent(tex)) {
         // for opaque materials, data is a function
         // they shall not be freed
         free(tex->data);
     }
     free(tex);
+}
+
+Interface *newInterface(Texture *in, Texture *out) {
+    Interface *interface = malloc(sizeof(*interface));
+    *interface = (Interface){in, out};
+    return interface;
+}
+
+void destroyInterface(Interface *interface) {
+    // users should manage the texture themselves since they might reuse the textures like air
+    free(interface);
 }
 
 #undef AG_LINE_COUNT

@@ -8,17 +8,17 @@
 
 typedef struct Object {
     Shape *shape;
-    Texture *texture;
+    Interface *interface;
 } Object;
 
-Object *newObject(Shape *shape, Texture *texture) {
+Object *newObject(Shape *shape, Interface *interface) {
     Object *obj = malloc(sizeof(*obj));
     if (obj == NULL) {
         fprintf(stderr, "malloc obj failed\n");
         exit(1);
     }
     obj->shape = shape;
-    obj->texture = texture;
+    obj->interface = interface;
     return obj;
 }
 
@@ -28,13 +28,13 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
 
-Real getObjectSigmaS(Object *self, Real lambda) { return getTextureSigmaS(self->texture, lambda); }
+Real getObjectSigmaS(Object *self, Real lambda) { return getTextureSigmaS(self->interface, lambda); }
 
 Vector sampleObjectNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
     return sampleTextureNextDirection(self->texture, currentDirection, mt);
 }
 
-Complex getRefractiveIndexOutside(Object *self, Real lambda) {
+Complex getRefractiveIndex(Object *self, Real lambda) {
     return getTextureRefractiveIndexOutside(self->texture, lambda);
 }
 

@@ -8,7 +8,7 @@
 
 typedef struct Object Object;
 
-Object *newObject(Shape *shape, Texture *texture);
+Object *newObject(Shape *shape, Interface *interface);
 
 void destroyObject(Object *obj);
 
@@ -33,6 +33,5 @@ bool isObjectHalfTransparent(Object *self);
 Real getBaseColor(Object *self, Real lambda);
 
 Vector getNormalVector(Object *self, Point p);
-
 
 #endif

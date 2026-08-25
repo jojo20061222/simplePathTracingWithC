@@ -6,34 +6,20 @@
 
 typedef struct Texture Texture;
 
-// wrappers for the internal structure
-Real getTextureBaseColor(Texture *texture, Real lambda);
-Real getTextureSigmaS(Texture *texture, Real lambda);
-Vector sampleTextureNextDirection(Texture *texture, Vector currentDirection, MT19937 *mt);
-Complex getTextureRefractiveIndexInside(Texture *texture, Real lambda);
-Complex getTextureRefractiveIndexOutside(Texture *texture, Real lambda);
-bool isTexturemetallic(Texture *texture);
-bool isTextureFullyTransparent(Texture *texture);
-bool isTextureHalfTransparent(Texture *texture);
-Real getTextureRoughness(Texture *texture);
-void destroyTexture(Texture *tex);
+typedef struct Interface Interface;
+
+// wrappers for Interface
+
+// read refractivity data
 void initTexture();
 
+
 // new Textures
-Texture *newOpaqueDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                            Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
-                            Real (*baseColor)(Real));
-
-Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                                 Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
-                                 Real concentraction);
-
-Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
-                  Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness);
-
-Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
-                                     Complex (*refractiveIndexOutside)(Texture *, Real),
-                                     Real roughness, Real (*sigmaS)(Real),
+Texture *newOpaqueDieletric(Complex (*refractiveIndex)(Texture *, Real), Real (*baseColor)(Real));
+Texture *newTransparentDieletric(Complex (*refractiveIndex)(Texture *, Real), Real concentration);
+Texture *newMetal(Complex (*refractiveIndex)(Texture *, Real));
+Texture *newHalfTransparentDieletric(Complex (*refractiveIndex)(Texture *, Real),
+                                     Real (*sigmaS)(Real),
                                      Vector (*sampleNextDirection)(Vector, MT19937 *));
 
 // base colors
@@ -61,5 +47,9 @@ Texture *newSapphire(Real roughness, Real concentration);
 
 // base h-G sample
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);
+
+
+// Wrappers for textures
+Real getInterfaceRoughness(Interface *interface);
 
 #endif
