@@ -556,14 +556,32 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // n1 symbolizes the refractivity of the material the reversed ray is currently in
     // n2 symbolizes the refractivity of material on the other side
     bool hitFromInside = vecDot(N, d) > 0;
+    Complex n1, n2;
+    bool isCurrentHalfTransparent;
+    bool isNextHalfTransparent;
+    bool isNextFullyTransparent;
+    bool isNextMetallic;
+
     if (hitFromInside) {
-        swapInterface(firstCollideObject);
+        N = vecNegative(N);
+        n1 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        n2 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        isCurrentHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
+        isNextHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
+        isNextFullyTransparent = isObjectOutsideFullyTransparent(firstCollideObject);
+        isNextMetallic = isObjectOutsideMetallic(firstCollideObject);
+    }
+    else {
+        n1 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        n2 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        isCurrentHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
+        isNextHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
+        isNextFullyTransparent = isObjectInsideFullyTransparent(firstCollideObject);
+        isNextMetallic = isObjectInsideMetallic(firstCollideObject);
     }
 
     // after the operations above, the normal vector should point on the side where reversed
     // rays come from
-    Complex n1 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
-    Complex n2 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
 
     Vector v = vecNegative(ray.direction); // direction from collide point to observer
     Real roughness = getObjectRoughness(firstCollideObject);
@@ -581,14 +599,13 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
-    bool metallic = isObjectInsideMetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta);
 
     // here we implement BSDF
     NextSimulationData nxt;
     bool isSpecularBounce = false;
 
-    if (metallic || randomReal(mt) <= F) {
+    if (isNextMetallic || randomReal(mt) <= F) {
         // to prevent dividing by 0 error when divided by branch PDF
         if (F < error) return notCollideData;
         if (alpha < error) {
@@ -601,7 +618,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
         scalingFactor *= nxt.scalingFactor;
         // since metallic texture won't go into the 1 - F branch so we do have to * F
-        if (!metallic) scalingFactor /= F;
+        if (!isNextMetallic) scalingFactor /= F;
     }
     else {
         // the left branch is 1 - F
@@ -610,9 +627,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
         // both fully transparent and half transparent obejcts need to take BTDF once so they should
         // in the same branch
-        bool halfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
-        bool fullyTransparent = isObjectInsideFullyTransparent(firstCollideObject);
-        if (fullyTransparent || halfTransparent) {
+        if (isNextFullyTransparent || isNextHalfTransparent) {
             // Note that we have returned a value in reflection branch so the proabability of
             // this branch is 1 - F There is no need to * (1 - F) in the result
 
@@ -634,27 +649,21 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     }
     if (nxt.scalingFactor == 0) return notCollideData;
 
-    bool transmission = vecDot(N, ray.direction) > 0;
+    bool transmission = vecDot(N, nxt.nxtRay.direction) < 0;
     Complex IOR = transmission ? n2 : n1;
     // calculate the extinction factor for next ray
     // Beer-Lembert's Law
     // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
     *extinctionFactor = 4 * M_PI * IOR.I / ray.wavelength * 1e5;
 
-    bool isCurrentTextureHalfTransparent = transmission
-                                               ? isObjectInsideHalfTransparent(firstCollideObject)
-                                               : isObjectOutsideHalfTransparent(firstCollideObject);
+    bool halfTransparent = transmission ? isNextHalfTransparent : isCurrentHalfTransparent;
 
-    if (isCurrentTextureHalfTransparent) {
+    if (halfTransparent) {
         nxt = sampleSSS(firstCollideObject, IOR, objects, sources, mt, &nxt.nxtRay);
 
         if (nxt.scalingFactor == 0) return notCollideData;
         scalingFactor *= nxt.scalingFactor;
     }
-
-    if (hitFromInside) {
-        swapInterface(firstCollideObject);
-    } // flip it back
 
     ReversedRay nxtRay = nxt.nxtRay;
     Vector l = nxtRay.direction;

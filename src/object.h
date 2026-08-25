@@ -34,10 +34,12 @@ bool isObjectInsideHalfTransparent(Object *self);
 
 bool isObjectOutsideHalfTransparent(Object *self);
 
+bool isObjectOutsideFullyTransparent(Object *self);
+
+bool isObjectOutsideMetallic(Object *self);
+
 Real getObjectInsideBaseColor(Object *self, Real lambda);
 
 Vector getNormalVector(Object *self, Point p);
-
-void swapInterface(Object *self);
 
 #endif
