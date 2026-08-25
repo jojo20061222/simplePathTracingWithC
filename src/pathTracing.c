@@ -11,7 +11,7 @@
  * @brief This file provides two default method for the users to render.
  */
 
-static const int maxDepth = 100;
+static const int maxDepth = 32;
 static const int threshold = 64;
 
 void renderToWindow(const char *windowTitle, Object **objects, LightSource **sources,

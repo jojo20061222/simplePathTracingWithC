@@ -489,8 +489,9 @@ static inline bool visibilityTest(ReversedRay *shadowRay, Real distance, Object 
 }
 
 static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **objects,
-                                           LightSource **sources, MT19937 *mt, ReversedRay *curRay,
-                                           int maxDepth) {
+                                           LightSource **sources, MT19937 *mt,
+                                           ReversedRay *curRay) {
+    static const int maxDepth = 1e7;
     Real sigmaS = getObjectSigmaS(obj, curRay->wavelength);
     Real k = n2.I;
     Real lambda = curRay->wavelength;
@@ -498,6 +499,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
     Real sigmaT = sigmaA + sigmaS;
     Real albedo = sigmaT > error ? sigmaS / sigmaT : 1.0;
     ReversedRay ray = *curRay;
+    Real scalingFactor = 1;
 
     for (int i = 0; i < maxDepth; i++) {
         CollideResult result = collideObject(obj, &ray);
@@ -514,18 +516,22 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
             // work
             // to prevent the ray just directly goes out the object, we minus it by an error
             ray.start = vecAdd(ray.start, vecMultiply(boundaryDistance - error, ray.direction));
-            return (NextSimulationData){1, ray};
+            return (NextSimulationData){scalingFactor, ray};
         }
 
-        // not collide with anything, so we decide if this ray should be killed by albedo
-        if (randomReal(mt) > albedo) {
-            printf("wtf\n");
+        // decide whether to kill the loop by russian roulette
+        // the chance to live is dynamically adjusted
+        Real q = albedo;
+        if (i > 10) {
+            q = fmin(albedo, 0.5);
+        }
+        if (randomReal(mt) > q) {
             return (NextSimulationData){0};
         }
+        scalingFactor *= (albedo / q);
 
         // sample next direction through current direction by phase function
         Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction, mt);
-        printf("("REAL_FMT", "REAL_FMT", "REAL_FMT"), ("REAL_FMT", "REAL_FMT", "REAL_FMT")", ray.direction.x, ray.direction.y, ray.direction.z, nxt);
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }
@@ -535,7 +541,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
 static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectResult,
                                             Object *firstCollideObject, Object **objects,
                                             LightSource **sources, Real *extinctionFactor,
-                                            ReversedRay ray, MT19937 *mt, int maxDepth) {
+                                            ReversedRay ray, MT19937 *mt) {
     static const NextSimulationData notCollideData = {0};
 
     Real travelingDistance = firstCollideObjectResult->distance;
@@ -636,8 +642,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
             // however, for half transparent objects, we need to do random walk SSS
             if (halfTransparent) {
-                nxt =
-                    sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
+                nxt = sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay);
 
                 if (nxt.scalingFactor == 0) return notCollideData;
                 scalingFactor *= nxt.scalingFactor;
@@ -973,9 +978,8 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         }
 
         // case 3: we collide with an object first
-        NextSimulationData BSDFnxt =
-            sampleBSDF(&firstCollideObjectResult, firstCollideObject, objects, sources,
-                       &extinctionFactor, curRay, mt, maxDepth);
+        NextSimulationData BSDFnxt = sampleBSDF(&firstCollideObjectResult, firstCollideObject,
+                                                objects, sources, &extinctionFactor, curRay, mt);
         if (BSDFnxt.scalingFactor < error) break;
 
         // this is used to inform the next loop to not calculate MIS

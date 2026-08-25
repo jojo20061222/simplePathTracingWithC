@@ -6,13 +6,13 @@ Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
 }
 
-Real sigmaSforMarble(Real _) { return 20.0; }
+Real sigmaSforMarble(Real _) { return 0.2; }
 
 Complex getMarbleRefractivity(Texture *__, Real _) { return (Complex){1.65, 0}; }
 
 int main() {
-    static const int width = 720;
-    static const int height = 540;
+    static const int width = 540;
+    static const int height = 360;
     Camera *camera =
         newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
                          (Real)height * 0.65, -1.0 / 3.0 * (Real)height, width);
@@ -85,7 +85,7 @@ int main() {
 
     // light3 : behind the diamond
     Shape *lightSph3 =
-        newSphere((Point){(Real)width / 2, (Real)height / 2, pz + lightRadius}, lightRadius);
+        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
