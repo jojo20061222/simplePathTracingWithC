@@ -28,35 +28,35 @@ CollideResult collideObject(Object *obj, ReversedRay *ray) {
     return detectCollide(obj->shape, ray);
 }
 
-Real getObjectSigmaS(Object *self, Real lambda) {
+Real getObjectInsideSigmaS(Object *self, Real lambda) {
     return getInterfaceInsideSigmaS(self->interface, lambda);
 }
 
-Vector sampleObjectNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
+Vector sampleObjectInsideNextDirection(Object *self, Vector currentDirection, MT19937 *mt) {
     return sampleInterfaceInsideNextDirection(self->interface, currentDirection, mt);
 }
 
-Complex getRefractiveIndex(Object *self, Real lambda) {
+Complex getObjectInsideRefractiveIndex(Object *self, Real lambda) {
     return getInterfaceInsideRefractiveIndex(self->interface, lambda);
 }
 
-Complex getRefractiveIndexInside(Object *self, Real lambda) {
+Complex getObjectOutsideRefractiveIndex(Object *self, Real lambda) {
     return getInterfaceInsideRefractiveIndex(self->interface, lambda);
 }
 
-Real getRoughness(Object *self) { return getInterfaceRoughness(self->interface); }
+Real getObjectRoughness(Object *self) { return getInterfaceRoughness(self->interface); }
 
-bool isObjectMetallic(Object *self) { return isInterfaceInsideMetallic(self->interface); }
+bool isObjectInsideMetallic(Object *self) { return isInterfaceInsideMetallic(self->interface); }
 
-bool isObjectFullyTransparent(Object *self) {
+bool isObjectInsideFullyTransparent(Object *self) {
     return isInterfaceInsideFullyTransparent(self->interface);
 }
 
-bool isObjectHalfTransparent(Object *self) {
+bool isObjectInsideHalfTransparent(Object *self) {
     return isInterfaceInsideHalfTransparent(self->interface);
 }
 
-Real getBaseColor(Object *self, Real lambda) {
+Real getObjectInsideBaseColor(Object *self, Real lambda) {
     return getInterfaceInsideBaseColor(self->interface, lambda);
 }
 

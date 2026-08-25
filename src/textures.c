@@ -289,6 +289,12 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
     return (Complex){n, k};
 }
 
+
+// texture examples 
+Texture *newAir() {
+    return newTransparentDieletric(getAirRefractivity, 0);
+}
+
 Texture *newSapphire(Real roughness, Real concentration) {
     return newTransparentDieletric(getSapphireRefractivity, concentration);
 }

@@ -458,7 +458,7 @@ static inline NextSimulationData sampleDiffusion(MT19937 *mt, Vector N, Real F, 
     ReversedRay nxtRay = getRay(nxtStart, nxtDirection, ray.wavelength);
 
     // after diffusion the light should have the color of the material
-    Real baseColor = getBaseColor(firstCollideObject, ray.wavelength);
+    Real baseColor = getObjectInsideBaseColor(firstCollideObject, ray.wavelength);
     Real scalingFactor = baseColor * (1 - F);
 
     return (NextSimulationData){scalingFactor, nxtRay};
@@ -492,7 +492,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
                                            LightSource **sources, MT19937 *mt,
                                            ReversedRay *curRay) {
     static const int maxDepth = 1e7;
-    Real sigmaS = getObjectSigmaS(obj, curRay->wavelength);
+    Real sigmaS = getObjectInsideSigmaS(obj, curRay->wavelength);
     Real k = n2.I;
     Real lambda = curRay->wavelength;
     Real sigmaA = (4 * M_PI * k / lambda) * 1e5; // we also convert sigma_a into 0.1 mm as unit
@@ -531,7 +531,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
         scalingFactor *= (albedo / q);
 
         // sample next direction through current direction by phase function
-        Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction, mt);
+        Vector nxtDirection = sampleObjectInsideNextDirection(obj, ray.direction, mt);
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }
@@ -560,18 +560,18 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         // N vecDot d < 0 implys the ray is now in the object
         // n1 = inside, n2 = outside, since we goes from inside to outside
         N = (Vector){-N.x, -N.y, -N.z};
-        n1 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
-        n2 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
+        n1 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        n2 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
     }
     else {
-        n1 = getRefractiveIndexOutside(firstCollideObject, ray.wavelength);
-        n2 = getRefractiveIndexInside(firstCollideObject, ray.wavelength);
+        n1 = getObjectOutsideRefractiveIndex(firstCollideObject, ray.wavelength);
+        n2 = getObjectInsideRefractiveIndex(firstCollideObject, ray.wavelength);
     }
     // after the operations above, the normal vector should point on the side where reversed
     // rays come from
 
     Vector v = vecNegative(ray.direction); // direction from collide point to observer
-    Real roughness = getRoughness(firstCollideObject);
+    Real roughness = getObjectRoughness(firstCollideObject);
     // By Disney's guidelines we square the roughness here to get alpha
     Real alpha = roughness * roughness;
 
@@ -586,7 +586,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
 
     // by Fresnel's Equation, we concluded that F should reflect and 1-F should goes through the
     // surface and so refraction or diffusion
-    bool metallic = isObjectMetallic(firstCollideObject);
+    bool metallic = isObjectInsideMetallic(firstCollideObject);
     Real F = getFresnelTerm(n1, n2, cosTheta);
 
     // here we implement BSDF
@@ -614,8 +614,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         // the left branch is 1 - F
         // to prevent dividing by 0 error when divided by branch PDF
         if (1 - F < error) return notCollideData; //
-        bool fullyTransparent = isObjectFullyTransparent(firstCollideObject);
-        bool halfTransparent = isObjectHalfTransparent(firstCollideObject);
+        bool fullyTransparent = isObjectInsideFullyTransparent(firstCollideObject);
+        bool halfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
 
         // both fully transparent and half transparent obejcts need to take BTDF once so they should
         // in the same branch
@@ -687,8 +687,8 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
-    bool metallic = isObjectMetallic(object);
-    bool transparent = isObjectFullyTransparent(object) || isObjectHalfTransparent(object);
+    bool metallic = isObjectInsideMetallic(object);
+    bool transparent = isObjectInsideTr
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     if (vecDot(N, l) < 0) {
@@ -749,7 +749,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 
     if (!metallic && !transparent) {
         // the light may comes from BRDF or diffusion branch
-        Real diffusion = getBaseColor(object, lambda) / M_PI;
+        Real diffusion = getObjectInsideBaseColor(object, lambda) / M_PI;
         return BRDF + diffusion * (1 - F);
     }
 
@@ -763,9 +763,9 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
-    bool transparent =
-        isObjectFullyTransparent(collideObject) || isObjectHalfTransparent(collideObject);
-    bool metallic = isObjectMetallic(collideObject);
+    bool transparent = isObjectInsideFullyTransparent(collideObject) ||
+                       isObjectInsideHalfTransparent(collideObject);
+    bool metallic = isObjectInsideMetallic(collideObject);
     Vector m;
     if (transmission) {
         if (!transparent) {
@@ -786,7 +786,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     Real MdotL = vecDot(m, l);
     Real MdotV = vecDot(m, v);
     Real NdotM = vecDot(m, N);
-    Real roughness = getRoughness(collideObject);
+    Real roughness = getObjectRoughness(collideObject);
     Real alpha = roughness * roughness;
     Real D = getNormalDistributionTerm(NdotM, alpha);
     Real F = getFresnelTerm(n1, n2, rabs(MdotV));
@@ -813,7 +813,7 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
         Real pdfSpecular = nom / denom;
 
         // for dieletic matirials
-        if (!isObjectMetallic(collideObject) && !transparent) {
+        if (!isObjectInsideMetallic(collideObject) && !transparent) {
             Real pdfDiffuse = rabs(vecDot(N, l)) / M_PI;
             // PDF(branch specular) + PDF(branch diffuse)
             return pdfBranch * pdfSpecular + (1 - F) * pdfDiffuse;
@@ -847,7 +847,7 @@ static inline LightIntensity sampleNEE(Complex n1, Complex n2,
     if (vecDot(N, v) < 0) {
         N = vecNegative(N);
     }
-    Real roughness = getRoughness(firstCollideObject);
+    Real roughness = getObjectRoughness(firstCollideObject);
     Real alpha = roughness * roughness;
 
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
@@ -987,11 +987,11 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         Complex n1 = BSDFnxt.n1, n2 = BSDFnxt.n2;
 
         // only smooth metal and transparent texture need not to do NEE
-        Real roughness = getRoughness(firstCollideObject);
+        Real roughness = getObjectRoughness(firstCollideObject);
         Real alpha = roughness * roughness;
-        bool isPureDelta = alpha < error && (isObjectFullyTransparent(firstCollideObject) ||
-                                             isObjectHalfTransparent(firstCollideObject) ||
-                                             isObjectMetallic(firstCollideObject));
+        bool isPureDelta = alpha < error && (isObjectInsideFullyTransparent(firstCollideObject) ||
+                                             isObjectInsideHalfTransparent(firstCollideObject) ||
+                                             isObjectInsideMetallic(firstCollideObject));
         if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
             // we have multiplied the result in sampleNEE by MIS weight

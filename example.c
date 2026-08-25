@@ -22,13 +22,14 @@ int main() {
     Object **objects = newDynamicArray(0, Object *);
     LightSource **sources = newDynamicArray(0, LightSource *);
 
-    Texture *whiteReflector =
-        newOpaqueDieletric(getPlasticRefractivity, getAirRefractivity, 1, pureWhite);
+    Texture *air = newAir();
+    pushBack(&textures, air, Texture *);
+    Texture *whiteReflector = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
     pushBack(&textures, whiteReflector, Texture *);
     Texture *diamond = newDiamond(0);
     pushBack(&textures, diamond, Texture *);
-    Texture *marble = newHalfTransparentDieletric(getMarbleRefractivity, getAirRefractivity, 0.1,
-                                                  sigmaSforMarble, sampleMarbleNextDirection);
+    Texture *marble = newHalfTransparentDieletric(getMarbleRefractivity, sigmaSforMarble,
+                                                  sampleMarbleNextDirection);
     pushBack(&textures, marble, Texture *);
 
     Real startx = 0, endx = width;
@@ -45,7 +46,8 @@ int main() {
     Shape *groundShape = newConvexPolygon(groundPoints);
     pushBack(&shapes, groundShape, Shape *);
     freeDynamicArray(groundPoints);
-    Object *ground = newObject(groundShape, whiteReflector);
+    Interface *groundInterface = newInterface(whiteReflector, air);
+    Object *ground = newObject(groundShape, groundInterface);
     pushBack(&objects, ground, Object *);
 
     // back
@@ -56,7 +58,7 @@ int main() {
     backPoints[3] = (Point){startx, starty, pz};
     Shape *backShape = newConvexPolygon(backPoints);
     freeDynamicArray(backPoints);
-    Object *backWall = newObject(backShape, whiteReflector);
+    Object *backWall = newObject(backShape, groundInterface);
     pushBack(&objects, backWall, Object *);
 
     Real radius = (Real)width / 10;
@@ -64,7 +66,8 @@ int main() {
 
     Shape *marbleSph = newSphere(showing, radius);
     pushBack(&shapes, marbleSph, Shape *);
-    Object *marbleBall = newObject(marbleSph, marble);
+    Interface *marbleInterface = newInterface(marble, air);
+    Object *marbleBall = newObject(marbleSph, marbleInterface);
     pushBack(&objects, marbleBall, Object *);
 
     Real lightRadius = (Real)width / 40;
@@ -85,7 +88,8 @@ int main() {
 
     // light3 : behind the diamond
     Shape *lightSph3 =
-        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius}, lightRadius);
+        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius},
+                  lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);

@@ -14,23 +14,23 @@ void destroyObject(Object *obj);
 
 CollideResult collideObject(Object *, ReversedRay *);
 
-Real getObjectSigmaS(Object *self, Real lambda);
+Real getObjectInsideSigmaS(Object *self, Real lambda);
 
-Vector sampleObjectNextDirection(Object *self, Vector currentDirection, MT19937 *mt);
+Vector sampleObjectInsideNextDirection(Object *self, Vector currentDirection, MT19937 *mt);
 
-Complex getRefractiveIndexInside(Object *self, Real lambda);
+Complex getObjectInsideRefractiveIndex(Object *self, Real lambda);
 
-Complex getRefractiveIndexOutside(Object *self, Real lambda);
+Complex getObjectOutsideRefractiveIndex(Object *self, Real lambda);
 
-Real getRoughness(Object *self);
+Real getObjectRoughness(Object *self);
 
-bool isObjectMetallic(Object *self);
+bool isObjectInsideMetallic(Object *self);
 
-bool isObjectFullyTransparent(Object *self);
+bool isObjectInsideFullyTransparent(Object *self);
 
-bool isObjectHalfTransparent(Object *self);
+bool isObjectInsideHalfTransparent(Object *self);
 
-Real getBaseColor(Object *self, Real lambda);
+Real getObjectInsideBaseColor(Object *self, Real lambda);
 
 Vector getNormalVector(Object *self, Point p);
 

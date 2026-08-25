@@ -58,6 +58,7 @@ Complex getIronRefractivity(Texture *, Real lambda);
 Complex getDiamondRefractivity(Texture *, Real lambda);
 
 // base materials
+Texture *newAir();
 Texture *newGold(Real roughness);
 Texture *newSilver(Real roughness);
 Texture *newCopper(Real roughness);
