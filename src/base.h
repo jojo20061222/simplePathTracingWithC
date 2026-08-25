@@ -171,8 +171,10 @@ static inline Real cplxArg(Complex z) {
     return atan(z.I / z.R) - M_PI; // x < 0 and y < 0
 }
 
+static inline Real lerp(Real a, Real b, Real t) { return a + t * (b - a); }
+
 // linearly map x from [x1, x2] to [y1, y2]
-static inline Real lerp(Real x1, Real x2, Real x, Real y1, Real y2) {
+static inline Real lerpInterval(Real x1, Real x2, Real x, Real y1, Real y2) {
     // since (y - y1) / (x - x1) = (y2 - y) / (x2 - x)
     // we have (y - y1)(x2 - x) = (y2 - y)(x - x1)
     // x2y - xy - x2y1 + y1x = y2x - x1y2 - xy + x1y
@@ -180,7 +182,6 @@ static inline Real lerp(Real x1, Real x2, Real x, Real y1, Real y2) {
     if (rabs(x2 - x1) < error) return y1;
     return (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1);
 }
-
 
 static inline Vector toWorld(Vector local, Vector N) {
     Vector helper = (rabs(N.x) > 0.9) ? ((Vector){0, 1, 0}) : ((Vector){1, 0, 0});

@@ -31,8 +31,8 @@ typedef struct {
 ReversedRay regularCameraMapFucntion(Camera *camera, Real x, Real y, Real wavelength) {
     RegularCameraData *data = camera->data;
     // linearly map the x, y on screen to reality
-    Real convertedX = lerp(0, data->width, x, data->startX, data->endX);
-    Real convertedY = lerp(0, data->height, y, data->startY, data->endY);
+    Real convertedX = lerpInterval(0, data->width, x, data->startX, data->endX);
+    Real convertedY = lerpInterval(0, data->height, y, data->startY, data->endY);
     Point direction = vecMinus((Vector){convertedX, convertedY, data->z}, data->start);
     return getRay(data->start, direction, wavelength);
 }

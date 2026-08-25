@@ -6,7 +6,22 @@ Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
 }
 
-Real sigmaSforMarble(Real _) { return 0.2; }
+Real getPinkMarbleSigmaS(Real lambda) {
+    if (lambda < 470.0) {
+        return 0.21;
+    }
+    else if (lambda < 530.0) {
+        Real t = (lambda - 470.0) / (530.0 - 470.0);
+        return lerp(0.21, 0.22, t);
+    }
+    else if (lambda < 650.0) {
+        Real t = (lambda - 530.0) / (650.0 - 530.0);
+        return lerp(0.22, 0.20, t);
+    }
+    else {
+        return 0.20;
+    }
+}
 
 int main() {
     static const int width = 540;
@@ -24,9 +39,7 @@ int main() {
     pushBack(&textures, air, Texture *);
     Texture *whitePlastic = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
     pushBack(&textures, whitePlastic, Texture *);
-    Texture *diamond = newDiamond(0);
-    pushBack(&textures, diamond, Texture *);
-    Texture *marble = newHalfTransparentDieletric(getMarbleRefractivity, sigmaSforMarble,
+    Texture *marble = newHalfTransparentDieletric(getPinkMarbleRefractivity, getPinkMarbleSigmaS,
                                                   sampleMarbleNextDirection);
     pushBack(&textures, marble, Texture *);
 
@@ -86,12 +99,13 @@ int main() {
 
     // light 3: directly behind the marble
     Shape *lightSph3 =
-        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius}, lightRadius);
+        newSphere((Point){(Real)width / 2 + lightRadius, (Real)height / 2, pz + lightRadius},
+                  lightRadius * 2);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
     pushBack(&sources, &light3, LightSource *);
 
-    renderToWindow("Diamond showing frame", objects, sources, camera, width, height, 11);
+    renderToWindow("Pink marble showing frame", objects, sources, camera, width, height, 11);
 
     destroyRegularCamera(camera);
 

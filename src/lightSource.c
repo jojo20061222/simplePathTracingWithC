@@ -57,12 +57,12 @@ ColorXYZ wavelengthToXYZ(Real wavelength) {
     Real slot1WaveLength = startWavelength + wavelengthStep * slot;
     Real slot2WaveLength = startWavelength + wavelengthStep * (slot + 1);
     // lerp
-    Real X = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].X,
-                  convertTable[slot + 1].X);
-    Real Y = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Y,
-                  convertTable[slot + 1].Y);
-    Real Z = lerp(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Z,
-                  convertTable[slot + 1].Z);
+    Real X = lerpInterval(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].X,
+                          convertTable[slot + 1].X);
+    Real Y = lerpInterval(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Y,
+                          convertTable[slot + 1].Y);
+    Real Z = lerpInterval(slot1WaveLength, slot2WaveLength, wavelength, convertTable[slot].Z,
+                          convertTable[slot + 1].Z);
 
     return (ColorXYZ){X, Y, Z};
 }

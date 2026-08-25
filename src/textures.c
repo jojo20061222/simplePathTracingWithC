@@ -221,7 +221,7 @@ Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}
 
 Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0.0}; };
 
-Complex getMarbleRefractivity(Texture *__, Real lambda) {
+Complex getMarbleRefractivity(Texture *_, Real lambda) {
     lambda /= 1000;
     Real lambda2 = lambda * lambda;
 
@@ -232,7 +232,43 @@ Complex getMarbleRefractivity(Texture *__, Real lambda) {
     static const Real e = 120;
 
     Real n = sqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
-    static const Real k = 2e-6;
+    static const Real k = 6e-6;
+
+    return (Complex){n, k};
+}
+
+static inline Real getPinkMarbleK(Real lambda) {
+    if (lambda < 470.0) {
+        return 6e-6; // 藍光
+    }
+    else if (lambda < 530.0) {
+        // 藍綠過渡
+        Real t = (lambda - 470.0) / (530.0 - 470.0);
+        return lerp(6e-6, 8.0e-6, t);
+    }
+    else if (lambda < 650.0) {
+        // 綠紅過渡
+        Real t = (lambda - 530.0) / (650.0 - 530.0);
+        return lerp(8.0e-6, 2.0e-6, t);
+    }
+    else {
+        return 2.0e-6; // 紅光
+    }
+}
+
+Complex getPinkMarbleRefractivity(Texture *_, Real lambda) {
+    Real k = getPinkMarbleK(lambda);
+
+    lambda /= 1000;
+    Real lambda2 = lambda * lambda;
+
+    static const Real a = 0.73358749;
+    static const Real b = 0.96464345;
+    static const Real c = 1.94325203e-2;
+    static const Real d = 1.82831454;
+    static const Real e = 120;
+
+    Real n = sqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
 
     return (Complex){n, k};
 }
@@ -246,8 +282,8 @@ Complex getRefractivity(Real lambda, Complex eta[], Real lambdaStep, int lineCou
     if (slot + 1 >= lineCount) return (Complex){0, 0};
     int preLambda = startLambda + lambdaStep * slot;
     int nxtLambda = startLambda + lambdaStep * (slot + 1);
-    return (Complex){lerp(preLambda, nxtLambda, lambda, eta[slot].R, eta[slot + 1].R),
-                     lerp(preLambda, nxtLambda, lambda, eta[slot].I, eta[slot + 1].I)};
+    return (Complex){lerpInterval(preLambda, nxtLambda, lambda, eta[slot].R, eta[slot + 1].R),
+                     lerpInterval(preLambda, nxtLambda, lambda, eta[slot].I, eta[slot + 1].I)};
 }
 
 Complex getSilverRefractivity(Texture *_, Real lambda) {
@@ -305,11 +341,8 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
     return (Complex){n, k};
 }
 
-
-// texture examples 
-Texture *newAir() {
-    return newTransparentDieletric(getAirRefractivity, 0);
-}
+// texture examples
+Texture *newAir() { return newTransparentDieletric(getAirRefractivity, 0); }
 
 Texture *newSapphire(Real roughness, Real concentration) {
     return newTransparentDieletric(getSapphireRefractivity, concentration);
