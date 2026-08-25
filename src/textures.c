@@ -1,6 +1,6 @@
 #include "textures.h"
-#include "random.h"
 #include "base.h"
+#include "random.h"
 #include <math.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -86,13 +86,14 @@ Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
 
 typedef struct {
     Real (*sigmaS)(Real);
-    Vector (*sampleNextDirection)(Vector, MT19937 *); // sample next direction through phase function
+    Vector (*sampleNextDirection)(Vector,
+                                  MT19937 *); // sample next direction through phase function
 } HalfTransparentTextureData;
 
 Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
                                      Complex (*refractiveIndexOutside)(Texture *, Real),
                                      Real roughness, Real (*sigmaS)(Real),
-                                     Vector (*sampleNextDirection)(Vector, MT19937*)) {
+                                     Vector (*sampleNextDirection)(Vector, MT19937 *)) {
     Texture *tex = malloc(sizeof(*tex));
     if (tex == NULL) mallocFailed();
     HalfTransparentTextureData *data = malloc(sizeof(*data));
@@ -107,15 +108,21 @@ Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *,
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
     Real u = randomReal(mt), v = randomReal(mt);
     Real theta = 2 * M_PI * u;
-    Real g2 = g * g;
-    Real temp = (1 - g2) / (1 + g - 2 * g * v);
-    Real cosPhi = (1 + g2 - temp * temp) / (2 * g);
-    Real sinPhi = sqrt(1 - cosPhi * cosPhi);
+
+    Real cosPhi;
+    if (rabs(g) < error) {
+        cosPhi = 1 - 2 * v;
+    }
+    else {
+        Real g2 = g * g;
+        Real temp = (1 - g2) / (1 + g - 2 * g * v);
+        cosPhi = (1 + g2 - temp * temp) / (2 * g);
+    }
+    Real sinPhi = sqrt(rmax(1 - cosPhi * cosPhi, 0.0));
     Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 
     return toWorld(local, input);
 }
-
 
 #define AG_LINE_COUNT 446
 static Complex AgEta[AG_LINE_COUNT];

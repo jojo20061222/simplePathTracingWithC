@@ -519,11 +519,13 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
 
         // not collide with anything, so we decide if this ray should be killed by albedo
         if (randomReal(mt) > albedo) {
+            printf("wtf\n");
             return (NextSimulationData){0};
         }
 
         // sample next direction through current direction by phase function
         Vector nxtDirection = sampleObjectNextDirection(obj, ray.direction, mt);
+        printf("("REAL_FMT", "REAL_FMT", "REAL_FMT"), ("REAL_FMT", "REAL_FMT", "REAL_FMT")", ray.direction.x, ray.direction.y, ray.direction.z, nxt);
         Point nxtStart = vecAdd(ray.start, vecMultiply(walkDistance, ray.direction));
         ray = getRay(nxtStart, nxtDirection, lambda);
     }
@@ -635,7 +637,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // however, for half transparent objects, we need to do random walk SSS
             if (halfTransparent) {
                 nxt =
-                   sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
+                    sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
 
                 if (nxt.scalingFactor == 0) return notCollideData;
                 scalingFactor *= nxt.scalingFactor;
@@ -681,7 +683,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
     bool metallic = isObjectMetallic(object);
-    bool transparent = isObjectFullyTransparent(object);
+    bool transparent = isObjectFullyTransparent(object) || isObjectHalfTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     if (vecDot(N, l) < 0) {
@@ -756,8 +758,9 @@ static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid
     bool transmission = distinguishRes - 1;
-    bool transparent = isObjectFullyTransparent(collideObject);
-    bool metallic = isObjectFullyTransparent(collideObject);
+    bool transparent =
+        isObjectFullyTransparent(collideObject) || isObjectHalfTransparent(collideObject);
+    bool metallic = isObjectMetallic(collideObject);
     Vector m;
     if (transmission) {
         if (!transparent) {
@@ -983,6 +986,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
         Real roughness = getRoughness(firstCollideObject);
         Real alpha = roughness * roughness;
         bool isPureDelta = alpha < error && (isObjectFullyTransparent(firstCollideObject) ||
+                                             isObjectHalfTransparent(firstCollideObject) ||
                                              isObjectMetallic(firstCollideObject));
         if (!isPureDelta) {
             Point collidePoint = BSDFnxt.collidePoint;
