@@ -29,7 +29,7 @@
 這個專案使用**右手坐標系**。視窗的左下角是原點，向右方是 +x 軸，向上方是 +y 軸，出螢幕側是 +z 軸。一個單位長對應現實中的 0.1 mm，在 macbook 上大約是一個像素的大小。
 
 ### Object
-Object 是一道光線真正互動的對象。使用 `newObject(...)`  方法創建一個新的 Object。一個 Object 需要具有形狀 Shape 和材質 Texture。
+Object 是一道光線真正互動的對象。使用 `newObject(...)`  方法創建一個新的 Object。一個 Object 需要具有形狀 Shape 和介面 Interface (1.8.0)。
 
 #### Shape
 使用 `new<形狀>(...)` 獲得一個新的 shape。實現的 Shape 包括
@@ -40,10 +40,15 @@ Object 是一道光線真正互動的對象。使用 `newObject(...)`  方法創
 
 使用 destroyShape 這一個統一的函數釋放資源。
 
-#### Texture
+#### Interface
+Interface 描述了兩個材質之間的關係。使用 `newInterface(in, out, roughness)` 產生一個介面。
+- in: 裡面的材質
+- out: 外面的材質
+- roughness: 表面的粗糙度，介於 0 到 1 之間，越高表面越粗糙 
+
+##### Texture
 使用 `new<材質>(...)` 獲得一個新的材質。實現的 Texture 都在 [textures.h](src/textures.h) 裡面了。
-可調整的參數如下：
-- roughness: 表面的粗糙度，介於 0 到 1 之間，越高表面越粗糙
+部分可調整的參數如下：
 - concentration：目前僅限藍寶石材質 Sapphire 才有，代表鐵、鈦離子的莫爾濃度，如果要貼近現實的話建議在 1e-3 到 1e-2 之間
 
 你也可以像 [example.c](example.c) 一樣自己構建材質，只要指定材質內部的折射率、材質外部的折射率（一般來說是空氣）、粗糙度等就可以了。
