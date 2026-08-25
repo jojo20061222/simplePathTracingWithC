@@ -2,6 +2,14 @@
 
 Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
 
+Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
+    return sampleHenyeyGreenstein(input, mt, 0.9);
+}
+
+Real sigmaSforMarble(Real _) { return 20.0; }
+
+Complex getMarbleRefractivity(Texture *__, Real _) { return (Complex){1.65, 0}; }
+
 int main() {
     static const int width = 720;
     static const int height = 540;
@@ -19,6 +27,9 @@ int main() {
     pushBack(&textures, whiteReflector, Texture *);
     Texture *diamond = newDiamond(0);
     pushBack(&textures, diamond, Texture *);
+    Texture *marble = newHalfTransparentDieletric(getMarbleRefractivity, getAirRefractivity, 0.1,
+                                                  sigmaSforMarble, sampleMarbleNextDirection);
+    pushBack(&textures, marble, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -51,16 +62,10 @@ int main() {
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
-    // diamond
-    Frame *diamondFrame = newFrame("src/static/diamond.obj");
-    pushBack(&frames, diamondFrame, Frame *);
-    RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, showing);
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
-    pushBack(&shapes, diamondShape, Shape *);
-    destroyRegulartransformPara(para);
-
-    Object *diamondObj = newObject(diamondShape, diamond);
-    pushBack(&objects, diamondObj, Object *);
+    Shape *marbleSph = newSphere(showing, radius);
+    pushBack(&shapes, marbleSph, Shape *);
+    Object *marbleBall = newObject(marbleSph, marble);
+    pushBack(&objects, marbleBall, Object *);
 
     Real lightRadius = (Real)width / 40;
 

@@ -635,7 +635,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // however, for half transparent objects, we need to do random walk SSS
             if (halfTransparent) {
                 nxt =
-                    sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
+                   sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay, maxDepth);
 
                 if (nxt.scalingFactor == 0) return notCollideData;
                 scalingFactor *= nxt.scalingFactor;

@@ -16,11 +16,10 @@ bool isTexturemetallic(Texture *texture);
 bool isTextureFullyTransparent(Texture *texture);
 bool isTextureHalfTransparent(Texture *texture);
 Real getTextureRoughness(Texture *texture);
-
 void destroyTexture(Texture *tex);
-
 void initTexture();
 
+// new Textures
 Texture *newOpaqueDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
                             Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness,
                             Real (*baseColor)(Real));
@@ -31,6 +30,11 @@ Texture *newTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Rea
 
 Texture *newMetal(Complex (*refractiveIndexInside)(Texture *, Real),
                   Complex (*refractiveIndexOutside)(Texture *, Real), Real roughness);
+
+Texture *newHalfTransparentDieletric(Complex (*refractiveIndexInside)(Texture *, Real),
+                                     Complex (*refractiveIndexOutside)(Texture *, Real),
+                                     Real roughness, Real (*sigmaS)(Real),
+                                     Vector (*sampleNextDirection)(Vector, MT19937 *));
 
 // base colors
 Real pureWhite(Real lambda);
@@ -46,6 +50,7 @@ Complex getCopperRefractivity(Texture *, Real lambda);
 Complex getIronRefractivity(Texture *, Real lambda);
 Complex getDiamondRefractivity(Texture *, Real lambda);
 
+// base materials
 Texture *newGold(Real roughness);
 Texture *newSilver(Real roughness);
 Texture *newCopper(Real roughness);
@@ -53,5 +58,8 @@ Texture *newIron(Real roughness);
 Texture *newGlass(Real roughness);
 Texture *newDiamond(Real roughness);
 Texture *newSapphire(Real roughness, Real concentration);
+
+// base h-G sample
+Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);
 
 #endif
