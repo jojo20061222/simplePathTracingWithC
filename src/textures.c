@@ -221,6 +221,22 @@ Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}
 
 Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0.0}; };
 
+Complex getMarbleRefractivity(Texture *__, Real lambda) {
+    lambda /= 1000;
+    Real lambda2 = lambda * lambda;
+
+    static const Real a = 0.73358749;
+    static const Real b = 0.96464345;
+    static const Real c = 1.94325203e-2;
+    static const Real d = 1.82831454;
+    static const Real e = 120;
+
+    Real n = sqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
+    static const Real k = 2e-6;
+
+    return (Complex){n, k};
+}
+
 // get refractivity from tables above
 Complex getRefractivity(Real lambda, Complex eta[], Real lambdaStep, int lineCount) {
     if (lambda < startLambda) return (Complex){0, 0};

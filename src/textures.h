@@ -56,6 +56,7 @@ Complex getGoldRefractivity(Texture *, Real lambda);
 Complex getCopperRefractivity(Texture *, Real lambda);
 Complex getIronRefractivity(Texture *, Real lambda);
 Complex getDiamondRefractivity(Texture *, Real lambda);
+Complex getMarbleRefractivity(Texture *, Real lambda);
 
 // base materials
 Texture *newAir();

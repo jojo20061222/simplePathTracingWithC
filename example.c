@@ -6,9 +6,7 @@ Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
 }
 
-Real sigmaSforMarble(Real _) { return 0.05; }
-
-Complex getMarbleRefractivity(Texture *__, Real _) { return (Complex){1.65, 0}; }
+Real sigmaSforMarble(Real _) { return 0.2; }
 
 int main() {
     static const int width = 540;
@@ -24,8 +22,8 @@ int main() {
 
     Texture *air = newAir();
     pushBack(&textures, air, Texture *);
-    Texture *whiteReflector = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
-    pushBack(&textures, whiteReflector, Texture *);
+    Texture *whitePlastic = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
+    pushBack(&textures, whitePlastic, Texture *);
     Texture *diamond = newDiamond(0);
     pushBack(&textures, diamond, Texture *);
     Texture *marble = newHalfTransparentDieletric(getMarbleRefractivity, sigmaSforMarble,
@@ -46,7 +44,7 @@ int main() {
     Shape *groundShape = newConvexPolygon(groundPoints);
     pushBack(&shapes, groundShape, Shape *);
     freeDynamicArray(groundPoints);
-    Interface *groundInterface = newInterface(whiteReflector, air, 1);
+    Interface *groundInterface = newInterface(whitePlastic, air, 1);
     Object *ground = newObject(groundShape, groundInterface);
     pushBack(&objects, ground, Object *);
 
@@ -72,27 +70,26 @@ int main() {
 
     Real lightRadius = (Real)width / 40;
 
-    // light 1: upper-left behind the diamond
+    // light 1: upper-left behind the marble
     Shape *lightSph1 =
         newSphere((Point){(Real)width * 0.25, (Real)height * 0.8, pz + radius}, lightRadius);
     pushBack(&shapes, lightSph1, Shape *);
     LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
     pushBack(&sources, &light1, LightSource *);
 
-    // light 2: upper-right behind the diamond
+    // light 2: upper-right in front of the marble
     Shape *lightSph2 =
         newSphere((Point){(Real)width * 0.75, (Real)height * 0.8, pz + 5 * radius}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
     LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
     pushBack(&sources, &light2, LightSource *);
 
-    // light3 : behind the diamond
+    // light 3: directly behind the marble
     Shape *lightSph3 =
-        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius},
-                  lightRadius);
+        newSphere((Point){(Real)width / 2 + lightRadius * 3, (Real)height / 2, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
-    // pushBack(&sources, &light3, LightSource *);
+    pushBack(&sources, &light3, LightSource *);
 
     renderToWindow("Diamond showing frame", objects, sources, camera, width, height, 11);
 
