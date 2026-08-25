@@ -26,9 +26,13 @@ Real getObjectRoughness(Object *self);
 
 bool isObjectInsideMetallic(Object *self);
 
+bool isObjectInsideTransparent(Object *self);
+
 bool isObjectInsideFullyTransparent(Object *self);
 
 bool isObjectInsideHalfTransparent(Object *self);
+
+bool isObjectOutsideHalfTransparent(Object *self);
 
 Real getObjectInsideBaseColor(Object *self, Real lambda);
 

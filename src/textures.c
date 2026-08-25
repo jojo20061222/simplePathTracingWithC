@@ -380,7 +380,7 @@ bool isInterfaceInsideMetallic(Interface *interface) { return isTextureMetallic(
 bool isInterfaceOutsideMetallic(Interface *interface) { return isTextureMetallic(interface->out); }
 
 static inline bool isTextureTransparent(Texture *texture) {
-    return (texture->tags & HALF_TRANSPARENT) > 0;
+    return texture->tags & FULLY_TRANSPARENT;
 }
 
 bool isInterfaceInsideTransparent(Interface *interface) {

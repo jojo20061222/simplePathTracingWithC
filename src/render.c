@@ -592,6 +592,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
     // here we implement BSDF
     NextSimulationData nxt;
     bool isSpecularBounce = false;
+    bool isCurrentTextureHalfTransparent;
 
     if (metallic || randomReal(mt) <= F) {
         // to prevent dividing by 0 error when divided by branch PDF
@@ -609,6 +610,8 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         scalingFactor *= nxt.scalingFactor;
         // since metallic texture won't go into the 1 - F branch so we do have to * F
         if (!metallic) scalingFactor /= F;
+
+        isCurrentTextureHalfTransparent = isObjectOutsideHalfTransparent(firstCollideObject);
     }
     else {
         // the left branch is 1 - F
@@ -616,6 +619,7 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
         if (1 - F < error) return notCollideData; //
         bool fullyTransparent = isObjectInsideFullyTransparent(firstCollideObject);
         bool halfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
+        isCurrentTextureHalfTransparent = isObjectInsideHalfTransparent(firstCollideObject);
 
         // both fully transparent and half transparent obejcts need to take BTDF once so they should
         // in the same branch
@@ -639,20 +643,20 @@ static inline NextSimulationData sampleBSDF(CollideResult *firstCollideObjectRes
             // Beer-Lembert's Law
             // 4pi k / lambda and convert to (10^(-4)m^(-1)) or 0.1mm^(-1) as unit
             *extinctionFactor = 4 * M_PI * n2.I / ray.wavelength * 1e5;
-
-            // however, for half transparent objects, we need to do random walk SSS
-            if (halfTransparent) {
-                nxt = sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay);
-
-                if (nxt.scalingFactor == 0) return notCollideData;
-                scalingFactor *= nxt.scalingFactor;
-            }
         }
         else {
             // Branch Diffusion, only non-transparent materials need to do this
             nxt = sampleDiffusion(mt, N, F, ray, collidePoint, firstCollideObject);
             scalingFactor *= nxt.scalingFactor / (1 - F);
         }
+    }
+
+    // for half transparent objects, we need to do random walk SSS
+    if (isCurrentTextureHalfTransparent) {
+        nxt = sampleSSS(firstCollideObject, n2, objects, sources, mt, &nxt.nxtRay);
+
+        if (nxt.scalingFactor == 0) return notCollideData;
+        scalingFactor *= nxt.scalingFactor;
     }
 
     ReversedRay nxtRay = nxt.nxtRay;
@@ -688,7 +692,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
     bool metallic = isObjectInsideMetallic(object);
-    bool transparent = isObjectInsideTr
+    bool transparent = isObjectInsideTransparent(object);
     // we have to derive m by l, v
     // first we need to check if this is reflection (or diffusion) or refraction
     if (vecDot(N, l) < 0) {

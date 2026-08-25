@@ -52,6 +52,12 @@ bool isObjectInsideFullyTransparent(Object *self) {
     return isInterfaceInsideFullyTransparent(self->interface);
 }
 
+bool isObjectInsideTransparent(Object *self) {
+    return isInterfaceInsideTransparent(self->interface);
+}
+
+bool isObjectOutsideHalfTransparent()
+
 bool isObjectInsideHalfTransparent(Object *self) {
     return isInterfaceInsideHalfTransparent(self->interface);
 }
