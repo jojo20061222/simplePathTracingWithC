@@ -1,6 +1,6 @@
 #include "include/pathTracing.h"
 
-Real strongWhiteLight(Real wavelength) { return 1 * whiteLightBase(wavelength); }
+Real strongWhiteLight(Real wavelength) { return 0.01 * whiteLightBase(wavelength); }
 
 int main() {
     static const int width = 540;
@@ -20,6 +20,8 @@ int main() {
     pushBack(&textures, whitePlastic, Texture *);
     Texture *marble = newPinkMarble();
     pushBack(&textures, marble, Texture *);
+    Texture *rayleigh = newRayleighExampleTexture();
+    pushBack(&textures, rayleigh, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = (Real)height / 3, endy = height;
@@ -37,7 +39,7 @@ int main() {
     freeDynamicArray(groundPoints);
     Interface *groundInterface = newInterface(whitePlastic, air, 1);
     Object *ground = newObject(groundShape, groundInterface);
-    pushBack(&objects, ground, Object *);
+    // pushBack(&objects, ground, Object *);
 
     // back
     Point *backPoints = newDynamicArray(4, Point);
@@ -48,22 +50,22 @@ int main() {
     Shape *backShape = newConvexPolygon(backPoints);
     freeDynamicArray(backPoints);
     Object *backWall = newObject(backShape, groundInterface);
-    pushBack(&objects, backWall, Object *);
+    // pushBack(&objects, backWall, Object *);
 
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
-    Shape *marbleSph = newSphere(showing, radius);
-    pushBack(&shapes, marbleSph, Shape *);
-    Interface *marbleInterface = newInterface(marble, air, 0);
-    Object *marbleBall = newObject(marbleSph, marbleInterface);
-    pushBack(&objects, marbleBall, Object *);
+    Shape *rayleighSph = newSphere(showing, radius);
+    pushBack(&shapes, rayleighSph, Shape *);
+    Interface *rayleighInterface = newInterface(rayleigh, air, 0);
+    Object *rayleighBall = newObject(rayleighSph, rayleighInterface);
+    pushBack(&objects, rayleighBall, Object *);
 
-    Real lightRadius = (Real)width / 10;
+    Real lightRadius = (Real)width / 40;
 
     // light
     Shape *lightSph =
-        newSphere((Point){(Real)width * 0.25, (Real)height * 0.8, pz + radius}, lightRadius);
+        newSphere((Point){showing.x + radius * 2, showing.y, showing.z}, lightRadius);
     pushBack(&shapes, lightSph, Shape *);
     LightSource light = newLightSource(lightSph, strongWhiteLight);
     pushBack(&sources, &light, LightSource *);

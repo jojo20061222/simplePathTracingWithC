@@ -70,6 +70,7 @@ Texture *newDiamond();
 Texture *newSapphire(Real concentration);
 Texture *newMarble();
 Texture *newPinkMarble();
+Texture *newRayleighExampleTexture();
 
 // base h-G sample
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);

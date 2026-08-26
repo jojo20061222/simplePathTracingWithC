@@ -117,14 +117,14 @@ Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
     return toWorld(local, input);
 }
 
-Vector sampleRayleighScattering(Vector input, MT19937 *mt) {
+Vector sampleRayleighScatteringNextDirection(Vector input, MT19937 *mt) {
     Real v = 2 - 4 * randomReal(mt);
     Real t = rcbrt(v + rsqrt(v * v + 1));
-    Real cosPhi = t + (1 / t);
+    Real cosPhi = t - (1 / t);
     Real sinPhi = rsqrt(rmax(1 - cosPhi * cosPhi, 0));
 
     Real theta = 2 * M_PI * randomReal(mt);
-   
+
     Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 
     return toWorld(local, input);
@@ -232,7 +232,7 @@ Real green(Real lambda) { return 0.05 + 0.75 / (1 + rexp(-0.06 * (lambda - 650))
 
 Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}; }
 
-Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0.0}; };
+Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0}; };
 
 Complex getMarbleRefractivity(Texture *_, Real lambda) {
     lambda /= 1000;
@@ -273,6 +273,17 @@ static inline Real getPinkMarbleK(Real lambda) {
 }
 
 Real getMarbleSigmaS(Real lambda) { return 0.2; }
+
+Real getRayleighSigmaS(Real lambda) {
+    static const Real sigma550 = 0.2;
+    static const Real lambda0 = 550;
+
+    Real rLambda = lambda0 / lambda;
+    Real rLambda2 = rLambda * rLambda;
+    Real rLambda4 = rLambda2 * rLambda2;
+
+    return sigma550 * rLambda4;
+}
 
 Complex getPinkMarbleRefractivity(Texture *_, Real lambda) {
     Real k = getPinkMarbleK(lambda);
@@ -410,6 +421,11 @@ Real getPinkMarbleSigmaS(Real lambda) {
 Texture *newPinkMarble() {
     return newHalfTransparentDieletric(getPinkMarbleRefractivity, getPinkMarbleSigmaS,
                                        sampleMarbleNextDirection);
+}
+
+Texture *newRayleighExampleTexture() {
+    return newHalfTransparentDieletric(getAirRefractivity, getRayleighSigmaS,
+                                       sampleRayleighScatteringNextDirection);
 }
 
 // Wrappers
