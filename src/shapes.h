@@ -28,6 +28,8 @@ Shape *newSphere(Point center, Real radius);
 
 Shape *newConvexPolygon(Point *vertexes);
 
+Shape *newPolygon(Point *vertexes);
+
 Shape *newGroup(Shape **elements);
 
 CollideResult detectCollide(Shape *shape, ReversedRay *ray);

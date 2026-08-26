@@ -276,7 +276,7 @@ static Vector normalVectorOfPolygon(Point *vertexes) {
         N = vecCross(e1, e2);
         if (lengthOf(N) > 1e-5) break;
     }
-    return N;
+    return unitVector(N);
 }
 
 // convex polygon cannot be used in light source
@@ -294,7 +294,7 @@ Shape *newConvexPolygon(Point *vertexes) {
     memcpy(cp->vertexes, vertexes, sizeof(Point) * vertexesCount);
 
     Vector N = normalVectorOfPolygon(vertexes);
-    cp->normal = unitVector(N);
+    cp->normal = N;
 
     return (Shape *)cp;
 }
@@ -307,7 +307,7 @@ static inline bool rayXsegmentIntersection(P2 O, P2 A, P2 B) {
     Real xplust = lerpInterval(A.y, B.y, O.y, A.x, B.x);
     Real t = xplust - O.x;
     if (t < 0) return false;
-    return true;
+    return false;
 }
 
 static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
@@ -329,6 +329,7 @@ static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
     if (t <= error) {
         return notCollide();
     }
+
     Point collidePoint = vecAdd(O, vecMultiply(t, D));
 
     // Now we have converted this problem into if a point is in the polygon
@@ -338,11 +339,46 @@ static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
     // then we check if this point collide with odd times of edges
     bool collideOddTimes = false;
     for (int i = 0; i < vertexesCount; i++) {
-        collideOddTimes = (collideOddTimes !=
-            rayXsegmentIntersection(P, p->vertexes[i], p->vertexes[(i + 1) % vertexesCount]));
+        collideOddTimes =
+            (collideOddTimes !=
+             rayXsegmentIntersection(P, p->vertexes[i], p->vertexes[(i + 1) % vertexesCount]));
     }
     if (!collideOddTimes) return notCollide();
+
     return getCollideResult(true, t, p->normal);
+}
+
+static void destroyPolygon(Shape *self) {
+    Polygon *p = (Polygon *)self;
+    freeDynamicArray(p->vertexes);
+    free(p);
+}
+
+Shape *newPolygon(Point *vertexes) {
+    Polygon *p = malloc(sizeof(*p));
+    if (p == NULL) {
+        fprintf(stderr, "malloc p failed\n");
+        exit(1);
+    }
+    int vertexesCount = getSize(vertexes);
+    assert(vertexesCount >= 3);
+
+    p->shape = getShape(detectPolygonCollide, destroyPolygon, NULL, NULL, NULL);
+    p->p0 = vertexes[0];
+
+    // note that N is normalized here
+    Vector N = normalVectorOfPolygon(vertexes);
+    p->normal = N;
+    p->i = unitVector(vecMinus(vertexes[1], vertexes[0]));
+    p->j = vecCross(N, p->i);
+    p->vertexes = newDynamicArray(vertexesCount, P2);
+
+    for (int i = 0; i < vertexesCount; i++) {
+        Vector displacement = vecMinus(vertexes[i], p->p0);
+        p->vertexes[i] = (P2){vecDot(displacement, p->i), vecDot(displacement, p->j)};
+    }
+
+    return (Shape *)p;
 }
 
 static CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {

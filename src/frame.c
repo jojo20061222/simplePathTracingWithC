@@ -91,15 +91,14 @@ Shape *newGroupFromFrame(Frame *m, Transform t, void *para) {
             pushBack(&vertexes, p, Point);
         }
         if (getSize(vertexes) > 3) {
-            Shape *cp = newConvexPolygon(vertexes);
-            pushBack(&shapes, cp, Shape *);
-            freeDynamicArray(vertexes);
+            Shape *p = newPolygon(vertexes);
+            pushBack(&shapes, p, Shape *);
         }
         else {
             Shape *tri = newTriangle(vertexes[0], vertexes[1], vertexes[2]);
             pushBack(&shapes, tri, Shape *);
-            freeDynamicArray(vertexes);
         }
+        freeDynamicArray(vertexes);
     }
     return newGroup(shapes);
 }

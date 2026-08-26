@@ -99,7 +99,8 @@ int main() {
     Point glassShowing = {width / 2 + radius * 2.5, height / 2 + radius * 2.3, pz + 2 * radius};
     Frame *glassFrame = newFrame("src/static/cube.obj");
     pushBack(&frames, glassFrame, Frame *);
-    RegularTransformPara *glassPara = newRegularTransformPara(radius * 0.65, 45, 45, 45, glassShowing);
+    RegularTransformPara *glassPara =
+        newRegularTransformPara(radius * 0.65, 45, 45, 45, glassShowing);
     Shape *glassShape = newGroupFromFrame(glassFrame, regularTransform, glassPara);
     pushBack(&shapes, glassShape, Shape *);
     destroyRegulartransformPara(glassPara);
@@ -111,7 +112,8 @@ int main() {
     Point aerogelShowing = {width / 2 - radius * 2.5, height / 2 + radius * 2.3, pz + 2 * radius};
     Frame *aerogelFrame = newFrame("src/static/cube.obj");
     pushBack(&frames, aerogelFrame, Frame *);
-    RegularTransformPara *aerogelPara = newRegularTransformPara(radius * 0.75, 0, 0, 0, aerogelShowing);
+    RegularTransformPara *aerogelPara =
+        newRegularTransformPara(radius * 0.75, 0, 0, 0, aerogelShowing);
     Shape *aerogelShape = newGroupFromFrame(aerogelFrame, regularTransform, aerogelPara);
     pushBack(&shapes, aerogelShape, Shape *);
     destroyRegulartransformPara(aerogelPara);
@@ -132,7 +134,6 @@ int main() {
     Object *goldObject = newObject(goldShape, goldInterface);
     pushBack(&objects, goldObject, Object *);
 
-
     Real lightRadius = width / 40;
 
     // light
@@ -141,20 +142,19 @@ int main() {
     LightSource light1 = newLightSource(lightSph1, whiteLightBase);
     pushBack(&sources, &light1, LightSource *);
 
-    Shape *lightSph2 =
-        newSphere((Point){diamondShowing.x, diamondShowing.y, diamondShowing.z - radius * 2}, lightRadius);
+    Shape *lightSph2 = newSphere(
+        (Point){diamondShowing.x, diamondShowing.y, diamondShowing.z - radius * 2}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
     LightSource light2 = newLightSource(lightSph2, sunlightBase);
     pushBack(&sources, &light2, LightSource *);
 
-    Shape *lightSph3 = newSphere((Point){width, height, diamondShowing.z + radius}, lightRadius * 4);
+    Shape *lightSph3 =
+        newSphere((Point){width, height, diamondShowing.z + radius}, lightRadius * 4);
     pushBack(&shapes, lightSph3, Shape *);
     LightSource light3 = newLightSource(lightSph3, tungstenLampBase);
     pushBack(&sources, &light3, LightSource *);
 
-
-    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight,
-                   11);
+    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight, 11);
 
     destroyRegularCamera(camera);
 
