@@ -275,7 +275,7 @@ static inline Real getPinkMarbleK(Real lambda) {
 Real getMarbleSigmaS(Real lambda) { return 0.2; }
 
 Real getRayleighSigmaS(Real lambda) {
-    static const Real sigma550 = 0.2;
+    static const Real sigma550 = 5e-3;
     static const Real lambda0 = 550;
 
     Real rLambda = lambda0 / lambda;

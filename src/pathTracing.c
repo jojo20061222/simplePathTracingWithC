@@ -85,6 +85,7 @@ void renderToPictures(const char *outputPath, Object **objects, LightSource **so
                 fprintf(f, "%u\n", getPixel(vs, i));
             }
             fclose(f);
+            printf("Output %s finished\n", outputPath);
         }
         else if (!strcmp(input, "q")) {
             isRunning = false;

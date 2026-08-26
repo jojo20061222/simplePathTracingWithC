@@ -1,6 +1,6 @@
 #include "include/pathTracing.h"
 
-Real strongWhiteLight(Real wavelength) { return 0.01 * whiteLightBase(wavelength); }
+Real strongWhiteLight(Real wavelength) { return 1 * whiteLightBase(wavelength); }
 
 int main() {
     static const int width = 540;
@@ -16,10 +16,6 @@ int main() {
 
     Texture *air = newAir();
     pushBack(&textures, air, Texture *);
-    Texture *whitePlastic = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
-    pushBack(&textures, whitePlastic, Texture *);
-    Texture *marble = newPinkMarble();
-    pushBack(&textures, marble, Texture *);
     Texture *rayleigh = newRayleighExampleTexture();
     pushBack(&textures, rayleigh, Texture *);
 
@@ -28,36 +24,12 @@ int main() {
     Real pz = -(Real)2 / (Real)3 * width;
     Real bz = -(Real)1 / (Real)3 * width;
 
-    // groud
-    Point *groundPoints = newDynamicArray(4, Point);
-    groundPoints[0] = (Point){endx, starty, bz};
-    groundPoints[1] = (Point){endx, starty, pz};
-    groundPoints[2] = (Point){startx, starty, pz};
-    groundPoints[3] = (Point){startx, starty, bz};
-    Shape *groundShape = newConvexPolygon(groundPoints);
-    pushBack(&shapes, groundShape, Shape *);
-    freeDynamicArray(groundPoints);
-    Interface *groundInterface = newInterface(whitePlastic, air, 1);
-    Object *ground = newObject(groundShape, groundInterface);
-    // pushBack(&objects, ground, Object *);
-
-    // back
-    Point *backPoints = newDynamicArray(4, Point);
-    backPoints[0] = (Point){endx, starty, pz};
-    backPoints[1] = (Point){endx, endy, pz};
-    backPoints[2] = (Point){startx, endy, pz};
-    backPoints[3] = (Point){startx, starty, pz};
-    Shape *backShape = newConvexPolygon(backPoints);
-    freeDynamicArray(backPoints);
-    Object *backWall = newObject(backShape, groundInterface);
-    // pushBack(&objects, backWall, Object *);
-
     Real radius = (Real)width / 10;
     Point showing = {(Real)width / 2, (Real)height / 2, pz + 2 * radius};
 
     Shape *rayleighSph = newSphere(showing, radius);
     pushBack(&shapes, rayleighSph, Shape *);
-    Interface *rayleighInterface = newInterface(rayleigh, air, 0);
+    Interface *rayleighInterface = newInterface(rayleigh, air, 0.7);
     Object *rayleighBall = newObject(rayleighSph, rayleighInterface);
     pushBack(&objects, rayleighBall, Object *);
 
@@ -70,7 +42,7 @@ int main() {
     LightSource light = newLightSource(lightSph, strongWhiteLight);
     pushBack(&sources, &light, LightSource *);
 
-    renderToWindow("Pink marble showing frame", objects, sources, camera, width, height, 11);
+    renderToWindow("Aerogel showing frame", objects, sources, camera, width, height, 11);
 
     destroyRegularCamera(camera);
 
