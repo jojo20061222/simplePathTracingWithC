@@ -346,12 +346,14 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
     Real n2R = n2.R;
 
     // do not need refraction
-    if (rabs(n1R - n2R) < 1e3 * error) {
+    
+    if (rabs(n1R - n2R) < error) {
         Vector nxtDirection = ray.direction;
         Point nxtStart = fixedNextStart(collidePoint, N, true);
         ReversedRay nxtRay = getRay(nxtStart, nxtDirection, ray.wavelength);
         return (NextSimulationData){1, nxtRay};
     }
+    
 
     Real cosTheta1 = vecDot(m, v); // cosine of incident angle
     Vector l = getRefractionDirection(n1R, n2R, cosTheta1, I, m);
@@ -710,7 +712,7 @@ static inline int distinguishReflectionOrRefraction(Vector l, Vector v, Vector N
 
 static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Real alpha,
                         Object *object, Real lambda, bool transmission) {
-    if (rabs(n1.R - n2.R) < 1e3 * error) return 0;
+    if (rabs(n1.R - n2.R) < error) return 0;
 
 
     bool metallic = isObjectInsideMetallic(object);
@@ -786,7 +788,7 @@ static inline Real BSDF(Complex n1, Complex n2, Vector l, Vector v, Vector N, Re
 static inline Real pBSDF(Complex n1, Complex n2, Object *collideObject, Vector l, Vector v,
                          Vector N, Real lambda) {
 
-    if (rabs(n1.R - n2.R) < 1e3 * error) return 0;
+    if (rabs(n1.R - n2.R) < error) return 0;
 
     int distinguishRes = distinguishReflectionOrRefraction(l, v, N);
     if (distinguishRes == 0) return 0; // invalid

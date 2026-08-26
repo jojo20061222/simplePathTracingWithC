@@ -61,6 +61,7 @@ Complex getPinkMarbleRefractivity(Texture *, Real lambda);
 
 // base materials
 Texture *newAir();
+Texture *newWhitePlastic();
 Texture *newGold();
 Texture *newSilver();
 Texture *newCopper();
@@ -72,7 +73,7 @@ Texture *newMarble();
 Texture *newPinkMarble();
 Texture *newAerogel();
 
-// base h-G sample
+// base H-G sample
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);
 
 // Wrappers for textures
