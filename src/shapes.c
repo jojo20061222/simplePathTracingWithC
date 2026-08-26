@@ -263,6 +263,22 @@ static void destroyConvexPolygon(Shape *self) {
     free(self);
 }
 
+static Vector normalVectorOfPolygon(Point *vertexes) {
+    int vertexesCount = getSize(vertexes);
+    Vector N = {NAN, NAN, NAN}; // theoretically N should not be this after the loop
+    // we iterate the vertexes and find the vertexes that are not in a single line
+    for (int i = 0; i < vertexesCount; i++) {
+        Point p1 = vertexes[i];
+        Point p2 = vertexes[(i + 1) % vertexesCount];
+        Point p3 = vertexes[(i + 2) % vertexesCount];
+        Vector e1 = vecMinus(p2, p1);
+        Vector e2 = vecMinus(p3, p1);
+        N = vecCross(e1, e2);
+        if (lengthOf(N) > 1e-5) break;
+    }
+    return N;
+}
+
 // convex polygon cannot be used in light source
 Shape *newConvexPolygon(Point *vertexes) {
     ConvexPolygon *cp = malloc(sizeof(*cp));
@@ -277,20 +293,21 @@ Shape *newConvexPolygon(Point *vertexes) {
     assert(vertexesCount >= 3);
     memcpy(cp->vertexes, vertexes, sizeof(Point) * vertexesCount);
 
-    Vector N = {NAN, NAN, NAN}; // theoretically N should not be this after the loop
-    // we iterate the vertexes and find the vertexes that are not in a single line
-    for (int i = 0; i < vertexesCount; i++) {
-        Point p1 = cp->vertexes[i];
-        Point p2 = cp->vertexes[(i + 1) % vertexesCount];
-        Point p3 = cp->vertexes[(i + 2) % vertexesCount];
-        Vector e1 = vecMinus(p2, p1);
-        Vector e2 = vecMinus(p3, p1);
-        N = vecCross(e1, e2);
-        if (lengthOf(N) > 1e-5) break;
-    }
+    Vector N = normalVectorOfPolygon(vertexes);
     cp->normal = unitVector(N);
 
     return (Shape *)cp;
+}
+
+static inline bool rayXsegmentIntersection(P2 O, P2 A, P2 B) {
+    // express O as <O.x, O.y> then the ray is <O.x + t, O.y>
+    // we first check if y is in [A.y, B.y)
+    if ((O.y < A.y) == (O.y >= B.y)) return false;
+    // then check if O.x + t is in [A.x, B.x)
+    Real xplust = lerpInterval(A.y, B.y, O.y, A.x, B.x);
+    Real t = xplust - O.x;
+    if (t < 0) return false;
+    return true;
 }
 
 static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
@@ -311,13 +328,20 @@ static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
     Real t = (C - vecDot(N, O)) / NdotD;
     if (t <= error) {
         return notCollide();
-    }    
-    Point P = vecAdd(O, vecMultiply(t, D));
+    }
+    Point collidePoint = vecAdd(O, vecMultiply(t, D));
 
     // Now we have converted this problem into if a point is in the polygon
     // first we convert the points into 2d
-
-
+    Vector displacement = vecMinus(collidePoint, p->p0);
+    P2 P = {vecDot(displacement, p->i), vecDot(displacement, p->j)};
+    // then we check if this point collide with odd times of edges
+    bool collideOddTimes = false;
+    for (int i = 0; i < vertexesCount; i++) {
+        collideOddTimes = (collideOddTimes !=
+            rayXsegmentIntersection(P, p->vertexes[i], p->vertexes[(i + 1) % vertexesCount]));
+    }
+    if (!collideOddTimes) return notCollide();
     return getCollideResult(true, t, p->normal);
 }
 
