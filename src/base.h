@@ -70,6 +70,22 @@ static inline Real rlog(Real x) {
 #endif
 }
 
+static inline Real rsqrt(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return sqrt(x);
+#else
+    return sqrtf(x);
+#endif
+}
+
+static inline Real rcbrt(Real x) {
+#ifdef DOUBLE_AS_REAL
+    return cbrt(x);
+#else
+    return cbrtf(x);
+#endif
+}
+
 typedef union {
     struct {
         uint8_t R, G, B, A;
@@ -106,7 +122,7 @@ static inline Real vecDot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a
 
 static const Real error = 1e-6;
 
-static inline Real lengthOf(Vector v) { return sqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+static inline Real lengthOf(Vector v) { return rsqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
 
 static inline Real length2Of(Vector v) { return v.x * v.x + v.y + v.y + v.z * v.z; }
 
@@ -151,7 +167,7 @@ static inline Complex cplxDivide(Complex a, Complex b) {
     return (Complex){(a.R * b.R + a.I * b.I) / deno, (a.I * b.R - a.R * b.I) / deno};
 }
 
-static inline Real cplxModulus(Complex z) { return sqrt(z.R * z.R + z.I * z.I); }
+static inline Real cplxModulus(Complex z) { return rsqrt(z.R * z.R + z.I * z.I); }
 
 static inline Real cplxArg(Complex z) {
     if (z.R == 0 && z.I == 0)

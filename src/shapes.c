@@ -149,7 +149,7 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
     if (Delta < 0) {
         return notCollide();
     }
-    Real t1 = (-B - sqrt(Delta)) / (2 * A), t2 = (-B + sqrt(Delta)) / (2 * A);
+    Real t1 = (-B - rsqrt(Delta)) / (2 * A), t2 = (-B + rsqrt(Delta)) / (2 * A);
     if (t1 < 0 && t2 < 0) {
         return notCollide();
     }
@@ -166,7 +166,7 @@ Point randomPointOnSphere(Shape *self, MT19937 *mt) {
     Real u = randomReal(mt), v = randomReal(mt);
     Real theta = 2 * M_PI * u;
     Real z = 1 - 2 * v;
-    Real sinPhi = sqrt(1 - z * z);
+    Real sinPhi = rsqrt(1 - z * z);
     Real x = sinPhi * rcos(theta), y = sinPhi * rsin(theta);
     Vector N = (Vector){x, y, z};
     return vecAdd(sph->center, vecMultiply(sph->radius, N));
