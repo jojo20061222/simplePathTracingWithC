@@ -232,29 +232,34 @@ Complex getMarbleRefractivity(Texture *_, Real lambda) {
     static const Real e = 120;
 
     Real n = sqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
-    static const Real k = 7e-6;
+    static const Real k = 6e-6;
 
     return (Complex){n, k};
 }
 
+//
+Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
+    return sampleHenyeyGreenstein(input, mt, 0.9);
+}
+
 static inline Real getPinkMarbleK(Real lambda) {
     if (lambda < 470.0) {
-        return 6e-6; // 藍光
+        return 6e-6;
     }
     else if (lambda < 530.0) {
-        // 藍綠過渡
         Real t = (lambda - 470.0) / (530.0 - 470.0);
         return lerp(6e-6, 8.0e-6, t);
     }
     else if (lambda < 650.0) {
-        // 綠紅過渡
         Real t = (lambda - 530.0) / (650.0 - 530.0);
         return lerp(8.0e-6, 2.0e-6, t);
     }
     else {
-        return 2.0e-6; // 紅光
+        return 2.0e-6;
     }
 }
+
+Real getMarbleSigmaS(Real lambda) { return 0.2; }
 
 Complex getPinkMarbleRefractivity(Texture *_, Real lambda) {
     Real k = getPinkMarbleK(lambda);
@@ -344,27 +349,54 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
 // texture examples
 Texture *newAir() { return newTransparentDieletric(getAirRefractivity, 0); }
 
-Texture *newSapphire(Real roughness, Real concentration) {
+Texture *newSapphire(Real concentration) {
     return newTransparentDieletric(getSapphireRefractivity, concentration);
 }
 
-Texture *newGold(Real roughness) { return newMetal(getGoldRefractivity); }
+Texture *newGold() { return newMetal(getGoldRefractivity); }
 
-Texture *newSilver(Real roughness) { return newMetal(getSilverRefractivity); }
+Texture *newSilver() { return newMetal(getSilverRefractivity); }
 
-Texture *newCopper(Real roughness) { return newMetal(getCopperRefractivity); }
+Texture *newCopper() { return newMetal(getCopperRefractivity); }
 
-Texture *newIron(Real roughness) { return newMetal(getIronRefractivity); }
+Texture *newIron() { return newMetal(getIronRefractivity); }
 
-Texture *newGlass(Real roughness) {
+Texture *newGlass() {
     // for glass we don't care about its color (it has a fixed extinction coefficient), so
     // concentration remains 0
     return newTransparentDieletric(getGlassRefractivity, 0);
 }
 
-Texture *newDiamond(Real roughness) {
+Texture *newDiamond() {
     // for the same reason as glass, so concentration remains 0
     return newTransparentDieletric(getDiamondRefractivity, 0);
+}
+
+Texture *newMarble() {
+    return newHalfTransparentDieletric(getMarbleRefractivity, getMarbleSigmaS,
+                                       sampleMarbleNextDirection);
+}
+
+Real getPinkMarbleSigmaS(Real lambda) {
+    if (lambda < 470.0) {
+        return 0.21;
+    }
+    else if (lambda < 530.0) {
+        Real t = (lambda - 470.0) / (530.0 - 470.0);
+        return lerp(0.21, 0.22, t);
+    }
+    else if (lambda < 650.0) {
+        Real t = (lambda - 530.0) / (650.0 - 530.0);
+        return lerp(0.22, 0.20, t);
+    }
+    else {
+        return 0.20;
+    }
+}
+
+Texture *newPinkMarble() {
+    return newHalfTransparentDieletric(getPinkMarbleRefractivity, getPinkMarbleSigmaS,
+                                       sampleMarbleNextDirection);
 }
 
 // Wrappers

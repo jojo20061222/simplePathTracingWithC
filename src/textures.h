@@ -61,13 +61,15 @@ Complex getPinkMarbleRefractivity(Texture *, Real lambda);
 
 // base materials
 Texture *newAir();
-Texture *newGold(Real roughness);
-Texture *newSilver(Real roughness);
-Texture *newCopper(Real roughness);
-Texture *newIron(Real roughness);
-Texture *newGlass(Real roughness);
-Texture *newDiamond(Real roughness);
-Texture *newSapphire(Real roughness, Real concentration);
+Texture *newGold();
+Texture *newSilver();
+Texture *newCopper();
+Texture *newIron();
+Texture *newGlass();
+Texture *newDiamond();
+Texture *newSapphire(Real concentration);
+Texture *newMarble();
+Texture *newPinkMarble();
 
 // base h-G sample
 Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g);

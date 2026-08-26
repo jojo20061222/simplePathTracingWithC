@@ -2,27 +2,6 @@
 
 Real strongWhiteLight(Real wavelength) { return 1 * whiteLightBase(wavelength); }
 
-Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
-    return sampleHenyeyGreenstein(input, mt, 0.9);
-}
-
-Real getPinkMarbleSigmaS(Real lambda) {
-    if (lambda < 470.0) {
-        return 0.21;
-    }
-    else if (lambda < 530.0) {
-        Real t = (lambda - 470.0) / (530.0 - 470.0);
-        return lerp(0.21, 0.22, t);
-    }
-    else if (lambda < 650.0) {
-        Real t = (lambda - 530.0) / (650.0 - 530.0);
-        return lerp(0.22, 0.20, t);
-    }
-    else {
-        return 0.20;
-    }
-}
-
 int main() {
     static const int width = 540;
     static const int height = 360;
@@ -39,8 +18,7 @@ int main() {
     pushBack(&textures, air, Texture *);
     Texture *whitePlastic = newOpaqueDieletric(getPlasticRefractivity, pureWhite);
     pushBack(&textures, whitePlastic, Texture *);
-    Texture *marble = newHalfTransparentDieletric(getPinkMarbleRefractivity, getPinkMarbleSigmaS,
-                                                  sampleMarbleNextDirection);
+    Texture *marble = newPinkMarble();
     pushBack(&textures, marble, Texture *);
 
     Real startx = 0, endx = width;
@@ -83,27 +61,12 @@ int main() {
 
     Real lightRadius = (Real)width / 10;
 
-    // light 1: upper-left behind the marble
-    Shape *lightSph1 =
+    // light
+    Shape *lightSph =
         newSphere((Point){(Real)width * 0.25, (Real)height * 0.8, pz + radius}, lightRadius);
-    pushBack(&shapes, lightSph1, Shape *);
-    LightSource light1 = newLightSource(lightSph1, strongWhiteLight);
-    pushBack(&sources, &light1, LightSource *);
-
-    // light 2: upper-right in front of the marble
-    Shape *lightSph2 =
-        newSphere((Point){(Real)width * 0.75, (Real)height * 0.8, pz + 5 * radius}, lightRadius);
-    pushBack(&shapes, lightSph2, Shape *);
-    LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
-    pushBack(&sources, &light2, LightSource *);
-
-    // light 3: directly behind the marble
-    Shape *lightSph3 =
-        newSphere((Point){(Real)width / 2 + lightRadius, (Real)height / 2, pz + lightRadius},
-                  lightRadius * 2);
-    pushBack(&shapes, lightSph3, Shape *);
-    LightSource light3 = newLightSource(lightSph3, strongWhiteLight);
-    // pushBack(&sources, &light3, LightSource *);
+    pushBack(&shapes, lightSph, Shape *);
+    LightSource light = newLightSource(lightSph, strongWhiteLight);
+    pushBack(&sources, &light, LightSource *);
 
     renderToWindow("Pink marble showing frame", objects, sources, camera, width, height, 11);
 

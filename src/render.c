@@ -524,7 +524,7 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
         // the chance to live is dynamically adjusted
         Real q = albedo; // albedo <= 1
         if (i > 10) {
-            q = fmin(albedo, 0.9);
+            q = fmin(albedo, 0.99); // to prevent the ray runs infinitely
         }
         if (randomReal(mt) > q) {
             return (NextSimulationData){0};
@@ -1130,6 +1130,8 @@ void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objec
     intensityResult = tracePath(initRay, objects, sources, mt, maxDepth, 0);
 
     if (!isfinite(intensityResult)) return;
+
+    intensityResult = fmin(intensityResult, 1e7);
 
     // here we times by interval size because of pdf
     ColorXYZ colorResult =
