@@ -16,7 +16,7 @@ int main() {
 
     Texture *air = newAir();
     pushBack(&textures, air, Texture *);
-    Texture *rayleigh = newRayleighExampleTexture();
+    Texture *rayleigh = newAerogel();
     pushBack(&textures, rayleigh, Texture *);
 
     Real startx = 0, endx = width;
@@ -37,7 +37,7 @@ int main() {
 
     // light
     Shape *lightSph =
-        newSphere((Point){showing.x + radius * 2, showing.y, showing.z}, lightRadius);
+        newSphere((Point){showing.x+ radius * 2, showing.y, showing.z}, lightRadius);
     pushBack(&shapes, lightSph, Shape *);
     LightSource light = newLightSource(lightSph, strongWhiteLight);
     pushBack(&sources, &light, LightSource *);

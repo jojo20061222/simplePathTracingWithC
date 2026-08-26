@@ -234,6 +234,8 @@ Complex getPlasticRefractivity(Texture *__, Real _) { return (Complex){1.5, 0.0}
 
 Complex getAirRefractivity(Texture *__, Real _) { return (Complex){1.0, 0}; };
 
+Complex getAerogelRefractivity(Texture *__, Real _) { return (Complex){1.01, 1e-7}; };
+
 Complex getMarbleRefractivity(Texture *_, Real lambda) {
     lambda /= 1000;
     Real lambda2 = lambda * lambda;
@@ -272,10 +274,10 @@ static inline Real getPinkMarbleK(Real lambda) {
     }
 }
 
-Real getMarbleSigmaS(Real lambda) { return 0.2; }
+static Real getMarbleSigmaS(Real lambda) { return 0.2; }
 
-Real getRayleighSigmaS(Real lambda) {
-    static const Real sigma550 = 5e-3;
+static Real getAerogelSigmaS(Real lambda) {
+    static const Real sigma550 = 4e-3;
     static const Real lambda0 = 550;
 
     Real rLambda = lambda0 / lambda;
@@ -423,8 +425,8 @@ Texture *newPinkMarble() {
                                        sampleMarbleNextDirection);
 }
 
-Texture *newRayleighExampleTexture() {
-    return newHalfTransparentDieletric(getAirRefractivity, getRayleighSigmaS,
+Texture *newAerogel() {
+    return newHalfTransparentDieletric(getAerogelRefractivity, getAerogelSigmaS,
                                        sampleRayleighScatteringNextDirection);
 }
 
