@@ -3,6 +3,10 @@
 static const int screenWidth = 720;
 static const int screenHeight = 480;
 
+LightIntensity coldLightBase(Real lambda) {
+    return getBlackbodyIntensity(lambda, 9500) / 158005180313225.187500;
+}
+
 int main() {
     static const Real width = 720;
     static const Real height = 720.0 * screenHeight / screenWidth;
@@ -32,10 +36,10 @@ int main() {
     Texture *aerogel = newAerogel();
     pushBack(&textures, aerogel, Texture *);
 
-    Real startx = 0, endx = width;
+    Real startx = -width, endx = 2 * width;
     Real starty = height / 3, endy = height * 1.5;
     Real pz = -2.0 / 3.0 * width;
-    Real bz = -1.0 / 3.0 * width;
+    Real bz = 1.0 / 3.0 * width;
 
     Real radius = width / 10;
 
@@ -63,6 +67,17 @@ int main() {
     freeDynamicArray(backPoints);
     Object *backWall = newObject(backShape, groundInterface);
     pushBack(&objects, backWall, Object *);
+
+    // back
+    Point *frontPoints = newDynamicArray(4, Point);
+    frontPoints[0] = (Point){endx, starty, bz};
+    frontPoints[1] = (Point){endx, endy, bz};
+    frontPoints[2] = (Point){startx, endy, bz};
+    frontPoints[3] = (Point){startx, starty, bz};
+    Shape *frontShape = newConvexPolygon(frontPoints);
+    freeDynamicArray(frontPoints);
+    Object *frontWall = newObject(backShape, groundInterface);
+    pushBack(&objects, frontWall, Object *);
 
     Point marbleShowing = {(width / 2) - radius * 2.5, height / 2, pz + 2 * radius};
     Shape *marbleSph = newSphere(marbleShowing, radius);
@@ -123,9 +138,9 @@ int main() {
     pushBack(&objects, aerogelObject, Object *);
 
     Point goldShowing = {width / 2, height / 2 + radius * 2.3, pz + 2 * radius};
-    Frame *goldFrame = newFrame("src/static/brilliant.obj");
+    Frame *goldFrame = newFrame("src/static/apple.obj");
     pushBack(&frames, goldFrame, Frame *);
-    RegularTransformPara *goldPara = newRegularTransformPara(radius, 0, 0, 0, goldShowing);
+    RegularTransformPara *goldPara = newRegularTransformPara(radius * 5, 0, 0, 0, goldShowing);
     Shape *goldShape = newGroupFromFrame(goldFrame, regularTransform, goldPara);
     pushBack(&shapes, goldShape, Shape *);
     destroyRegulartransformPara(goldPara);
@@ -137,9 +152,9 @@ int main() {
     Real lightRadius = width / 40;
 
     // light
-    Shape *lightSph1 = newSphere((Point){0, height, diamondShowing.z + radius}, lightRadius * 4);
+    Shape *lightSph1 = newSphere((Point){0, height, diamondShowing.z + radius * 2}, lightRadius * 4);
     pushBack(&shapes, lightSph1, Shape *);
-    LightSource light1 = newLightSource(lightSph1, whiteLightBase);
+    LightSource light1 = newLightSource(lightSph1, tungstenLampBase);
     pushBack(&sources, &light1, LightSource *);
 
     Shape *lightSph2 = newSphere(
@@ -149,12 +164,18 @@ int main() {
     pushBack(&sources, &light2, LightSource *);
 
     Shape *lightSph3 =
-        newSphere((Point){width, height, diamondShowing.z + radius}, lightRadius * 4);
+        newSphere((Point){width, height, diamondShowing.z + radius * 2}, lightRadius * 4);
     pushBack(&shapes, lightSph3, Shape *);
-    LightSource light3 = newLightSource(lightSph3, tungstenLampBase);
+    LightSource light3 = newLightSource(lightSph3, coldLightBase);
     pushBack(&sources, &light3, LightSource *);
 
-    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight, 11);
+    Shape *lightSph4 = newSphere((Point){0, height, 0}, lightRadius * 10);
+    pushBack(&shapes, lightSph4, Shape *);
+    LightSource light4 = newLightSource(lightSph4, sunlightBase);
+    pushBack(&sources, &light4, LightSource *);
+
+    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight,
+                   11);
 
     destroyRegularCamera(camera);
 

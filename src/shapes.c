@@ -302,12 +302,12 @@ Shape *newConvexPolygon(Point *vertexes) {
 static inline bool rayXsegmentIntersection(P2 O, P2 A, P2 B) {
     // express O as <O.x, O.y> then the ray is <O.x + t, O.y>
     // we first check if y is in [A.y, B.y)
-    if ((O.y < A.y) == (O.y >= B.y)) return false;
+    if ((O.y < A.y) == (O.y < B.y)) return false;
     // then check if O.x + t is in [A.x, B.x)
     Real xplust = lerpInterval(A.y, B.y, O.y, A.x, B.x);
     Real t = xplust - O.x;
     if (t < 0) return false;
-    return false;
+    return true;
 }
 
 static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
@@ -337,13 +337,14 @@ static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
     Vector displacement = vecMinus(collidePoint, p->p0);
     P2 P = {vecDot(displacement, p->i), vecDot(displacement, p->j)};
     // then we check if this point collide with odd times of edges
-    bool collideOddTimes = false;
+    int collideTimes = 0;
     for (int i = 0; i < vertexesCount; i++) {
-        collideOddTimes =
-            (collideOddTimes !=
-             rayXsegmentIntersection(P, p->vertexes[i], p->vertexes[(i + 1) % vertexesCount]));
+        P2 p1 = p->vertexes[i];
+        P2 p2 = p->vertexes[(i + 1) % vertexesCount];
+        bool collide = rayXsegmentIntersection(P, p1, p2);
+        if (collide) collideTimes++;
     }
-    if (!collideOddTimes) return notCollide();
+    if (!(collideTimes & 1)) return notCollide();
 
     return getCollideResult(true, t, p->normal);
 }
