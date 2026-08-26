@@ -117,6 +117,10 @@ Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
     return toWorld(local, input);
 }
 
+Vector sampleRayleighScattering(Vector input, MT19937 *mt) {
+    
+}
+
 #define AG_LINE_COUNT 446
 static Complex AgEta[AG_LINE_COUNT];
 static const char AG_PATH_N[] = "src/static/ag_n.csv";
@@ -237,7 +241,7 @@ Complex getMarbleRefractivity(Texture *_, Real lambda) {
     return (Complex){n, k};
 }
 
-//
+// Mie scattering
 Vector sampleMarbleNextDirection(Vector input, MT19937 *mt) {
     return sampleHenyeyGreenstein(input, mt, 0.9);
 }
