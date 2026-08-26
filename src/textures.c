@@ -232,7 +232,7 @@ Complex getMarbleRefractivity(Texture *_, Real lambda) {
     static const Real e = 120;
 
     Real n = sqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
-    static const Real k = 6e-6;
+    static const Real k = 7e-6;
 
     return (Complex){n, k};
 }

@@ -522,9 +522,9 @@ static inline NextSimulationData sampleSSS(Object *obj, Complex n2, Object **obj
 
         // decide whether to kill the loop by russian roulette
         // the chance to live is dynamically adjusted
-        Real q = albedo;
+        Real q = albedo; // albedo <= 1
         if (i > 10) {
-            q = fmin(albedo, 0.5);
+            q = fmin(albedo, 0.9);
         }
         if (randomReal(mt) > q) {
             return (NextSimulationData){0};
