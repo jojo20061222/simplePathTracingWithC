@@ -158,7 +158,7 @@ int main() {
     pushBack(&sources, &light1, LightSource *);
 
     Shape *lightSph2 = newSphere(
-        (Point){diamondShowing.x, diamondShowing.y, diamondShowing.z - radius * 2}, lightRadius);
+        (Point){diamondShowing.x, diamondShowing.y, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
     LightSource light2 = newLightSource(lightSph2, sunlightBase);
     pushBack(&sources, &light2, LightSource *);
