@@ -18,6 +18,8 @@ typedef struct Sphere Sphere;
 
 typedef struct ConvexPolygon ConvexPolygon;
 
+typedef struct Polygon Polygon;
+
 typedef struct Group Group;
 
 Shape *newTriangle(Point p1, Point p2, Point p3);

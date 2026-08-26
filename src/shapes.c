@@ -38,6 +38,18 @@ typedef struct ConvexPolygon {
     Vector normal;
 } ConvexPolygon;
 
+typedef struct P2 {
+    Real x, y;
+} P2;
+
+typedef struct Polygon {
+    Shape shape;
+    P2 *vertexes;
+    Point p0;
+    Vector normal;
+    Vector i, j;
+} Polygon;
+
 typedef struct Group {
     Shape shape;
     Shape **elements;
@@ -161,7 +173,7 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
 static void destroySphere(Shape *self) { free(self); }
 
 // choose a ramdom point on sphere
-Point randomPointOnSphere(Shape *self, MT19937 *mt) {
+static Point randomPointOnSphere(Shape *self, MT19937 *mt) {
     Sphere *sph = (Sphere *)self;
     Real u = randomReal(mt), v = randomReal(mt);
     Real theta = 2 * M_PI * u;
@@ -172,12 +184,12 @@ Point randomPointOnSphere(Shape *self, MT19937 *mt) {
     return vecAdd(sph->center, vecMultiply(sph->radius, N));
 }
 
-Real PDFofPointOnSphere(Shape *self, Point _) {
+static Real PDFofPointOnSphere(Shape *self, Point _) {
     Sphere *sph = (Sphere *)self;
     return 1 / (4 * M_PI * sph->radius * sph->radius);
 }
 
-Vector normalVectorOfPointOnSphere(Shape *self, Point p) {
+static Vector normalVectorOfPointOnSphere(Shape *self, Point p) {
     Sphere *sph = (Sphere *)self;
     return unitVector(vecMinus(p, sph->center));
 }
@@ -281,7 +293,35 @@ Shape *newConvexPolygon(Point *vertexes) {
     return (Shape *)cp;
 }
 
-CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {
+static CollideResult detectPolygonCollide(Shape *self, ReversedRay *ray) {
+    Polygon *p = (Polygon *)self;
+    int vertexesCount = getSize(p->vertexes);
+    // First we get the plane of the polygon
+    // get the normal vector
+    assert(vertexesCount >= 3);
+    Vector N = p->normal;
+
+    Vector D = ray->direction;
+    Vector O = ray->start;
+    Real C = vecDot(N, p->p0);
+    Real NdotD = vecDot(N, D);
+    if (rabs(NdotD) < error) {
+        return notCollide();
+    }
+    Real t = (C - vecDot(N, O)) / NdotD;
+    if (t <= error) {
+        return notCollide();
+    }    
+    Point P = vecAdd(O, vecMultiply(t, D));
+
+    // Now we have converted this problem into if a point is in the polygon
+    // first we convert the points into 2d
+
+
+    return getCollideResult(true, t, p->normal);
+}
+
+static CollideResult detectGroupCollide(Shape *self, ReversedRay *ray) {
     Group *group = (Group *)self;
     int shapesCount = getSize(group->elements);
     CollideResult firstCollideObjectResult = notCollide();

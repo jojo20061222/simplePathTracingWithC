@@ -1,7 +1,5 @@
 #include "include/pathTracing.h"
 
-Real strongWhiteLight(Real wavelength) { return 3 * whiteLightBase(wavelength); }
-
 static const int screenWidth = 720;
 static const int screenHeight = 480;
 
@@ -98,10 +96,10 @@ int main() {
     Object *sapphireObject = newObject(sapphireShape, sapphireInterface);
     pushBack(&objects, sapphireObject, Object *);
 
-    Point glassShowing = {width / 2 + radius * 2.5, height / 2 + radius * 2.5, pz + 2 * radius};
+    Point glassShowing = {width / 2 + radius * 2.5, height / 2 + radius * 2.3, pz + 2 * radius};
     Frame *glassFrame = newFrame("src/static/cube.obj");
     pushBack(&frames, glassFrame, Frame *);
-    RegularTransformPara *glassPara = newRegularTransformPara(radius * 0.75, 45, 45, 45, glassShowing);
+    RegularTransformPara *glassPara = newRegularTransformPara(radius * 0.65, 45, 45, 45, glassShowing);
     Shape *glassShape = newGroupFromFrame(glassFrame, regularTransform, glassPara);
     pushBack(&shapes, glassShape, Shape *);
     destroyRegulartransformPara(glassPara);
@@ -110,7 +108,7 @@ int main() {
     Object *glassObject = newObject(glassShape, glassInterface);
     pushBack(&objects, glassObject, Object *);
 
-    Point aerogelShowing = {width / 2 - radius * 2.5, height / 2 + radius * 2.5, pz + 2 * radius};
+    Point aerogelShowing = {width / 2 - radius * 2.5, height / 2 + radius * 2.3, pz + 2 * radius};
     Frame *aerogelFrame = newFrame("src/static/cube.obj");
     pushBack(&frames, aerogelFrame, Frame *);
     RegularTransformPara *aerogelPara = newRegularTransformPara(radius * 0.75, 0, 0, 0, aerogelShowing);
@@ -122,19 +120,31 @@ int main() {
     Object *aerogelObject = newObject(aerogelShape, aerogelInterface);
     pushBack(&objects, aerogelObject, Object *);
 
+    Point goldShowing = {width / 2, height / 2 + radius * 2.3, pz + 2 * radius};
+    Frame *goldFrame = newFrame("src/static/brilliant.obj");
+    pushBack(&frames, goldFrame, Frame *);
+    RegularTransformPara *goldPara = newRegularTransformPara(radius, 0, 0, 0, goldShowing);
+    Shape *goldShape = newGroupFromFrame(goldFrame, regularTransform, goldPara);
+    pushBack(&shapes, goldShape, Shape *);
+    destroyRegulartransformPara(goldPara);
+    Interface *goldInterface = newInterface(gold, air, 0.3);
+    pushBack(&interfaces, goldInterface, Interface *);
+    Object *goldObject = newObject(goldShape, goldInterface);
+    pushBack(&objects, goldObject, Object *);
+
 
     Real lightRadius = width / 40;
 
     // light
     Shape *lightSph1 = newSphere((Point){0, height, diamondShowing.z + radius}, lightRadius * 4);
     pushBack(&shapes, lightSph1, Shape *);
-    LightSource light1 = newLightSource(lightSph1, sunlightBase);
+    LightSource light1 = newLightSource(lightSph1, whiteLightBase);
     pushBack(&sources, &light1, LightSource *);
 
     Shape *lightSph2 =
         newSphere((Point){diamondShowing.x, diamondShowing.y, diamondShowing.z - radius * 2}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
-    LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
+    LightSource light2 = newLightSource(lightSph2, sunlightBase);
     pushBack(&sources, &light2, LightSource *);
 
     Shape *lightSph3 = newSphere((Point){width, height, diamondShowing.z + radius}, lightRadius * 4);
