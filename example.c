@@ -3,10 +3,10 @@
 Real strongWhiteLight(Real wavelength) { return 1 * whiteLightBase(wavelength); }
 
 int main() {
-    static const int width = 540;
-    static const int height = 360;
+    static const int width = 720;
+    static const int height = 540;
     Camera *camera =
-        newRegularCamera(width, height, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
+        newRegularCamera(1080, 720, (Real)width * 0.35, (Real)width * 0.65, (Real)height * 0.35,
                          (Real)height * 0.65, -1.0 / 3.0 * (Real)height, width);
     Frame **frames = newDynamicArray(0, Frame *);
     Shape **shapes = newDynamicArray(0, Shape *);
