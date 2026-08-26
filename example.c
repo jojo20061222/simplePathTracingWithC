@@ -25,6 +25,14 @@ int main() {
     pushBack(&textures, pinkMarble, Texture *);
     Texture *diamond = newDiamond();
     pushBack(&textures, diamond, Texture *);
+    Texture *sapphire = newSapphire(5e-3);
+    pushBack(&textures, sapphire, Texture *);
+    Texture *gold = newGold();
+    pushBack(&textures, gold, Texture *);
+    Texture *glass = newGlass();
+    pushBack(&textures, glass, Texture *);
+    Texture *aerogel = newAerogel();
+    pushBack(&textures, aerogel, Texture *);
 
     Real startx = 0, endx = width;
     Real starty = height / 3, endy = height * 1.5;
@@ -58,8 +66,8 @@ int main() {
     Object *backWall = newObject(backShape, groundInterface);
     pushBack(&objects, backWall, Object *);
 
-    Point showing = {(width / 2) - radius * 2.5, height / 2, pz + 2 * radius};
-    Shape *marbleSph = newSphere(showing, radius);
+    Point marbleShowing = {(width / 2) - radius * 2.5, height / 2, pz + 2 * radius};
+    Shape *marbleSph = newSphere(marbleShowing, radius);
     pushBack(&shapes, marbleSph, Shape *);
     Interface *marbleInterface = newInterface(pinkMarble, air, 0);
     pushBack(&interfaces, marbleInterface, Interface *);
@@ -69,36 +77,73 @@ int main() {
     Point diamondShowing = {width / 2, height / 2, pz + 2 * radius};
     Frame *diamondFrame = newFrame("src/static/diamond.obj");
     pushBack(&frames, diamondFrame, Frame *);
-    RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, diamondShowing);
-    Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, para);
+    RegularTransformPara *diamondPara = newRegularTransformPara(radius, 60, 0, 0, diamondShowing);
+    Shape *diamondShape = newGroupFromFrame(diamondFrame, regularTransform, diamondPara);
     pushBack(&shapes, diamondShape, Shape *);
-    destroyRegulartransformPara(para);
+    destroyRegulartransformPara(diamondPara);
     Interface *diamondInterface = newInterface(diamond, air, 0);
     pushBack(&interfaces, diamondInterface, Interface *);
     Object *diamondObject = newObject(diamondShape, diamondInterface);
     pushBack(&objects, diamondObject, Object *);
 
-    Point sapphireShowing = {width / 2 + radius * 2, height / 2, pz + 2 * radius};
-    Frame *sapphireFrame = newFrame("src/static/sapphire.obj");
+    Point sapphireShowing = {width / 2 + radius * 2.5, height / 2, pz + 2 * radius};
+    Frame *sapphireFrame = newFrame("src/static/gem.obj");
     pushBack(&frames, sapphireFrame, Frame *);
-    RegularTransformPara *para = newRegularTransformPara(radius, 60, 0, 0, sapphireShowing);
-    Shape *sapphireShape = newGroupFromFrame(sapphireFrame, regularTransform, para);
+    RegularTransformPara *sapphirePara = newRegularTransformPara(radius, 60, 0, 0, sapphireShowing);
+    Shape *sapphireShape = newGroupFromFrame(sapphireFrame, regularTransform, sapphirePara);
     pushBack(&shapes, sapphireShape, Shape *);
-    destroyRegulartransformPara(para);
+    destroyRegulartransformPara(sapphirePara);
     Interface *sapphireInterface = newInterface(sapphire, air, 0);
     pushBack(&interfaces, sapphireInterface, Interface *);
-    Object *sapphireObject = newObject(diamondShape, diamondInterface);
-    pushBack(&objects, diamondObject, Object *);
+    Object *sapphireObject = newObject(sapphireShape, sapphireInterface);
+    pushBack(&objects, sapphireObject, Object *);
 
-    Real lightRadius = width / 10;
+    Point glassShowing = {width / 2 + radius * 2.5, height / 2 + radius * 2.5, pz + 2 * radius};
+    Frame *glassFrame = newFrame("src/static/cube.obj");
+    pushBack(&frames, glassFrame, Frame *);
+    RegularTransformPara *glassPara = newRegularTransformPara(radius * 0.75, 45, 45, 45, glassShowing);
+    Shape *glassShape = newGroupFromFrame(glassFrame, regularTransform, glassPara);
+    pushBack(&shapes, glassShape, Shape *);
+    destroyRegulartransformPara(glassPara);
+    Interface *glassInterface = newInterface(glass, air, 0.5);
+    pushBack(&interfaces, glassInterface, Interface *);
+    Object *glassObject = newObject(glassShape, glassInterface);
+    pushBack(&objects, glassObject, Object *);
+
+    Point aerogelShowing = {width / 2 - radius * 2.5, height / 2 + radius * 2.5, pz + 2 * radius};
+    Frame *aerogelFrame = newFrame("src/static/cube.obj");
+    pushBack(&frames, aerogelFrame, Frame *);
+    RegularTransformPara *aerogelPara = newRegularTransformPara(radius * 0.75, 0, 0, 0, aerogelShowing);
+    Shape *aerogelShape = newGroupFromFrame(aerogelFrame, regularTransform, aerogelPara);
+    pushBack(&shapes, aerogelShape, Shape *);
+    destroyRegulartransformPara(aerogelPara);
+    Interface *aerogelInterface = newInterface(aerogel, air, 1);
+    pushBack(&interfaces, aerogelInterface, Interface *);
+    Object *aerogelObject = newObject(aerogelShape, aerogelInterface);
+    pushBack(&objects, aerogelObject, Object *);
+
+
+    Real lightRadius = width / 40;
 
     // light
-    Shape *lightSph = newSphere((Point){0, height, showing.z - radius}, lightRadius);
-    pushBack(&shapes, lightSph, Shape *);
-    LightSource light = newLightSource(lightSph, strongWhiteLight);
-    pushBack(&sources, &light, LightSource *);
+    Shape *lightSph1 = newSphere((Point){0, height, diamondShowing.z + radius}, lightRadius * 4);
+    pushBack(&shapes, lightSph1, Shape *);
+    LightSource light1 = newLightSource(lightSph1, sunlightBase);
+    pushBack(&sources, &light1, LightSource *);
 
-    renderToWindow("Aerogel showing frame", objects, sources, camera, screenWidth, screenHeight,
+    Shape *lightSph2 =
+        newSphere((Point){diamondShowing.x, diamondShowing.y, diamondShowing.z - radius * 2}, lightRadius);
+    pushBack(&shapes, lightSph2, Shape *);
+    LightSource light2 = newLightSource(lightSph2, strongWhiteLight);
+    pushBack(&sources, &light2, LightSource *);
+
+    Shape *lightSph3 = newSphere((Point){width, height, diamondShowing.z + radius}, lightRadius * 4);
+    pushBack(&shapes, lightSph3, Shape *);
+    LightSource light3 = newLightSource(lightSph3, tungstenLampBase);
+    pushBack(&sources, &light3, LightSource *);
+
+
+    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight,
                    11);
 
     destroyRegularCamera(camera);
