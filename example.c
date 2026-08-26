@@ -152,13 +152,14 @@ int main() {
     Real lightRadius = width / 40;
 
     // light
-    Shape *lightSph1 = newSphere((Point){0, height, diamondShowing.z + radius * 2}, lightRadius * 4);
+    Shape *lightSph1 =
+        newSphere((Point){0, height, diamondShowing.z + radius * 2}, lightRadius * 4);
     pushBack(&shapes, lightSph1, Shape *);
     LightSource light1 = newLightSource(lightSph1, tungstenLampBase);
     pushBack(&sources, &light1, LightSource *);
 
-    Shape *lightSph2 = newSphere(
-        (Point){diamondShowing.x, diamondShowing.y, pz + lightRadius}, lightRadius);
+    Shape *lightSph2 =
+        newSphere((Point){diamondShowing.x, diamondShowing.y, pz + lightRadius}, lightRadius);
     pushBack(&shapes, lightSph2, Shape *);
     LightSource light2 = newLightSource(lightSph2, sunlightBase);
     pushBack(&sources, &light2, LightSource *);
@@ -174,8 +175,7 @@ int main() {
     LightSource light4 = newLightSource(lightSph4, sunlightBase);
     pushBack(&sources, &light4, LightSource *);
 
-    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight,
-                   11);
+    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight, 30);
 
     destroyRegularCamera(camera);
 
@@ -183,7 +183,7 @@ int main() {
         destroyFrame(frames[i]);
     }
 
-    for (int i = 0; i < getSize(sources); i++) {
+    for (int i = 0; i < getSize(shapes); i++) {
         destroyShape(shapes[i]);
     }
     freeDynamicArray(shapes);
