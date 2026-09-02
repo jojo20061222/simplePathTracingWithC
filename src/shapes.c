@@ -146,7 +146,7 @@ static CollideResult detectSphereCollide(Shape *self, ReversedRay *ray) {
      * Some math.
      * Let R(t) = O + tD = <a + tx, b + ty, c + tz>, center of sphere C = <e, f, g>
      * <a + tx, b + ty, c + tz> - <e, f, g> = <a - e + tx, b - f + ty, c - g + tz>
-     * Hence we solve for minimum of (a - e + tx)^2 + (b - f + ty)^2 + (c - g + tz)^2 = r^2
+     * Hence we solve for (a - e + tx)^2 + (b - f + ty)^2 + (c - g + tz)^2 = r^2
      * Let W = O - C = <o, p, q>
      * then (x^2 + y^2 + z^2)t^2 + 2(ox + py + qz)t + (o^2 + p^2 + q^2 - r^2) = 0
      */
