@@ -125,8 +125,6 @@ static void *TSQPop(ThreadSafeQueue *tsq) {
     return resultData;
 }
 
-static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
-
 typedef struct {
     int id;
     VirtualScreen *vs;
@@ -158,13 +156,8 @@ static void *worker(void *para) {
 
     int width = getScreenWidth(vs);
     int height = getScreenHeight(vs);
-    int rangeLength = width * height;
 
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
-#if defined(ADAPTIVE_SAMPLING)
-    // the worker will update the status of pixels every (blockSize) times of loop
-    int blockSize = 64;
-#endif
 
     while (*workerPara->exit == 0) {
         // here we get the data from the task queue
@@ -173,27 +166,6 @@ static void *worker(void *para) {
         int leftBoundary = range->leftBoundary;
         int rightBoundary = range->rightBoundary;
 
-#if defined(ADAPTIVE_SAMPLING)
-        for (int b = 0; b < blockSize && *workerPara->exit == 0; b++) {
-            for (int i = leftBoundary; i <= rightBoundary; i++) {
-                // in order to reduce cache miss rate we have but to do this :(
-                int x = getX(vs, i), y = getY(vs, i);
-                if (!*accessConvergent(vs, x, y)) { // adaptive sampling
-                    renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);
-                }
-            }
-        }
-
-        // update the the convergent state of pixels
-        for (int i = leftBoundary; i <= rightBoundary; i++) {
-            int x = getX(vs, i), y = getY(vs, i);
-            if (*accessConvergent(vs, x, y) || !isThresholdAchived(vs, x, y)) continue;
-            Real RE = getRelativeError(vs, x, y);
-            if (RE < 5e-2) {
-                *accessConvergent(vs, x, y) = true;
-            }
-        }
-#endif
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
             renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);
@@ -221,10 +193,6 @@ Multithreads *initMultithreads(VirtualScreen *vs, int threadCount, Object **obje
     *mul->exit = 0;
 
     int rangeLength = getScreenWidth(vs) * getScreenHeight(vs);
-#if defined(ADAPTIVE_SAMPLING)
-    // set render threshold for every pixel
-    setThreshold(camera, vs, objects, sources, 64);
-#endif
     // here, we divide the screen into (blockCount) blocks
     // and push them into task queue for workers to work
     int blockCount = threadCount * 2;

@@ -90,7 +90,7 @@ ScreenColor XYZtoRGB(ColorXYZ xyz) {
     uint8_t R = adj(3.2404542 * X - 1.5371385 * Y - 0.4985314 * Z);
     uint8_t G = adj(-0.9692660 * X + 1.8760108 * Y + 0.0415560 * Z);
     uint8_t B = adj(0.0556434 * X - 0.2040259 * Y + 1.0572252 * Z);
-    return (ScreenColor){R, G, B, 0};
+    return getScreenColor(R, G, B);
 }
 
 Real getBlackbodyIntensity(Real wavelength, Real T) {

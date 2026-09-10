@@ -93,6 +93,15 @@ typedef union {
     uint32_t pixel;
 } ScreenColor;
 
+static inline ScreenColor getScreenColor(uint8_t R, uint8_t G, uint8_t B) {
+    ScreenColor s;
+    s.color.R = R;
+    s.color.G = G;
+    s.color.B = B;
+    s.color.A = 0;
+    return s;
+}
+
 typedef struct {
     Real x, y, z;
 } Tuple;

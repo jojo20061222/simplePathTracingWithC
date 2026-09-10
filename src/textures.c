@@ -170,10 +170,10 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
         exit(1);
     }
 
-    fscanf(fN, "%d", &lineCount);
+    fscanf(fN, "%d", &lineCountFromFile);
     for (int i = 0; i < lineCount; i++) {
         Real lambda = 0;
-        int successfulCount = fscanf(fN, REAL_FMT "," REAL_FMT, &lambda, &eta[i].R);
+        fscanf(fN, REAL_FMT "," REAL_FMT, &lambda, &eta[i].R);
     }
     fclose(fN);
 
@@ -184,7 +184,7 @@ static void readFile(const char *filePathN, const char *filePathK, Complex eta[]
     fscanf(fK, "%d", &lineCount);
     for (int i = 0; i < lineCount; i++) {
         Real lambda = 0;
-        int successfulCount = fscanf(fK, REAL_FMT "," REAL_FMT, &lambda, &eta[i].I);
+        fscanf(fK, REAL_FMT "," REAL_FMT, &lambda, &eta[i].I);
     }
     fclose(fK);
     return;
@@ -246,7 +246,7 @@ Complex getMarbleRefractivity(Texture *_, Real lambda) {
     static const Real d = 1.82831454;
     static const Real e = 120;
 
-    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
+    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
     static const Real k = 6e-6;
 
     return (Complex){n, k};
@@ -299,7 +299,7 @@ Complex getPinkMarbleRefractivity(Texture *_, Real lambda) {
     static const Real d = 1.82831454;
     static const Real e = 120;
 
-    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - 120)));
+    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
 
     return (Complex){n, k};
 }
@@ -509,7 +509,7 @@ bool isInterfaceOutsideTransparent(Interface *interface) {
 
 static inline bool isTextureFullyTransparent(Texture *texture) {
     static const uint32_t transparent_mask = HALF_TRANSPARENT;
-    return (texture->tags & HALF_TRANSPARENT) == FULLY_TRANSPARENT;
+    return (texture->tags & transparent_mask) == FULLY_TRANSPARENT;
 }
 
 bool isInterfaceInsideFullyTransparent(Interface *interface) {

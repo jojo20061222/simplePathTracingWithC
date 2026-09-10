@@ -12,7 +12,6 @@
  */
 
 static const int maxDepth = 32;
-static const int threshold = 64;
 
 void renderToWindow(const char *windowTitle, Object **objects, LightSource **sources,
                     Camera *camera, int width, int height, int threadCount) {

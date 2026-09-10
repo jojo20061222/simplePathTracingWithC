@@ -68,17 +68,6 @@ int main() {
     Object *backWall = newObject(backShape, groundInterface);
     pushBack(&objects, backWall, Object *);
 
-    // back
-    Point *frontPoints = newDynamicArray(4, Point);
-    frontPoints[0] = (Point){endx, starty, bz};
-    frontPoints[1] = (Point){endx, endy, bz};
-    frontPoints[2] = (Point){startx, endy, bz};
-    frontPoints[3] = (Point){startx, starty, bz};
-    Shape *frontShape = newConvexPolygon(frontPoints);
-    freeDynamicArray(frontPoints);
-    Object *frontWall = newObject(backShape, groundInterface);
-    pushBack(&objects, frontWall, Object *);
-
     Point marbleShowing = {(width / 2) - radius * 2.5, height / 2, pz + 2 * radius};
     Shape *marbleSph = newSphere(marbleShowing, radius);
     pushBack(&shapes, marbleSph, Shape *);

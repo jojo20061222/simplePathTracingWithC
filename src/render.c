@@ -25,13 +25,6 @@ typedef struct VirtualScreen {
     ScreenColor *buffer;
     unsigned long long *renderCount;
     ColorXYZ *mean;
-#if defined(ADAPTIVE_SAMPLING)
-    unsigned long long *threshold;
-    struct {
-        Real X2, Y2, Z2;
-    } *m2;
-    bool *convergent;
-#endif
     int width, height;
 } VirtualScreen;
 
@@ -54,19 +47,6 @@ VirtualScreen *newScreen(int width, int height) {
     if (result->renderCount == NULL) mallocFailedExit();
     result->mean = calloc(width * height, sizeof(*result->mean));
     if (result->mean == NULL) mallocFailedExit();
-#if defined(ADAPTIVE_SAMPLING)
-    // Welford's algorithm needs m2 to calculate variance
-    // we calculate variance of x, y, z so that colors will be considered
-    result->m2 = calloc(width * height, sizeof(*result->m2));
-    if (result->m2 == NULL) mallocFailedExit();
-
-    // Adaptive sampling
-    result->convergent = calloc(width * height, sizeof(*result->convergent));
-    if (result->convergent == NULL) mallocFailedExit();
-
-    result->threshold = calloc(width * height, sizeof(*result->threshold));
-    if (result->threshold == NULL) mallocFailedExit();
-#endif
 
     return result;
 }
@@ -75,11 +55,6 @@ void destroyScreen(VirtualScreen *screen) {
     free(screen->buffer);
     free(screen->mean);
     free(screen->renderCount);
-#if defined(ADAPTIVE_SAMPLING)
-    free(screen->m2);
-    free(screen->convergent);
-    free(screen->threshold);
-#endif
     free(screen);
     return;
 }
@@ -111,48 +86,8 @@ static inline void updateScreen(VirtualScreen *vs, int x, int y, ColorXYZ color)
     vs->mean[i].X += dX / n;
     vs->mean[i].Y += dY / n;
     vs->mean[i].Z += dZ / n;
-
-#if defined(ADAPTIVE_SAMPLING)
-    vs->m2[i].X2 += dX * (color.X - vs->mean[i].X);
-    vs->m2[i].Y2 += dY * (color.Y - vs->mean[i].Y);
-    vs->m2[i].Z2 += dZ * (color.Z - vs->mean[i].Z);
-
-    if (color.X == 0 && color.Y == 0 && color.Z == 0) {
-        // won't stop until it really samples somthing
-        vs->threshold[i]++;
-    }
-
-#endif
     vs->buffer[i] = XYZtoRGB(vs->mean[i]);
 }
-
-#if defined(ADAPTIVE_SAMPLING)
-static inline Real getSingleRelativeError(Real mean, Real m2, Real n) {
-    Real relativeError;
-    if (n <= 1) {
-        relativeError = INFINITY;
-    }
-    else {
-        Real stdDev = rsqrt(m2 / (Real)(n - 1));
-        relativeError = stdDev / (rabs(mean) + error);
-    }
-    return relativeError;
-}
-
-Real getRelativeError(VirtualScreen *vs, int x, int y) {
-    // calculate sample standard deviation
-    int i = getIndex(vs, x, y);
-    int n = vs->renderCount[i];
-    Real relativeErrorX = getSingleRelativeError(vs->mean[i].X, vs->m2[i].X2, n);
-    Real relativeErrorY = getSingleRelativeError(vs->mean[i].Y, vs->m2[i].Y2, n);
-    Real relativeErrorZ = getSingleRelativeError(vs->mean[i].Z, vs->m2[i].Z2, n);
-    return fmax(relativeErrorX, fmax(relativeErrorY, relativeErrorZ));
-}
-bool *accessConvergent(VirtualScreen *vs, int x, int y) {
-    int i = getIndex(vs, x, y);
-    return &vs->convergent[i];
-}
-#endif
 
 // to avoid collide with the same object again, we move a little from the collide point
 static inline Point fixedNextStart(Point curPoint, Vector N, bool transmission) {
@@ -221,7 +156,7 @@ static inline SingleRayCollideSourceResult singleRayCollideSource(LightSource **
                                                                   ReversedRay *ray) {
     int sourcesCount = getSize(sources);
     // then we do the same on light source
-    CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, 0};
+    CollideLightSourceResult firstCollideSourceResult = {false, INFINITY, {0, 0, 0}, 0};
     LightSource *firstCollideSource = NULL;
     for (int i = 0; i < sourcesCount; i++) {
         CollideLightSourceResult collideResult = collideLightSource(sources[i], ray);
@@ -379,7 +314,6 @@ static inline NextSimulationData sampleBTDF(Vector N, Vector v, Vector m, Real a
 
     // N dot L is natrally negative, and we shall use its absolute value in calculation
     Real absNdotL = rabs(NdotL);
-    Real absMdotL = rabs(MdotL);
     Real absMdotV = rabs(MdotV);
 
     // calculate Geometry term
@@ -1059,68 +993,7 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
     return intensity;
 }
 
-#if defined(ADAPTIVE_SAMPLING)
-// form a touch map before actual rendering
-// if a reversed ray touches an object then it's marked as true (touched)
-// otherwise it is marked as false
-static bool *newTouchMap(Camera *camera, VirtualScreen *vs, Object **objects,
-                         LightSource **sources) {
-    int width = vs->width;
-    int height = vs->height;
-    bool *touch = calloc(width * height, sizeof(*touch));
-
-    for (int i = 0; i < width * height; i++) {
-        int x = getX(vs, i), y = getY(vs, i);
-        // it won't reflect so a wavelength is fine
-        ReversedRay initRay = getInitRay(camera, (double)x, (double)y, 0);
-        SingleRayCollideResult result = singleRayCollide(objects, sources, initRay);
-        if (result.firstCollideObject != NULL || result.firstCollideSource != NULL) {
-            touch[i] = true;
-        }
-    }
-
-    return touch;
-}
-#endif
-
 static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
-
-#if defined(ADAPTIVE_SAMPLING)
-void setThreshold(Camera *camera, VirtualScreen *vs, Object **objects, LightSource **sources,
-                  int sampleThreshold) {
-    bool *touchMap = newTouchMap(camera, vs, objects, sources);
-    int width = vs->width;
-    int height = vs->height;
-    for (int i = 0; i < width * height; i++) {
-        // to make antialiasing work, we cannot block the pixels around the pixels that touches
-        // object
-        // consider 3 * 3 pixels around a pixel, if one of them touches object then we set a normal
-        // threshold for them
-        int x = getX(vs, i), y = getY(vs, i);
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                // neighbor x, y
-                int nx = x + dx;
-                int ny = y + dy;
-                if (!inBoundary(nx, width) || !inBoundary(ny, height)) continue;
-                int ni = getIndex(vs, nx, ny);
-                // if neighbor touches objects then set threshold to default value
-                if (touchMap[ni]) {
-                    vs->threshold[i] = sampleThreshold;
-                }
-            }
-        }
-    }
-    // we use "new"TouchMap so we have to free here
-    free(touchMap);
-}
-
-bool isThresholdAchived(VirtualScreen *vs, int x, int y) {
-    int i = getIndex(vs, x, y);
-    return vs->renderCount[i] >= vs->threshold[i];
-}
-#endif
 
 void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
