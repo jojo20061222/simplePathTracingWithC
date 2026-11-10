@@ -129,7 +129,11 @@ static inline Vector vecMultiply(Real c, Vector a) { return (Vector){c * a.x, c 
 
 static inline Real vecDot(Vector a, Vector b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 
+#ifdef DOUBLE_AS_REAL
 static const Real error = 1e-6;
+#else
+static const Real error = 1e-3;
+#endif
 
 static inline Real lengthOf(Vector v) { return rsqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
 

@@ -154,9 +154,6 @@ static void *worker(void *para) {
     VirtualScreen *vs = workerPara->vs;
     ThreadSafeQueue *taskQueue = workerPara->taskQueue;
 
-    int width = getScreenWidth(vs);
-    int height = getScreenHeight(vs);
-
     MT19937 *mt = initMT19937(id * 42 + time(NULL) + 19650218U);
 
     while (*workerPara->exit == 0) {
@@ -165,7 +162,6 @@ static void *worker(void *para) {
         Range *range = TSQPop(taskQueue);
         int leftBoundary = range->leftBoundary;
         int rightBoundary = range->rightBoundary;
-
         for (int i = leftBoundary; i <= rightBoundary; i++) {
             int x = getX(vs, i), y = getY(vs, i);
             renderPixel(camera, vs, x, y, objects, sources, mt, maxDepth);

@@ -993,8 +993,6 @@ static LightIntensity tracePath(ReversedRay initRay, Object **objects, LightSour
     return intensity;
 }
 
-static inline bool inBoundary(int var, int limit) { return var >= 0 && var < limit; }
-
 void renderPixel(Camera *camera, VirtualScreen *vs, int x, int y, Object **objects,
                  LightSource **sources, MT19937 *mt, int maxDepth) {
     if (sources == NULL) return;
