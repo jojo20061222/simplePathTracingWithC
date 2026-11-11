@@ -111,7 +111,7 @@ Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
         Real temp = (1 - g2) / (1 + g - 2 * g * v);
         cosPhi = (1 + g2 - temp * temp) / (2 * g);
     }
-    Real sinPhi = rsqrt(rmax(1 - cosPhi * cosPhi, 0.0));
+    Real sinPhi = rsqrt_(rmax(1 - cosPhi * cosPhi, 0.0));
     Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 
     return toWorld(local, input);
@@ -119,9 +119,9 @@ Vector sampleHenyeyGreenstein(Vector input, MT19937 *mt, Real g) {
 
 Vector sampleRayleighScatteringNextDirection(Vector input, MT19937 *mt) {
     Real v = 2 - 4 * randomReal(mt);
-    Real t = rcbrt(v + rsqrt(v * v + 1));
+    Real t = rcbrt(v + rsqrt_(v * v + 1));
     Real cosPhi = t - (1 / t);
-    Real sinPhi = rsqrt(rmax(1 - cosPhi * cosPhi, 0));
+    Real sinPhi = rsqrt_(rmax(1 - cosPhi * cosPhi, 0));
 
     Real theta = 2 * M_PI * randomReal(mt);
 
@@ -246,7 +246,7 @@ Complex getMarbleRefractivity(Texture *_, Real lambda) {
     static const Real d = 1.82831454;
     static const Real e = 120;
 
-    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
+    Real n = rsqrt_(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
     static const Real k = 6e-6;
 
     return (Complex){n, k};
@@ -299,7 +299,7 @@ Complex getPinkMarbleRefractivity(Texture *_, Real lambda) {
     static const Real d = 1.82831454;
     static const Real e = 120;
 
-    Real n = rsqrt(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
+    Real n = rsqrt_(a + ((b * lambda2) / (lambda2 - c)) + ((d * lambda2) / (lambda2 - e)));
 
     return (Complex){n, k};
 }
@@ -340,7 +340,7 @@ Complex getGlassRefractivity(Texture *_, Real lambda) {
 Complex getDiamondRefractivity(Texture *_, Real x) {
     x /= 1000;
     return (Complex){
-        rsqrt(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
+        rsqrt_(1 + 0.3306 / (1 - pow(0.1750 / x, 2)) + 4.3356 / (1 - pow(0.1060 / x, 2))), 0};
 }
 
 Complex getSapphireRefractivity(Texture *self, Real lambda) {
@@ -359,7 +359,7 @@ Complex getSapphireRefractivity(Texture *self, Real lambda) {
     Real nterm1 = a * lambda2 / (lambda2 - b * b);
     Real nterm2 = c * lambda2 / (lambda2 - d * d);
     Real nterm3 = e * lambda2 / (lambda2 - f * f);
-    Real n = rsqrt(1 + nterm1 + nterm2 + nterm3);
+    Real n = rsqrt_(1 + nterm1 + nterm2 + nterm3);
     // calcuate the k part
     Real EperpC = eCombined.R;
     Real EparaC = eCombined.I;
