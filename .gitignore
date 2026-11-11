@@ -12,3 +12,4 @@ convergentImg*
 upload.sh
 processImg.sh
 autogit.sh
+Makefile
