@@ -99,8 +99,8 @@ static inline Point fixedNextStart(Point curPoint, Vector N, bool transmission) 
 static inline Vector GGXVectorSample(MT19937 *mt, Real alpha) {
     Real u1 = randomReal(mt), u2 = randomReal(mt);
     Real theta = 2 * M_PI * u1;
-    Real cosPhi = rsqrt((1 - u2) / (1 + (alpha * alpha - 1) * u2));
-    Real sinPhi = rsqrt(fmax(0, 1 - cosPhi * cosPhi));
+    Real cosPhi = rsqrt_((1 - u2) / (1 + (alpha * alpha - 1) * u2));
+    Real sinPhi = rsqrt_(fmax(0, 1 - cosPhi * cosPhi));
     // <cos theta sinPhi, sin theta sin phi, cos phi>
     return (Vector){rcos(theta) * sinPhi, rsin(theta) * sinPhi, cosPhi};
 }
@@ -113,13 +113,13 @@ static inline Vector cosineVectorSample(MT19937 *mt) {
     // (r/R)^2, r = Rrsqrt(u)
     // https://stackoverflow.com/questions/5837572/generate-a-random-point-within-a-circle-uniformly
     Real u1 = randomReal(mt), u2 = randomReal(mt);
-    Real sinPhi = rsqrt(1 - u1), theta = 2 * M_PI * u2;
+    Real sinPhi = rsqrt_(1 - u1), theta = 2 * M_PI * u2;
 
     // then we shall project it onto an sphere, then we get the cosine distribution
     // normally suppose the normal vector point towards z-axis, then base on spherical
     // coordinate <1, theta, phi> <=> <rcos(theta)rsin(phi), rsin(theta)rsin(phi), rcos(phi)>
     // where rsin(phi) is rsqrt(1 - r^2), or rsqrt(1 - u1)
-    Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, rsqrt(u1)};
+    Vector local = {rcos(theta) * sinPhi, rsin(theta) * sinPhi, rsqrt_(u1)};
     return local;
 }
 
@@ -201,7 +201,7 @@ static inline Vector getRefractionDirection(Real n1R, Real n2R, Real cosTheta1, 
     Real eta = n1R / n2R;
     Real eta2 = eta * eta;
     Real sin2Theta1 = fmax(1 - cosTheta1 * cosTheta1, 0);
-    Real coefficientOfSecondPart = eta * cosTheta1 - rsqrt(fmax(0, 1 - eta2 * sin2Theta1));
+    Real coefficientOfSecondPart = eta * cosTheta1 - rsqrt_(fmax(0, 1 - eta2 * sin2Theta1));
     Vector O = vecAdd(vecMultiply(eta, I), vecMultiply(coefficientOfSecondPart, N));
     return O;
 }
@@ -210,8 +210,8 @@ static inline Real getGeometryTermDenom(Real NdotL, Real NdotV, Real alpha) {
     Real alpha2 = alpha * alpha;
     Real NdotV2 = NdotV * NdotV;
     Real NdotL2 = NdotL * NdotL;
-    return (NdotL * rsqrt(alpha2 + (1 - alpha2) * NdotV2) +
-            NdotV * rsqrt(alpha2 + (1 - alpha2) * NdotL2));
+    return (NdotL * rsqrt_(alpha2 + (1 - alpha2) * NdotV2) +
+            NdotV * rsqrt_(alpha2 + (1 - alpha2) * NdotL2));
 }
 
 static inline Real getGeometryTerm(Real NdotV, Real NdotL, Real alpha) {
@@ -375,7 +375,7 @@ static inline Real getFresnelTerm(Complex n1, Complex n2, Real cosTheta) {
             // ignore the imaginary part of n since metal does not have refraction
             // since n1 sinTheta1 = n2 sinTheta2 we have sinTheta2 = n1/n2 sinTheta1
             Real sin2Theta2 = n1R2 / n2R2 * sin2Theta;
-            cosThetaForF = rsqrt(fmax(0, 1 - sin2Theta2));
+            cosThetaForF = rsqrt_(fmax(0, 1 - sin2Theta2));
         }
     }
     else {

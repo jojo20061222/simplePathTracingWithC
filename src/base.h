@@ -70,7 +70,7 @@ static inline Real rlog(Real x) {
 #endif
 }
 
-static inline Real rsqrt(Real x) {
+static inline Real rsqrt_(Real x) {
 #ifdef DOUBLE_AS_REAL
     return sqrt(x);
 #else
@@ -135,7 +135,7 @@ static const Real error = 1e-6;
 static const Real error = 1e-3;
 #endif
 
-static inline Real lengthOf(Vector v) { return rsqrt(v.x * v.x + v.y * v.y + v.z * v.z); }
+static inline Real lengthOf(Vector v) { return rsqrt_(v.x * v.x + v.y * v.y + v.z * v.z); }
 
 static inline Real length2Of(Vector v) { return v.x * v.x + v.y + v.y + v.z * v.z; }
 
@@ -180,7 +180,7 @@ static inline Complex cplxDivide(Complex a, Complex b) {
     return (Complex){(a.R * b.R + a.I * b.I) / deno, (a.I * b.R - a.R * b.I) / deno};
 }
 
-static inline Real cplxModulus(Complex z) { return rsqrt(z.R * z.R + z.I * z.I); }
+static inline Real cplxModulus(Complex z) { return rsqrt_(z.R * z.R + z.I * z.I); }
 
 static inline Real cplxArg(Complex z) {
     if (z.R == 0 && z.I == 0)
