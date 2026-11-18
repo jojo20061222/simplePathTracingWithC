@@ -65,6 +65,8 @@ int getScreenHeight(VirtualScreen *vs) { return vs->height; }
 
 uint32_t getPixel(VirtualScreen *vs, int i) { return vs->buffer[i].pixel; }
 
+ColorXYZ getMeanXYZ(VirtualScreen *vs, int i) { return vs->mean[i]; }
+
 uint32_t *getBuffer(VirtualScreen *vs) { return (uint32_t *)vs->buffer; }
 
 int getIndex(VirtualScreen *vs, int x, int y) { return (vs->height - y - 1) * vs->width + x; }

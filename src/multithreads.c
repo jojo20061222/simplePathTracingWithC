@@ -4,6 +4,7 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdatomic.h>
 
 /*
  * @author seaofvoices
@@ -243,4 +244,45 @@ void destroyMultithreads(Multithreads *mul) {
     free(mul->exit);
     destroyTSQueue(mul->taskQueue);
     free(mul);
+}
+
+/*
+ * Benchmark mode: fixed workload, no progressive loop.
+ * Every pixel is rendered exactly `spp` times. Work is split into one task per screen row and the
+ * RNG of a row is seeded from (seed, row), so the output does not depend on the thread count.
+ */
+typedef struct {
+    VirtualScreen *vs;
+    Object **objects;
+    LightSource **sources;
+    Camera *camera;
+    int maxDepth, spp;
+    uint32_t seed;
+    atomic_int *nextRow;
+} BenchPara;
+
+static void *benchWorker(void *para) {
+    BenchPara *p = para;
+    int width = getScreenWidth(p->vs), height = getScreenHeight(p->vs);
+    int row;
+    while ((row = atomic_fetch_add(p->nextRow, 1)) < height) {
+        MT19937 *mt = initMT19937(p->seed + 7919U * (uint32_t)row + 19650218U);
+        for (int x = 0; x < width; x++) {
+            int y = getY(p->vs, row * width + x);
+            for (int s = 0; s < p->spp; s++)
+                renderPixel(p->camera, p->vs, x, y, p->objects, p->sources, mt, p->maxDepth);
+        }
+        destroyMT19937(mt);
+    }
+    return NULL;
+}
+
+void runFixedWorkload(VirtualScreen *vs, int threadCount, Object **objects, LightSource **sources,
+                      Camera *camera, int maxDepth, int spp, uint32_t seed) {
+    atomic_int nextRow = 0;
+    BenchPara para = {vs, objects, sources, camera, maxDepth, spp, seed, &nextRow};
+    pthread_t *pool = malloc(sizeof(pthread_t) * threadCount);
+    for (int i = 0; i < threadCount; i++) pthread_create(&pool[i], NULL, benchWorker, &para);
+    for (int i = 0; i < threadCount; i++) pthread_join(pool[i], NULL);
+    free(pool);
 }

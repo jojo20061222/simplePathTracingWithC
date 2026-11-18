@@ -1,6 +1,17 @@
 #!/bin/bash
 
-CC="clang"
+CC="${CC:-clang}"
+
+# SDL is optional: without it only the headless --bench mode is available
+if command -v sdl2-config >/dev/null 2>&1; then
+    sdlCflags="\`sdl2-config --cflags\`"
+    sdlLibs="\`sdl2-config --libs\`"
+    sdlDefine=""
+else
+    sdlCflags=""
+    sdlLibs=""
+    sdlDefine="-DNO_SDL"
+fi
 buildPath="build"
 binaryPath="bin"
 sourcePath="src"
@@ -25,7 +36,7 @@ if [[ $# != 1 ]]; then
 fi
 
 
-optimizationFlags="-O2 -pthread -g -flto -DDOUBLE_AS_REAL -Wall"
+optimizationFlags="-O2 -pthread -g -flto -DDOUBLE_AS_REAL -Wall $sdlDefine"
 
 echo "all: $binaryPath/pathTracing"
 
@@ -43,8 +54,8 @@ for file in $sourcePath/*.c $1; do
 
 
     if [[ $filename == pathTracing.c ]]; then
-        echo "$buildPath/$($CC `sdl2-config --cflags` -MM $file)"
-        echo -e "\t$CC -o \$@ -c \$< \`sdl2-config --cflags\` $optimizationFlags"
+        echo "$buildPath/$($CC $sdlDefine -MM $file)"
+        echo -e "\t$CC -o \$@ -c \$< $sdlCflags $optimizationFlags"
     else 
         echo "$buildPath/$($CC -MM $file)"
         echo -e "\t$CC -o \$@ -c \$< $optimizationFlags"
@@ -53,7 +64,7 @@ done
 
 
 echo $mainDependency
-echo -e "\t$CC \$^ -o \$@ \`sdl2-config --libs\` -lm -lpthread -flto"
+echo -e "\t$CC \$^ -o \$@ $sdlLibs -lm -lpthread -flto"
 echo
 echo ".PHONY: clean"
 echo "clean: "

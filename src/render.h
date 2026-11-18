@@ -24,6 +24,9 @@ int getScreenHeight(VirtualScreen *vs);
 
 uint32_t getPixel(VirtualScreen *vs, int i);
 
+// linear CIE XYZ running mean of pixel i (before clamping / gamma / tone mapping)
+ColorXYZ getMeanXYZ(VirtualScreen *vs, int i);
+
 uint32_t *getBuffer(VirtualScreen *vs);
 
 int getX(VirtualScreen *vs, int i);
