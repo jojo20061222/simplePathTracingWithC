@@ -4,8 +4,8 @@ CC="${CC:-clang}"
 
 # SDL is optional: without it only the headless --bench mode is available
 if command -v sdl2-config >/dev/null 2>&1; then
-    sdlCflags="\`sdl2-config --cflags\`"
-    sdlLibs="\`sdl2-config --libs\`"
+    sdlCflags=$(sdl2-config --cflags)
+    sdlLibs=$(sdl2-config --libs)
     sdlDefine=""
 else
     sdlCflags=""
@@ -52,13 +52,14 @@ for file in $sourcePath/*.c $1; do
     xfpref=${filename%%.*}
     mainDependency+="$buildPath/$xfpref.o "
 
-
     if [[ $filename == pathTracing.c ]]; then
-        echo "$buildPath/$($CC $sdlDefine -MM $file)"
+        echo "$buildPath/$($CC $sdlCflags $sdlDefine -MM $file)"
         echo -e "\t$CC -o \$@ -c \$< $sdlCflags $optimizationFlags"
+        echo
     else 
         echo "$buildPath/$($CC -MM $file)"
         echo -e "\t$CC -o \$@ -c \$< $optimizationFlags"
+        echo
     fi
 done
 
