@@ -16,8 +16,9 @@ Per spp it reports:
   - rmse8: RMSE of the 8-bit display image (0-255), for reference only.
   - median time and timing variation (CV = stdev / mean) per thread count
   - speedup = median time with the fewest threads / median time with the most threads
-If ref2.xyz exists (a second reference with another seed), it also reports the reference's own
-noise: error(ref, ref2) / sqrt(2). It should be well below the error of the highest-spp test image.
+If ref2.xyz exists (a second reference with the same spp and another seed), the reference used is
+the average (ref + ref2) / 2, which is statistically identical to one image with twice the spp.
+Its own noise is then error(ref, ref2) / 2; it should be well below the error of the test images.
 Writes <outdir>/summary.csv, and <outdir>/sppSweep.png when matplotlib is installed.
 """
 import csv
@@ -49,19 +50,24 @@ def main():
     if not os.path.exists(path("ref.xyz")):
         sys.exit(f"{path('ref.xyz')} not found: run sppSweep.sh first")
     w, h, ref = load_xyz(path("ref.xyz"))
-    ref_finite = np.isfinite(ref).all(axis=1)
-    ref_scale = ref[ref_finite].mean()
-    ref8 = load_rgb8(path("ref.txt"))[2] if os.path.exists(path("ref.txt")) else None
-
-    # noise of the reference itself, from two independent references
+    ref_count = 1
     ref_noise = None
     if os.path.exists(path("ref2.xyz")):
         w2, h2, ref2 = load_xyz(path("ref2.xyz"))
-        if (w2, h2) == (w, h):
-            ok = ref_finite & np.isfinite(ref2).all(axis=1)
-            diff = ref[ok] - ref2[ok]
-            ref_noise = {"relRMSE": float(np.sqrt(np.mean(diff ** 2)) / ref_scale / math.sqrt(2)),
-                         "relMAE": float(np.mean(np.abs(diff)) / ref_scale / math.sqrt(2))}
+        if (w2, h2) != (w, h):
+            sys.exit(f"ref2.xyz: size {w2}x{h2} differs from ref.xyz {w}x{h}")
+        both = np.isfinite(ref).all(axis=1) & np.isfinite(ref2).all(axis=1)
+        diff = (ref - ref2)[both]
+        ref = (ref + ref2) / 2  # = one reference with twice the samples
+        ref_count = 2
+    ref_finite = np.isfinite(ref).all(axis=1)
+    ref_scale = ref[ref_finite].mean()
+    if ref_count == 2:
+        # var(ref - ref2) = 2 s^2 and var of the average = s^2 / 2, so its noise is |diff| / 2
+        ref_noise = {"relRMSE": float(np.sqrt(np.mean(diff ** 2)) / 2 / ref_scale),
+                     "relMAE": float(np.mean(np.abs(diff)) / 2 / ref_scale)}
+    ref8 = load_rgb8(path("ref.txt"))[2] if os.path.exists(path("ref.txt")) else None
+
 
     # timings: {spp: {threads: [time, ...]}}
     times = {}
@@ -124,10 +130,15 @@ def main():
     print()
     print(f"relRMSE log-log slope: {fmt(slope, '{:.3f}')} (expect about -0.5)")
     ref_info = open(path("ref.info")).read().strip() if os.path.exists(path("ref.info")) else "?"
-    print(f"reference: {ref_info}")
+    if ref_count == 2:
+        ref_spp = ref_info.split()[0].removeprefix("spp=")
+        eff = f"{2 * int(ref_spp)} spp" if ref_spp.isdigit() else "2x spp"
+        print(f"reference: average of ref + ref2 ({ref_info} each) = {eff}")
+    else:
+        print(f"reference: {ref_info}")
     if ref_noise:
         # relMAE does not scale exactly like this, but it is a fair sanity check
-        print(f"reference's own noise (ref vs ref2, / sqrt 2): relRMSE={ref_noise['relRMSE']:.4f} "
+        print(f"reference's own noise (|ref - ref2| / 2): relRMSE={ref_noise['relRMSE']:.4f} "
               f"relMAE={ref_noise['relMAE']:.4f}")
         if e:
             last = e[-1]
