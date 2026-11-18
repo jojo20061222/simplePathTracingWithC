@@ -1,4 +1,5 @@
 #include "include/pathTracing.h"
+#include <string.h>
 
 static const int screenWidth = 720;
 static const int screenHeight = 480;
@@ -7,7 +8,21 @@ LightIntensity coldLightBase(Real lambda) {
     return getBlackbodyIntensity(lambda, 9500) / 158005180313225.187500;
 }
 
-int main() {
+int main(int argc, char **argv) {
+    // benchmark options:  --bench [--spp N] [--threads N] [--seed N] [--out FILE] [--out-xyz FILE]
+    bool bench = false;
+    int spp = 64, benchThreads = 1;
+    unsigned int seed = 42;
+    const char *benchOut = NULL, *benchXYZ = NULL;
+    for (int i = 1; i < argc; i++) {
+        if (!strcmp(argv[i], "--bench")) bench = true;
+        else if (!strcmp(argv[i], "--spp") && i + 1 < argc) spp = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--threads") && i + 1 < argc) benchThreads = atoi(argv[++i]);
+        else if (!strcmp(argv[i], "--seed") && i + 1 < argc) seed = strtoul(argv[++i], NULL, 10);
+        else if (!strcmp(argv[i], "--out") && i + 1 < argc) benchOut = argv[++i];
+        else if (!strcmp(argv[i], "--out-xyz") && i + 1 < argc) benchXYZ = argv[++i];
+    }
+
     static const Real width = 720;
     static const Real height = 720.0 * screenHeight / screenWidth;
     Camera *camera = newRegularCamera(screenWidth, screenHeight, width * 0.2, width * 0.8,
@@ -164,7 +179,17 @@ int main() {
     LightSource light4 = newLightSource(lightSph4, sunlightBase);
     pushBack(&sources, &light4, LightSource *);
 
-    renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth, screenHeight, 30);
+    if (bench) {
+        renderBenchmark(benchOut, objects, sources, camera, screenWidth, screenHeight, benchThreads,
+                        spp, seed, benchXYZ);
+    } else {
+#ifndef NO_SDL
+        renderToWindow("Example Showing Frame", objects, sources, camera, screenWidth,
+                       screenHeight, 30);
+#else
+        fprintf(stderr, "built without SDL: use --bench\n");
+#endif
+    }
 
     destroyRegularCamera(camera);
 
